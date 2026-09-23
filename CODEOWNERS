@@ -1,0 +1,9 @@
+# Default owner for everything until the team grows.
+* @amaq9
+
+# Sensitive paths always require review (rulebook.md §5) once a second
+# reviewer is available. Until then @amaq9 is the sole owner/approver.
+/api/auth/ @amaq9
+/api/**/tenant*.py @amaq9
+/infra/ @amaq9
+/docs/security/ @amaq9
