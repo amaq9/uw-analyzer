@@ -46,4 +46,3 @@ test-results/
 # (Note: /docs is NOT excluded - architecture, ADRs, threat model, etc. are
 # compliance-mandated in-repo artifacts per compliance-and-documentation.md)
 BRD + PRD/
-
