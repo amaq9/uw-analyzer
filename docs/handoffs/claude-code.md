@@ -47,8 +47,21 @@ End with a short overall credit-style view (strengths, weaknesses, what to watch
 - Branch protection on `main` now applies to admins too, so no agent can push to `main` directly.
 - Root-level full handoffs for both agents are git-ignored (#2, #5); only sanitised copies live in `docs/handoffs/`.
 
-### Status and next steps
+### 2026-10-04 — Session close
+- All of today's PRs (#2–#7) merged. Both agents' workspaces in sync with `main`, no open PRs, no stray branches.
 - Phase 0 setup and governance are in place; no application code yet.
-- Blocked: the local Docker environment, pending a WSL2 install on the build machine.
-- Open: six Phase 0 decisions (cloud, identity provider, tenancy, LLM provider, credit-data providers, retention).
-- Next for Claude Code: the Phase 0 CI pipeline, the `/api` FastAPI skeleton and the first OpenAPI contract in `docs/api/`, so the front end has something real to build against.
+
+## Next steps
+
+**Product Owner:**
+1. Install WSL2 (`wsl --install`, as Administrator) and restart the build machine, then confirm Docker starts. This unblocks the local Postgres and Redis environment.
+2. Decide, or approve default assumptions for, the six open Phase 0 decisions: cloud provider and region, identity provider, single- vs multi-tenant, LLM provider and search tools, licensed credit-data providers, and retention/RPO/RTO/volumes.
+3. Optional: enable Dependabot alerts on the repo.
+
+**Claude Code, once the above is settled** (each as its own small PR):
+1. Phase 0 CI pipeline (FR-0.6): GitHub Actions for lint, typecheck, tests, SAST, dependency and secret scanning, and SBOM, gating PRs to `main`.
+2. `/api` FastAPI skeleton with a health endpoint and tests.
+3. First OpenAPI contract in `docs/api/`, so Codex can start the front end against it.
+4. Then FR-0.4 (auth and RBAC skeleton) and FR-0.5 (audit event service), as the decisions allow.
+
+**Codex:** waits for Product Owner approval of its first front-end slice, then builds against the OpenAPI contract.
