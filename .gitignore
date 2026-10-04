@@ -50,6 +50,7 @@ BRD + PRD/
 # Agent handoffs and stray governance-doc copies - local only, never pushed
 # (sanitised, shareable handoffs go under docs/handoffs/ via PR)
 /handoff-claude-code.md
+/codex-handoff.md
 /progress-log.md
 /rulebook.md
 /compliance-and-documentation.md
