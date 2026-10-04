@@ -40,3 +40,15 @@ End with a short overall credit-style view (strengths, weaknesses, what to watch
 - Moved the Consolidated Prompt and Research Protocol documents into `BRD + PRD/`, so the master holds the full set of source documents.
 - Removed outdated duplicate governance docs from the repo root; the current versions are in `BRD + PRD/`.
 - Added root-level handoff and governance-doc filenames to `.gitignore` so they can't be pushed by accident.
+
+### 2026-10-04 — Two-agent working agreement
+- Product Owner split the work: Codex owns the front end (`/web`, `/tests/e2e`); Claude Code owns the back end, infrastructure, CI, security tooling and the OpenAPI contract in `docs/api/`.
+- Added `AGENTS.md` (shared rules for both agents) and `CLAUDE.md` (#3). Each agent works in its own git worktree on `claude/` or `codex/` branches and merges only via PR.
+- Branch protection on `main` now applies to admins too, so no agent can push to `main` directly.
+- Root-level full handoffs for both agents are git-ignored (#2, #5); only sanitised copies live in `docs/handoffs/`.
+
+### Status and next steps
+- Phase 0 setup and governance are in place; no application code yet.
+- Blocked: the local Docker environment, pending a WSL2 install on the build machine.
+- Open: six Phase 0 decisions (cloud, identity provider, tenancy, LLM provider, credit-data providers, retention).
+- Next for Claude Code: the Phase 0 CI pipeline, the `/api` FastAPI skeleton and the first OpenAPI contract in `docs/api/`, so the front end has something real to build against.
