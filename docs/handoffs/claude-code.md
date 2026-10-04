@@ -7,6 +7,12 @@ Doc: Handoff — Claude Code (sanitised copy of individual task log)
 
 This is a shortened, sanitised copy of the Claude Code session log. It tracks only work assigned to Claude Code; a separate agent works in parallel and has its own tracking. Shared governance (`rulebook.md`, BRD/PRD invariants P-01 to P-10) binds this session too.
 
+## Project location (master copy)
+
+- **Master copy:** `Documents\AZT Allianz - AI Project - Credit Underwriting` (the local git working copy of this repo). Confirmed by the Product Owner on 2026-10-04. All work happens here.
+- **Requirements and governance docs** (BRD, PRD, Consolidated Prompt, Research Protocol, progress log, rulebook, compliance, security handoff) live in `BRD + PRD/`, which is local only and never pushed.
+- Any other copy of the project folder is obsolete.
+
 ## Standing preference: how financial statements are analyzed
 
 Use this lens whenever asked to review new financials. Lead with these five areas, not a P&L summary:
@@ -28,3 +34,9 @@ End with a short overall credit-style view (strengths, weaknesses, what to watch
 - **Starbucks FY2025 10-K:** reviewed with the lens above. Weak liquidity (current ratio 0.72x), shareholders' deficit, free cash flow not covering the dividend.
 - **Nike Q2 FY26 10-Q:** reviewed with the lens above. Strong balance sheet (net cash, low gearing), but operating cash flow down 44% and free cash flow not covering the dividend.
 - No AR aging schedule was disclosed in either filing; ratios are calculated from the filed statements.
+
+### 2026-10-04 — Master folder consolidation
+- Confirmed the master copy of the project folder (see "Project location"). The old OneDrive copy is being retired by the Product Owner.
+- Moved the Consolidated Prompt and Research Protocol documents into `BRD + PRD/`, so the master holds the full set of source documents.
+- Removed outdated duplicate governance docs from the repo root; the current versions are in `BRD + PRD/`.
+- Added root-level handoff and governance-doc filenames to `.gitignore` so they can't be pushed by accident.
