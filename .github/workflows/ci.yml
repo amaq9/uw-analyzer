@@ -45,6 +45,29 @@ jobs:
       - run: uv run mypy app tests scripts
       - run: uv run pytest
 
+  web:
+    name: Web (lint, types, tests, build, audit, licenses)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci --ignore-scripts
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - name: Dependency vulnerabilities (fail on high or critical)
+        run: npm audit --audit-level=high
+      - name: License policy (fail on strong copyleft)
+        run: npx --yes license-checker-rseidelsohn@4.4.2 --production --excludePrivatePackages --failOn "GPL-3.0;AGPL-3.0;GPL-2.0" --summary
+
   security:
     name: Security (SAST, secrets, SCA, licenses, IaC/container scan)
     runs-on: ubuntu-latest
@@ -87,4 +110,10 @@ jobs:
           path: api
           format: spdx-json
           artifact-name: sbom-api.spdx.json
+          upload-artifact: true
+      - uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
+        with:
+          path: web
+          format: spdx-json
+          artifact-name: sbom-web.spdx.json
           upload-artifact: true
