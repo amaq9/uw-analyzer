@@ -333,7 +333,7 @@ def test_listing_cases_is_not_audited_per_case(
 
 
 def test_no_case_field_or_path_can_carry_a_decision(db_app: FastAPI) -> None:
-    banned = ("approv", "declin", "rating", "score", "decision", "credit_limit", "bind")
+    banned = ("approv", "declin", "rating", "score", "decision", "credit_limit", "bind", "traffic")
     schema = db_app.openapi()
     names = [p for p in schema["paths"]]
     for model in schema["components"]["schemas"].values():
