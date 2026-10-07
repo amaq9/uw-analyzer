@@ -26,6 +26,9 @@ class Action(StrEnum):
     AUTHZ_DENIED = "authz.denied"
     CROSS_TENANT_DENIED = "authz.cross_tenant_denied"
     AUDIT_READ = "audit.read"
+    CASE_CREATED = "case.created"
+    CASE_VIEWED = "case.viewed"
+    CASE_UPDATED = "case.updated"
 
 
 @dataclass(frozen=True)

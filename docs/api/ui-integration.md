@@ -44,6 +44,11 @@ the front end's decision; the back end needs nothing further for it.
 | `GET /health` | API reachable check (no auth) |
 | `GET /api/v1/me` | Signed-in state: who, tenant, roles, permissions |
 | `GET /api/v1/audit-events` | An auditor-only activity view (`audit:read`) |
+| `POST/GET/PATCH /api/v1/cases` | Case intake: create, list, view and edit (see README for rules) |
+
+**Case screens.** Show `information_gaps` clearly (they are a feature, not an error). On `409`
+reload the case and let the user redo the edit. Send `expected_version` on every edit. Treat
+`exposure_amount` as a string to avoid rounding. Do not offer `status` as an editable field.
 
 Case, entity, evidence and report endpoints arrive with Phases 1 to 5. If the UI needs an endpoint
 or field that is missing, request it in the front-end handoff; the Product Owner routes it to the

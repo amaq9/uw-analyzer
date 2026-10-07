@@ -24,4 +24,5 @@ the column below says what must be decided, not a number.
 ## Current tables
 | Table | Class | Notes |
 |---|---|---|
+| `cases` | Restricted | Intake data. Tenant-scoped. Never logged or placed in audit details |
 | `audit_events` | Confidential | Append-only. `details` must stay free of Restricted content. `tenant_id` null for unauthenticated events. Retention undecided |

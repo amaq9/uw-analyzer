@@ -33,7 +33,7 @@ agent (prompt injection); the LLM itself (untrusted output).
 |---|---|---|---|
 | T1 | Forged, expired or wrong-audience token; `alg=none`; HS/RS key confusion | RS256-only verification, iss/aud/exp/sub required, tests for each attack | Built (PR #11) |
 | T2 | Privilege escalation through roles | Fixed role-to-permission table in code, unknown roles grant nothing, deny by default | Built (PR #11) |
-| T3 | Cross-tenant data access | Tenant ID from the verified token, object-level `assert_same_tenant`, 404 so existence is not revealed, denial audited | Built for the check; **applies to each data endpoint as it is added**. Database row-level security is Planned |
+| T3 | Cross-tenant data access | Tenant ID from the verified token, object-level `assert_same_tenant`, 404 so existence is not revealed, denial audited | Built, and **proven on the cases endpoints** (read, list, update, audit). Must be repeated for each new data endpoint. Database row-level security is Planned |
 | T4 | Stub identity provider reaching staging or production | Settings refuse `AUTH_MODE=stub` unless `APP_ENV` is local or test; no default for `APP_ENV` | Built |
 | T5 | Audit trail tampering or deletion | Append-only DB triggers; exact ordering; reads audited | Built (FR-0.5). **Residual:** a DB admin can drop triggers; restricted DB role and hash chain Planned |
 | T6 | Log injection or request-ID spoofing | Safe-token check on caller-supplied request IDs | Built (FR-0.5) |
