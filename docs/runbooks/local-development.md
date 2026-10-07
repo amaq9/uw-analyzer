@@ -37,6 +37,31 @@ Every response has an `X-Request-ID` header; the same ID appears in the audit ev
 3. The UI is not connected to the API yet; that is the front end's next step. See
    `docs/api/ui-integration.md` for what it connects to and the rules it follows.
 
+## Document uploads (storage and virus scanner)
+Uploads need two more local containers, started with the rest: `docker compose -f infra/docker-compose.dev.yml up -d`
+(services `s3` and `clamav`). `scripts/dev_server.py` configures them automatically with throwaway local
+credentials and creates the bucket. If they are not running, uploads answer 503 ("not set up" or
+"could not be completed") and nothing else is affected. The first start of the scanner can take a minute.
+
+- Try it at http://127.0.0.1:8000/docs: sign in with an underwriter token, create a case, then use
+  `POST /api/v1/cases/{id}/documents` (choose a PDF and a category).
+- Files you can expect to be refused: programs, files whose name does not match their contents, Word or Excel
+  files with macros, PDFs with scripts, oversize files, and anything the scanner flags.
+- **Antivirus on your computer:** to test the scanner, the standard harmless **EICAR** test string is used. Windows
+  Defender will quarantine any file containing it and may show a "threat found" notice. That is the test working
+  and is not a real virus. The automated tests send it from memory, never from a file.
+
+### Running the real-service tests
+```
+bash infra/ci/start-test-services.sh      # starts the two containers (same as CI)
+cd api
+# set these four for the session, then run pytest
+TEST_S3_ENDPOINT_URL=http://localhost:8333  TEST_S3_ACCESS_KEY=devaccesskey
+TEST_S3_SECRET_KEY=devsecretkey123          TEST_CLAMAV_HOST=localhost
+```
+The script and the compose services use the same ports, so stop one set (`docker rm -f uw-test-s3 uw-test-clamav`)
+before starting the other. Without these settings the real-service tests skip locally; in CI they must run.
+
 ## Stop it
 Press `Ctrl+C` in the terminal. Tokens stop working when the server stops.
 

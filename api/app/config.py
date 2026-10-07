@@ -4,7 +4,7 @@ import re
 from enum import StrEnum
 from typing import Self
 
-from pydantic import model_validator
+from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -38,8 +38,51 @@ class Settings(BaseSettings):
     oidc_audience: str | None = None
     oidc_jwks_url: str | None = None
 
+    # Uploaded documents (FR-1.2). Optional as a group: when none are set, uploads are switched off
+    # (the API answers 503 for them). When any is set, all of them must be.
+    s3_endpoint_url: str | None = None
+    s3_bucket: str | None = None
+    s3_access_key: SecretStr | None = None
+    s3_secret_key: SecretStr | None = None
+    s3_region: str = "us-east-1"
+    clamav_host: str | None = None
+    clamav_port: int = 3310
+    max_upload_mb: int = Field(default=20, ge=1, le=25)  # below the scanner's own 25 MB limit
+
     # Browser origins allowed to call the API (JSON list in the environment). Empty = none.
     cors_allowed_origins: list[str] = []
+
+    @property
+    def documents_configured(self) -> bool:
+        return bool(
+            self.s3_endpoint_url
+            and self.s3_bucket
+            and self.s3_access_key
+            and self.s3_secret_key
+            and self.clamav_host
+        )
+
+    @model_validator(mode="after")
+    def _validate_documents(self) -> Self:
+        values = [
+            self.s3_endpoint_url,
+            self.s3_bucket,
+            self.s3_access_key,
+            self.s3_secret_key,
+            self.clamav_host,
+        ]
+        if any(values) and not all(values):
+            raise ValueError(
+                "Document uploads need S3_ENDPOINT_URL, S3_BUCKET, S3_ACCESS_KEY, S3_SECRET_KEY "
+                "and CLAMAV_HOST together"
+            )
+        if (
+            self.s3_endpoint_url
+            and self.app_env in (AppEnv.STAGING, AppEnv.PROD)
+            and not self.s3_endpoint_url.startswith("https://")
+        ):
+            raise ValueError("S3_ENDPOINT_URL must use https in staging and prod")
+        return self
 
     @model_validator(mode="after")
     def _validate_cors(self) -> Self:

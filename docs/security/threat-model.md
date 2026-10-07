@@ -44,7 +44,7 @@ agent (prompt injection); the LLM itself (untrusted output).
 | T11 | LLM fabricates access or evidence (P-01, P-02) | Only an executed connector call can mark a source accessed; LLM output is schema-validated and provenance-checked before saving | Planned (Phases 2 and 3) |
 | T12 | Prompt injection from retrieved pages or uploads | Retrieved content delimited and treated as data; cannot change tool policy; adversarial tests | Planned (Phase 2 onward) |
 | T13 | System issues a decision or binding commitment (P-09) | No permission or endpoint for it; tests fail if one appears | Built for current surface; enforced on every new endpoint |
-| T14 | Malicious upload (malware, oversized, wrong type) | Allow-list, size limit, malware scan, private storage, random names | Planned (Phase 1) |
+| T14 | Malicious upload (malware, oversized, wrong type, zip bomb, macros, scripted PDF) | Allow-list judged from file bytes, size limit (declared and while reading), ClamAV scan that fails closed, no macros, zip-bomb and PDF active-content checks, private storage, random keys, metadata append-only, download as attachment with nosniff | Built (ADR 0007). Open: encryption at rest and bucket policy (hosting), per-tenant quotas |
 | T15 | Denial of service, brute force | Rate limits, connector quotas, request size limits | Planned |
 | T16 | Data loss | Encrypted, tested backups; restore drills | Planned (needs hosting decision) |
 | T17 | Information leakage in errors | Generic 401/403/404 messages; reasons logged and audited, never returned | Built |

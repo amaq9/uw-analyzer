@@ -27,6 +27,36 @@ services:
       timeout: 5s
       retries: 10
 
+  # S3-compatible object storage for uploaded documents (local development only).
+  # Credentials are throwaway local values; the API reaches it at http://localhost:8333.
+  s3:
+    image: chrislusf/seaweedfs:latest
+    command: server -s3 -s3.port=8333 -s3.config=/etc/seaweedfs/s3.json -dir=/data -ip.bind=0.0.0.0
+    ports:
+      - "8333:8333"
+    volumes:
+      - s3_data:/data
+      - ./s3-dev-config.json:/etc/seaweedfs/s3.json:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8333/ || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # Virus scanner. Every upload is scanned before it is stored. First start can take
+  # a minute or two while signatures load; the API refuses uploads until it is ready.
+  clamav:
+    image: clamav/clamav:stable
+    ports:
+      - "3310:3310"
+    healthcheck:
+      test: ["CMD-SHELL", "clamdcheck.sh || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 60s
+
 volumes:
   postgres_data:
   redis_data:
+  s3_data:

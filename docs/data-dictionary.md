@@ -80,3 +80,21 @@ copied into `audit_events`.
 | `note` | The person's reason or note |
 
 Retention: TBD (legal).
+
+## `case_documents` (migration 0004) — Restricted
+Metadata for uploaded files (the files themselves are in private object storage under random keys).
+Append-only: database triggers refuse UPDATE, DELETE and TRUNCATE. Tenant-scoped. The file name and contents
+are Restricted and never copied into audit events or logs.
+
+| Field | Meaning |
+|---|---|
+| `seq`, `id`, `case_id`, `tenant_id` | Order number, document ID, owning case and tenant |
+| `category` | `financial_statement`, `credit_report` or `supporting` (database-checked) |
+| `original_filename` | Cleaned display name (no path or control characters, at most 150 characters) |
+| `content_type` | Type detected from the file's contents (not what the browser claimed) |
+| `size_bytes`, `sha256` | Exact size and SHA-256 of the stored bytes |
+| `storage_key` | Random key in object storage (`tenant/random/random`); never returned by the API |
+| `scan_status`, `scanned_at` | Always `clean` (an infected file is never recorded) and when it was scanned |
+| `uploaded_by`, `uploaded_at` | Who and when |
+
+Retention and controlled deletion: TBD (legal).
