@@ -8,30 +8,33 @@
 
 ## Current Status
 
-- No front-end implementation task is active.
-- The session-closeout branch was created from the latest `origin/main` before this update.
-- The front-end application remains an empty scaffold pending an approved first implementation slice.
+- The first front-end implementation slice is complete on `codex/ui-foundation`.
+- The application now has a tested Next.js/TypeScript foundation, responsive workspace shell, and enterprise access state.
+- API integration is waiting on the versioned OpenAPI contract; no independent API types were introduced.
 
 ## Completed Work
 
-- Established the isolated Codex working-copy workflow.
-- Reviewed the repository and project governance instructions.
-- Synchronized work with the latest main branch before each task.
-- Published this sanitized handoff while keeping the detailed working handoff local only.
-- Retired merged Codex branches and prepared a clean, short-lived branch workflow for future front-end tasks.
+- Built the `/web` application foundation with a responsive desktop/mobile layout.
+- Added a workspace overview that communicates the controlled research sequence and human-underwriter boundary.
+- Added truthful readiness and empty states without fabricated customer, case, source, or activity data.
+- Added a separate enterprise sign-in screen with SSO visibly unavailable until integration is complete.
+- Added component tests for the decision boundary, entity ambiguity stop-control, access/verification separation, and disabled SSO state.
+- Added baseline response headers and pinned dependencies with a clean audit.
 
 ## Verification
 
-- Confirmed the closeout branch started from the latest fetched `origin/main`.
-- Confirmed no Claude-owned implementation or handoff files were modified.
-- Confirmed the full Codex handoff is ignored and absent from Git status.
-- The complete configured pre-commit suite passed, including secret scanning and static analysis.
+- Lint, TypeScript checks, 4 component tests, and the optimized production build pass.
+- npm reports zero known dependency vulnerabilities.
+- Desktop and mobile browser reviews pass with no console warnings or errors.
+- Changes remain limited to `/web` and Codex's own handoff.
 
 ## Blockers and Risks
 
-- The front-end application remains an empty scaffold pending an explicitly assigned task.
-- API-dependent UI work must use the versioned OpenAPI contract and request back-end changes through the Product Owner.
+- The versioned OpenAPI contract is not yet present in `docs/api/`, so authentication and live workspace data are not connected.
+- The CI-owned workflow has no `/web` job yet; request frontend install, lint, typecheck, test, build, audit/license, and SBOM steps from Claude Code.
+- Playwright coverage starts with the first critical user workflow rather than this non-interactive foundation.
+- Staging deployment and validation remain pending.
 
 ## Next Action
 
-Obtain approval for the first front-end scaffold slice and its acceptance criteria. At the next session, update from `origin/main`, create a fresh `codex/<topic>` branch, and implement only the approved front-end scope with appropriate tests.
+After Product Owner review and publication of the OpenAPI contract, generate client types from the contract, connect the authenticated `/me` state, and begin the Phase 1 case-intake/entity-resolution UI as a separate small PR.
