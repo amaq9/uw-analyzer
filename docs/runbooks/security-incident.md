@@ -4,7 +4,7 @@ Use for: a suspected leaked secret, unauthorised access, a cross-tenant data exp
 authentication bypass, or a suspicious pattern in the audit log. A cross-tenant defect or an
 authentication bypass is **stop-ship** and an incident by definition (PRD section 11).
 
-Named security contact: **not yet assigned** (Product Owner to name one; open item).
+Security contact: **the Product Owner** (named 2026-10-07). Contact details are kept privately, not in this public repo. Review this when the team grows or an IT security lead is appointed.
 
 ## First 30 minutes
 1. **Write down the time and what you saw.** Do not delete anything: logs and audit events are evidence.
