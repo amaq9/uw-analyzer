@@ -28,3 +28,14 @@ Legend: **Built** means implemented and tested. **Planned** names the phase that
 | FR-1.5 / AC-01 / BR-01 Ambiguity stop and explanation | `research-readiness` endpoint, `entities.py` | status check | `test_new_case_cannot_research_and_says_why`, `test_two_candidates_make_the_case_ambiguous_and_block_research`, readiness rule tests | Built |
 | FR-1.2 Secure uploads (type, size, malware checks, private storage) | `app/documents/` (`validation.py`, `scanner.py`, `storage.py`, `service.py`, `router.py`) | `case_documents` append-only triggers | `test_document_validation.py`, `test_document_scanner.py`, `test_documents_api.py`, `test_documents_integration.py` (real S3 and the real ClamAV with the EICAR test file) | Built |
 | FR-1.6 Aliases, former names, parent, subsidiaries | `CandidateCreate` | `entity_candidates` array columns | `test_candidate_lists_and_validation` | Built |
+
+## Assisted mode and the draft recommendation (ADR 0005, ADR 0008)
+| Requirement | Code | Database rule | Test | Status |
+|---|---|---|---|---|
+| Policy v1.0 applied by the server, not the author | `app/recommendation/policy.py`, `router.py` | outcome/band/amount consistency and amount never above the request | `test_recommendation_policy.py` (every band, boundary, rounding, decline rule), `test_draft_recommendations.py` | Built |
+| P-02 No invented evidence | evidence schema; cited documents must be uploads of the case | none | `test_a_cited_document_must_be_a_real_upload_of_this_case`, `test_evidence_must_be_complete_and_well_formed` | Built for assisted drafts |
+| P-06 / P-07 Unverified material findings do not auto-decide | unverified finding blocks the draft | none | `test_an_unverified_finding_is_not_a_decline_it_blocks_the_draft` | Built |
+| P-03 Entity gate; policy 2e2 item 5 | draft needs a resolved or human-recorded unconfirmed entity | `ENTITY_UNCONFIRMED` status | `test_an_unresolved_entity_cannot_have_a_draft`, `test_entity_unconfirmed.py` | Built |
+| P-08 / P-10 Immutable, versioned, reproducible drafts | version per case, source and policy version stored | append-only triggers | `test_new_drafts_get_new_versions_and_old_ones_are_kept`, `test_drafts_cannot_be_edited_or_deleted_in_the_database` | Built |
+| P-09 Decision wording only in the designated places | exact allow-list | none | `tests/p09.py` used by `test_decision_wording_exists_only_in_the_designated_places` and the contract test | Built |
+| Human adoption, change or rejection; agreement view (ADR 0005 decisions 7 and 8) | none yet | none yet | none yet | Next |

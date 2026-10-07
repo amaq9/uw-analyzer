@@ -24,6 +24,7 @@ the column below says what must be decided, not a number.
 ## Current tables
 | Table | Class | Notes |
 |---|---|---|
+| `draft_recommendations` | Restricted | Outcomes, amounts and reasons are case content. Append-only. Never copied into audit events |
 | `case_documents` | Restricted | Metadata; the stored files are Restricted too. Append-only. File names never copied into audit events |
 | `entity_candidates` | Restricted | Entity details entered by users. Tenant-scoped |
 | `entity_resolution_log` | Restricted | Append-only. Free-text notes are never copied into audit events |

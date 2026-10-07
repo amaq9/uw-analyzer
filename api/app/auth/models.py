@@ -26,6 +26,8 @@ class Permission(StrEnum):
     REPORT_COMPLETE = "report:complete"
     ADMIN_MANAGE = "admin:manage"
     AUDIT_READ = "audit:read"
+    DRAFT_IMPORT = "draft:import"
+    DECISION_RECORD = "decision:record"
 
 
 _UNDERWRITER = frozenset(
@@ -35,6 +37,8 @@ _UNDERWRITER = frozenset(
         Permission.RESEARCH_RUN,
         Permission.EVIDENCE_ANNOTATE,
         Permission.REPORT_COMPLETE,
+        Permission.DRAFT_IMPORT,
+        Permission.DECISION_RECORD,
     }
 )
 
@@ -46,7 +50,7 @@ ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
     ),
     Role.ADMINISTRATOR: frozenset({Permission.ADMIN_MANAGE}),  # no case data: least privilege
     Role.AUDITOR: frozenset({Permission.CASE_READ, Permission.AUDIT_READ}),
-    Role.SERVICE: frozenset({Permission.RESEARCH_RUN}),
+    Role.SERVICE: frozenset({Permission.RESEARCH_RUN, Permission.DRAFT_IMPORT}),
 }
 
 

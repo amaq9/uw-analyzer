@@ -51,6 +51,10 @@ Every response carries an `X-Request-ID` header (send your own safe ID in the re
 | POST | `/api/v1/cases/{id}/documents` | bearer, `case:write` | Upload a file (`multipart/form-data`: `file` and `category` = `financial_statement`, `credit_report` or `supporting`). 201 with the document record. 413 too large, 415 type not accepted, 422 refused (virus scan, macros, scripts in a PDF, zip bomb), 409 case is full (50 documents), 503 scanner or storage unavailable (nothing saved, retry is safe), 411 missing Content-Length |
 | GET | `/api/v1/cases/{id}/documents` | bearer, `case:read` | The case's documents (name, category, type, size, SHA-256, uploader, time). Never the storage location |
 | GET | `/api/v1/cases/{id}/documents/{document_id}/content` | bearer, `case:read` | Download as an attachment (needs the `Authorization` header, so fetch it in code, not with a plain link) |
+| POST | `/api/v1/cases/{id}/entity-resolution/unconfirmed` | bearer, `case:write` | A person records that the legal entity could not be confirmed or found. `{reason}` is mandatory. The case becomes `ENTITY_UNCONFIRMED`; candidates and choices are blocked until a person reopens it |
+| POST | `/api/v1/cases/{id}/draft-recommendations` | bearer, `draft:import` (underwriter, reviewer, service) | **Assisted mode.** Submit findings, reasons with evidence and the AI's proposed amount; the **server derives the outcome and amount from the approved policy v1.0**. 409 if the entity is not resolved or recorded as not confirmed; 422 if evidence is incomplete, a cited document is not part of the case, a material finding is unverified, or the amount is above the request |
+| GET | `/api/v1/cases/{id}/draft-recommendations` | bearer, `case:read` | The case's drafts, newest first (older versions are kept) |
+| GET | `/api/v1/cases/{id}/draft-recommendations/{draft_id}` | bearer, `case:read` | One draft |
 
 **Case notes.** `status` is server-controlled (`DRAFT`, `ENTITY_AMBIGUOUS`, `ENTITY_RESOLVED`; the case also returns `resolved_candidate_id`, `resolved_by`, `resolved_at` once resolved). Candidates are always user-entered (`source: "user_entered"`); the system never invents one. While resolved, changing `legal_name`, `registration_number` or `jurisdiction` returns 409 until the entity is reopened; sending
 `status`, `id`, `owner`, `tenant_id` or `version` is rejected (422). `exposure_amount` is an exact
@@ -61,4 +65,13 @@ decimal (send and treat it as a string such as `"1250000.50"`) and must come wit
 file's contents, and the name must agree with them. The default size limit is 20 MB. Documents cannot be edited or
 deleted through the API. If document storage is not configured on the server, upload endpoints answer 503.
 
-There are deliberately no endpoints that approve, decline, rate or set a limit (P-09).
+**Draft recommendations (ADR 0005, ADR 0008).** A draft has an `outcome` (`APPROVE` or `DECLINE`), a `band`
+(`FULL`, `REDUCED` or `DECLINE`), the requested and recommended amounts (exact decimal strings), the
+AI's own proposed amount, the reasons with evidence, factors, information gaps, a fixed
+`limitations` list, `notice` ("Draft recommendation for the underwriter. Not a decision.") and
+`test_product: true`. **Show the notice and the test-product label with every draft, never as a
+decision.** There is no score, rating, grade, probability or colour: show plain words and the reasons.
+Decision wording appears only in these draft shapes and in the human decision (next release); it is
+checked by an exact allow-list test.
+
+The system never acts on a draft: only a named person's recorded decision counts (P-09, ADR 0005).

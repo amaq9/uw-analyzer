@@ -79,6 +79,15 @@
         "title": "AuditEventOut",
         "type": "object"
       },
+      "Band": {
+        "enum": [
+          "FULL",
+          "REDUCED",
+          "DECLINE"
+        ],
+        "title": "Band",
+        "type": "string"
+      },
       "Blocker": {
         "properties": {
           "code": {
@@ -963,6 +972,42 @@
         "title": "CaseUpdate",
         "type": "object"
       },
+      "DeclineFinding": {
+        "additionalProperties": false,
+        "description": "A finding that always means decline, but only once verified under the protocol.",
+        "properties": {
+          "code": {
+            "enum": [
+              "insolvency",
+              "sanctions",
+              "fraud_or_regulatory",
+              "going_concern"
+            ],
+            "title": "Code",
+            "type": "string"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceRef"
+            },
+            "maxItems": 5,
+            "minItems": 1,
+            "title": "Evidence",
+            "type": "array"
+          },
+          "verified": {
+            "title": "Verified",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "code",
+          "verified",
+          "evidence"
+        ],
+        "title": "DeclineFinding",
+        "type": "object"
+      },
       "DocumentCategory": {
         "enum": [
           "financial_statement",
@@ -1033,6 +1078,251 @@
         "title": "DocumentOut",
         "type": "object"
       },
+      "DraftImport": {
+        "additionalProperties": false,
+        "properties": {
+          "ai_proposed_amount": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,16}|(?=[\\d.]{1,19}0*$)\\d{0,16}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Proposed Amount"
+          },
+          "decline_findings": {
+            "items": {
+              "$ref": "#/components/schemas/DeclineFinding"
+            },
+            "maxItems": 10,
+            "title": "Decline Findings",
+            "type": "array"
+          },
+          "factors": {
+            "items": {
+              "$ref": "#/components/schemas/Factor"
+            },
+            "maxItems": 4,
+            "title": "Factors",
+            "type": "array"
+          },
+          "financial_findings_weak": {
+            "title": "Financial Findings Weak",
+            "type": "boolean"
+          },
+          "information_gaps": {
+            "items": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Information Gaps",
+            "type": "array"
+          },
+          "reasons": {
+            "items": {
+              "$ref": "#/components/schemas/Reason"
+            },
+            "maxItems": 12,
+            "minItems": 1,
+            "title": "Reasons",
+            "type": "array"
+          },
+          "source": {
+            "$ref": "#/components/schemas/SourceInfo"
+          },
+          "summary": {
+            "maxLength": 600,
+            "minLength": 1,
+            "title": "Summary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "financial_findings_weak",
+          "summary",
+          "reasons",
+          "source"
+        ],
+        "title": "DraftImport",
+        "type": "object"
+      },
+      "DraftOut": {
+        "description": "A draft recommendation for the underwriter. Always labelled; never a decision.",
+        "properties": {
+          "ai_proposed_amount": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Proposed Amount"
+          },
+          "band": {
+            "$ref": "#/components/schemas/Band"
+          },
+          "case_id": {
+            "format": "uuid",
+            "title": "Case Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "title": "Created By",
+            "type": "string"
+          },
+          "decline_findings": {
+            "items": {
+              "$ref": "#/components/schemas/DeclineFinding"
+            },
+            "title": "Decline Findings",
+            "type": "array"
+          },
+          "factors": {
+            "items": {
+              "$ref": "#/components/schemas/Factor"
+            },
+            "title": "Factors",
+            "type": "array"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "information_gaps": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Information Gaps",
+            "type": "array"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Limitations",
+            "type": "array"
+          },
+          "notice": {
+            "default": "Draft recommendation for the underwriter. Not a decision.",
+            "title": "Notice",
+            "type": "string"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/Outcome"
+          },
+          "policy_version": {
+            "title": "Policy Version",
+            "type": "string"
+          },
+          "reasons": {
+            "items": {
+              "$ref": "#/components/schemas/Reason"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "recommended_amount": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recommended Amount"
+          },
+          "requested_amount": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested Amount"
+          },
+          "requested_currency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested Currency"
+          },
+          "rule_codes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Rule Codes",
+            "type": "array"
+          },
+          "source": {
+            "$ref": "#/components/schemas/SourceInfo"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "test_product": {
+            "default": true,
+            "title": "Test Product",
+            "type": "boolean"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "case_id",
+          "version",
+          "outcome",
+          "band",
+          "requested_amount",
+          "requested_currency",
+          "recommended_amount",
+          "ai_proposed_amount",
+          "rule_codes",
+          "summary",
+          "reasons",
+          "decline_findings",
+          "factors",
+          "information_gaps",
+          "limitations",
+          "source",
+          "policy_version",
+          "created_by",
+          "created_at"
+        ],
+        "title": "DraftOut",
+        "type": "object"
+      },
       "ErrorBody": {
         "properties": {
           "code": {
@@ -1085,6 +1375,108 @@
           "error"
         ],
         "title": "ErrorResponse",
+        "type": "object"
+      },
+      "EvidenceRef": {
+        "additionalProperties": false,
+        "description": "Where a reason comes from. Documents must be real uploads of this case; web sources need a\nsecure address, the date it was read, and the quoted words.",
+        "properties": {
+          "document_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Id"
+          },
+          "kind": {
+            "enum": [
+              "document",
+              "web"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location"
+          },
+          "quote": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Quote",
+            "type": "string"
+          },
+          "retrieved_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retrieved At"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "kind",
+          "quote"
+        ],
+        "title": "EvidenceRef",
+        "type": "object"
+      },
+      "Factor": {
+        "additionalProperties": false,
+        "description": "Something that lowered the proposed amount, and how.",
+        "properties": {
+          "code": {
+            "enum": [
+              "sector_outlook",
+              "acceptable_not_strong",
+              "missing_information",
+              "concentration"
+            ],
+            "title": "Code",
+            "type": "string"
+          },
+          "explanation": {
+            "maxLength": 400,
+            "minLength": 1,
+            "title": "Explanation",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "explanation"
+        ],
+        "title": "Factor",
         "type": "object"
       },
       "FieldError": {
@@ -1175,6 +1567,14 @@
         "title": "Me",
         "type": "object"
       },
+      "Outcome": {
+        "enum": [
+          "APPROVE",
+          "DECLINE"
+        ],
+        "title": "Outcome",
+        "type": "string"
+      },
       "Readiness": {
         "properties": {
           "allowed": {
@@ -1198,6 +1598,32 @@
           "blockers"
         ],
         "title": "Readiness",
+        "type": "object"
+      },
+      "Reason": {
+        "additionalProperties": false,
+        "properties": {
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceRef"
+            },
+            "maxItems": 5,
+            "minItems": 1,
+            "title": "Evidence",
+            "type": "array"
+          },
+          "text": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "evidence"
+        ],
+        "title": "Reason",
         "type": "object"
       },
       "ReopenRequest": {
@@ -1243,6 +1669,43 @@
           "candidate_id"
         ],
         "title": "ResolveRequest",
+        "type": "object"
+      },
+      "SourceInfo": {
+        "additionalProperties": false,
+        "description": "Who produced the draft and with what, so the run can be reproduced (P-10).",
+        "properties": {
+          "kind": {
+            "const": "claude_code_session",
+            "title": "Kind",
+            "type": "string"
+          },
+          "model": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Model",
+            "type": "string"
+          },
+          "policy_version": {
+            "maxLength": 20,
+            "minLength": 1,
+            "title": "Policy Version",
+            "type": "string"
+          },
+          "skill_version": {
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Skill Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "model",
+          "skill_version",
+          "policy_version"
+        ],
+        "title": "SourceInfo",
         "type": "object"
       },
       "UnconfirmedRequest": {
@@ -1951,6 +2414,264 @@
         "summary": "Download Document",
         "tags": [
           "documents"
+        ]
+      }
+    },
+    "/api/v1/cases/{case_id}/draft-recommendations": {
+      "get": {
+        "description": "The case's drafts, newest first. Older drafts are kept; nothing is overwritten.",
+        "operationId": "list_drafts_api_v1_cases__case_id__draft_recommendations_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DraftOut"
+                  },
+                  "title": "Response List Drafts Api V1 Cases  Case Id  Draft Recommendations Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the token is invalid."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Signed in but not permitted."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found (or belongs to another tenant)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request was malformed."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Drafts",
+        "tags": [
+          "draft-recommendations"
+        ]
+      },
+      "post": {
+        "description": "Record a draft recommendation written by an analyst session (assisted mode). The server\nderives the outcome and amount from the approved policy; the author cannot choose them.",
+        "operationId": "import_draft_api_v1_cases__case_id__draft_recommendations_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DraftImport"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the token is invalid."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Signed in but not permitted."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found (or belongs to another tenant)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request was malformed."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Import Draft",
+        "tags": [
+          "draft-recommendations"
+        ]
+      }
+    },
+    "/api/v1/cases/{case_id}/draft-recommendations/{draft_id}": {
+      "get": {
+        "operationId": "get_draft_api_v1_cases__case_id__draft_recommendations__draft_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Draft Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the token is invalid."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Signed in but not permitted."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found (or belongs to another tenant)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request was malformed."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Draft",
+        "tags": [
+          "draft-recommendations"
         ]
       }
     },
