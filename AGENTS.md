@@ -55,9 +55,9 @@ Source of truth for requirements: the BRD and PRD (v1.0, 16 Sep 2026) in `BRD + 
 
 These bind **both** agents. The UI is where several of them are most visible.
 
-- **P-09: no autonomous underwriting decision.** The system never approves, declines, rates, or sets a credit limit.
-  - *Back end:* no endpoint returns or records a decision on the underwriter's behalf.
-  - *UI:* no "Approve" or "Decline" buttons, no score or traffic light that reads as a credit decision, and no wording that implies the system decided. The underwriter decides.
+- **P-09: no autonomous underwriting decision.** The system never decides. It never approves, declines or sets a credit limit by itself, never acts on or communicates an outcome without a named human, and never makes a binding commitment. *Amended by ADR 0005 (Product Owner decision, 2026-10-07; feature gated and not yet built):* the system may later produce a **Draft recommendation for the underwriter** (approve an amount, do not approve, or decline) which a named person must adopt, change or reject. Only that person's recorded **Underwriter decision** is the decision.
+  - *Back end:* no endpoint returns or records a decision on the underwriter's behalf. Until ADR 0005 is built and approved there is no recommendation or decision endpoint at all. When built, the server enforces the ADR 0005 preconditions, the approved recommendation policy, and human adoption.
+  - *UI:* **today**, no "Approve" or "Decline" buttons, no rating, score, traffic light or credit-limit wording, and no wording that implies the system decided. Never present research readiness as a score or a decision (ADR 0004). After ADR 0005 is built and approved, decision wording is allowed only in two labelled places: the "Draft recommendation for the underwriter" and the human "Underwriter decision". Do not build them early.
 - **P-01, P-02: no fabricated sources or evidence.** Every claim shown must link to its source.
 - **P-03:** entity ambiguity blocks substantive research. The UI must surface it, not hide it.
 - **P-04:** "accessed" and "verified" are separate fields. Display them separately and never merge them into one badge.
