@@ -31,6 +31,12 @@ It prepares the local database, prints a **test token for each role**, and start
 
 Every response has an `X-Request-ID` header; the same ID appears in the audit event.
 
+## Run the UI and the API together
+1. Start the API as above (it already allows the UI at port 3000).
+2. In a second PowerShell window: `cd web` then `npm run dev`, and open http://localhost:3000.
+3. The UI is not connected to the API yet; that is the front end's next step. See
+   `docs/api/ui-integration.md` for what it connects to and the rules it follows.
+
 ## Stop it
 Press `Ctrl+C` in the terminal. Tokens stop working when the server stops.
 
