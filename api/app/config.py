@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     app_env: AppEnv
     auth_mode: AuthMode = AuthMode.OIDC
 
+    # No default: audit events must always have a database to go to.
+    database_url: str
+
     oidc_issuer: str | None = None
     oidc_audience: str | None = None
     oidc_jwks_url: str | None = None

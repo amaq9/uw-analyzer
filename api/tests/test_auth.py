@@ -185,6 +185,7 @@ def test_oidc_mode_wires_a_verifier_without_stub() -> None:
             oidc_issuer="https://idp.example/",
             oidc_audience="uw-analyzer-api",
             oidc_jwks_url="https://idp.example/jwks.json",
+            database_url="postgresql+psycopg://u:p@localhost/db",
         )
     )
     assert not hasattr(app.state, "stub_idp")

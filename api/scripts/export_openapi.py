@@ -11,6 +11,7 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from app.audit.events import InMemoryAuditSink  # noqa: E402
 from app.config import AppEnv, AuthMode, Settings  # noqa: E402
 from app.main import create_app  # noqa: E402
 
@@ -18,7 +19,12 @@ SPEC_PATH = Path(__file__).resolve().parents[2] / "docs" / "api" / "openapi.json
 
 
 def build_spec() -> dict[str, Any]:
-    app = create_app(Settings(app_env=AppEnv.TEST, auth_mode=AuthMode.STUB))
+    settings = Settings(
+        app_env=AppEnv.TEST,
+        auth_mode=AuthMode.STUB,
+        database_url="postgresql+psycopg://unused:unused@localhost:1/unused",  # never connects
+    )
+    app = create_app(settings, audit_sink=InMemoryAuditSink())
     return app.openapi()
 
 
