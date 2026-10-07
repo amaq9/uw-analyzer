@@ -1,57 +1,84 @@
 # Codex Front-End Handoff
 
-## Latest: API connection foundation
-
-- Generated frontend types directly from the approved OpenAPI contract with a repeatable command.
-- Added a validated, environment-configured API base URL and typed `/api/v1/me` client.
-- Added development-only token sign-in for the accepted local pilot. Tokens stay in memory and are
-  never persisted; safe API errors include the request ID without exposing raw responses.
-- Confirmed ADR 0003 and the `/api/v1/cases` contract are present on the synced main branch.
-- Generation, lint, type-checking, 11 tests, production build, dependency audit, and local browser
-  inspection pass.
-- No backend change is requested. Next frontend slice: contract-driven case intake and listing.
+Last updated: 2026-10-07 (America/Toronto)
 
 ## Ownership
 
-- Codex implements front-end UI work only, following the Product Owner's narrower assignment.
-- Back-end, infrastructure, CI/CD, shared governance, and Claude Code's handoff remain outside Codex's ownership.
-- Work uses a separate Git worktree and short-lived `codex/<topic>` branches.
+- Codex owns `/web/**`, `/tests/e2e/**`, and this published handoff.
+- Backend, worker, infrastructure, CI/CD, the API contract, and Claude Code's handoff remain outside
+  Codex's ownership.
+- Frontend work uses isolated worktrees, short-lived `codex/<topic>` branches, generated OpenAPI
+  types, and small single-purpose pull requests.
 
-## Previous Status
+## Completed work
 
-- The Skills information-architecture slice is complete on `codex/skills-interface`.
-- The interface now exposes the configured Financial Statement Assessment methodology without implying backend execution exists.
-- Skill execution remains disabled until Claude Code publishes an approved versioned contract.
+### Frontend foundation and Skills
 
-## Completed Work
+- PR #12 established the responsive Next.js shell, overview, navigation, sign-in presentation,
+  truthful empty states, and core invariant tests.
+- PR #19 added the Financial Statement Assessment information architecture and safeguards. Execution
+  remains disabled because no approved backend skill contract exists.
 
-- Built the `/web` application foundation with a responsive desktop/mobile layout.
-- Added a workspace overview that communicates the controlled research sequence and human-underwriter boundary.
-- Added truthful readiness and empty states without fabricated customer, case, source, or activity data.
-- Added a separate enterprise sign-in screen with SSO visibly unavailable until integration is complete.
-- Added component tests for the decision boundary, entity ambiguity stop-control, access/verification separation, and disabled SSO state.
-- Added baseline response headers and pinned dependencies with a clean audit.
-- Added a Skills destination to desktop and mobile navigation.
-- Added a Financial Statement Assessment overview spotlight and detailed five-area methodology page.
-- Added explicit requirements, missing-data handling, indicative-benchmark warning, and decision-boundary safeguards.
-- Added tests that keep skill execution disabled while the backend contract is absent.
+### API connection foundation
 
-## Verification
+- PR #25 added contract-generated TypeScript declarations, validated API base-URL configuration,
+  safe standard-error handling, and development-only token sign-in through `/api/v1/me`.
+- Tokens remain in React memory only. They are not persisted in browser storage, URLs, logs, or
+  analytics.
+- Enterprise SSO remains disabled. The local token form is excluded from production builds.
+- Safe error messages and request IDs are shown without exposing raw responses, tokens, or stack
+  traces.
 
-- Lint, TypeScript checks, 7 component tests, and the optimized production build pass.
-- npm reports zero known dependency vulnerabilities.
-- Desktop and mobile browser reviews pass with no console warnings or errors; mobile navigation exposes only live destinations.
-- Changes remain limited to `/web` and Codex's own handoff.
+### Contract synchronization
 
-## Blockers and Risks
+- PR #27 refreshed the generated declarations for cases, entity candidates, explicit entity
+  resolution/reopen, and research readiness.
+- `npm run api:types` is the canonical generation command; the previous command remains an alias.
+- A stale-types test regenerates into a temporary directory and compares the result with the
+  committed declaration.
+- PR #31 received a single-file frontend commit refreshing the declarations for secure document
+  upload endpoints. No upload UI was added.
 
-- OpenAPI v0.1.0 exposes health, caller identity, and audit events only; it has no skill registry or financial-assessment resource.
-- The financial-assessment skill is a local Claude package, not a deployable backend capability. Its indicative benchmark reference also contains decision-like wording that must be sanitized before integration.
-- The CI-owned workflow has no `/web` job yet; request frontend install, lint, typecheck, test, build, audit/license, and SBOM steps from Claude Code.
-- Skill execution remains disabled. A future backend contract should preserve input periods/units, data gaps, provenance, five-area structured output, and run metadata.
-- Playwright coverage starts with the first critical user workflow rather than this non-interactive information-architecture slice.
-- Staging deployment and validation remain pending.
+## Verification status
 
-## Next Action
+- Latest API-type refresh: lint passed, TypeScript passed, 12 tests passed, and the production build
+  passed.
+- The stale-types test passed.
+- Pre-commit hygiene, secret scanning, and Semgrep passed.
+- Prior frontend PR CI also passed the Web, API, security, dependency, and SBOM jobs.
+- No known dependency vulnerabilities were reported in the latest dependency audit performed by
+  Codex.
 
-After Product Owner review, Claude Code should propose the versioned skill contract and sanitize benchmark wording when that later-phase work is authorized. Codex will generate client types from the approved OpenAPI contract before enabling assessment execution.
+## Current constraints
+
+- ADR 0003 permits a single-user, local-machine pilot only. The app must not be hosted, shared, or
+  used by a second person until the documented exit requirements are met.
+- The development token session is currently page-local. Protected routes need application-wide
+  React memory state without browser persistence.
+- No case, entity-resolution, audit, or upload screen exists yet.
+- P-09 remains binding: no approval, decline, rating, score, traffic light, credit-limit
+  recommendation, or binding commitment may appear in the UI.
+- No backend change is currently requested by Codex.
+
+## Next steps
+
+1. Sync `origin/main` and create a fresh Codex worktree for the next UI slice.
+2. If the OpenAPI contract changes, regenerate and commit only the declaration in a separate
+   prerequisite PR; the stale-types test must pass.
+3. Provide application-wide, memory-only development session context for protected routes.
+4. Build the paged case list as the next screen PR, including loading, empty, error, 403, permission,
+   and pagination states.
+5. Build case detail, new case, edit case, entity resolution, and auditor-only audit trail as separate
+   PRs in that order.
+6. Add the first Playwright journey covering sign-in, case creation, information gaps, two entity
+   candidates, the ambiguity stop, explicit resolution, and reason-required reopen.
+7. For every UI PR, run lint, TypeScript, Vitest, production build, dependency audit, repository
+   hooks, and applicable browser/E2E checks.
+
+## Product Owner checks for the next slice
+
+- Confirm a development token enters the protected UI without persistence.
+- Confirm users without `case:read` receive a clear access-denied state.
+- Confirm the case list uses only API-provided values and contains no decision-like language.
+- Confirm New Case is hidden without `case:write`.
+- Confirm pagination, loading, empty, error, and 403 states are understandable in plain language.
