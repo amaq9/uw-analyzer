@@ -7,6 +7,19 @@
 - **Changes:** a back-end change that alters a request or response shape updates this file in the same PR. Breaking changes need Product Owner approval before merge (AGENTS.md section 3).
 - **Auth:** all endpoints except `GET /health` need `Authorization: Bearer <token>`. `401` means unauthenticated; `403` means authenticated but not permitted; a `404` can also mean the object belongs to another tenant.
 
+## Keeping the UI's generated types in sync (required on every contract change)
+The UI's types are generated from `openapi.json` and a web test fails if they are stale, so the UI and API
+cannot drift. Because a change to this file makes that test fail until the types are refreshed, **a PR that
+changes `openapi.json` is not finished until the UI types are refreshed in the same PR**:
+
+1. The back-end author changes the API and regenerates `openapi.json` (only their own files).
+2. The front-end owner checks out that PR branch, runs `npm run api:types` in `web/`, and commits **only the
+   regenerated types file** to the same branch (their own files).
+3. CI then passes on both sides and the PR is merged once.
+
+Neither side edits the other's files. A change that is breaking, or needs UI work beyond the types, is
+raised in the PR description and routed by the Product Owner.
+
 ## Conventions
 - **Versioned paths:** everything except `GET /health` lives under `/api/v1/`.
 - **Standard error object** on every non-2xx response:
