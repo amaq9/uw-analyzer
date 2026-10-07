@@ -1,17 +1,26 @@
 import pytest
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Request
 from fastapi.testclient import TestClient
 
+from app.audit.events import InMemoryAuditSink
 from app.auth.deps import assert_same_tenant, require_permission
 from app.auth.models import Permission, Principal
 from app.auth.tokens import StubIdentityProvider
 from app.config import AppEnv, AuthMode, Settings
 from app.main import create_app
 
+DUMMY_DB_URL = "postgresql+psycopg://unused:unused@localhost:1/unused"  # engine never connects
+
 
 @pytest.fixture
-def app() -> FastAPI:
-    app = create_app(Settings(app_env=AppEnv.TEST, auth_mode=AuthMode.STUB))
+def sink() -> InMemoryAuditSink:
+    return InMemoryAuditSink()
+
+
+@pytest.fixture
+def app(sink: InMemoryAuditSink) -> FastAPI:
+    settings = Settings(app_env=AppEnv.TEST, auth_mode=AuthMode.STUB, database_url=DUMMY_DB_URL)
+    app = create_app(settings, audit_sink=sink)
 
     # Test-only routes that exercise the permission and tenant-isolation dependencies.
     @app.get("/_test/conflicts")
@@ -22,10 +31,11 @@ def app() -> FastAPI:
 
     @app.get("/_test/cases/{case_tenant}")
     def case(
+        request: Request,
         case_tenant: str,
         principal: Principal = Depends(require_permission(Permission.CASE_READ)),  # noqa: B008
     ) -> dict[str, str]:
-        assert_same_tenant(principal, case_tenant)
+        assert_same_tenant(request, principal, case_tenant, resource_type="case")
         return {"tenant": case_tenant}
 
     return app

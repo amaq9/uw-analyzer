@@ -1,11 +1,17 @@
-from fastapi import Depends, FastAPI
+from datetime import datetime
+
+from fastapi import Depends, FastAPI, Query, Request
 from pydantic import BaseModel
+from sqlalchemy import create_engine
 
 from app import __version__
-from app.auth.deps import get_principal
-from app.auth.models import Principal
+from app.audit.events import Action, AuditSink, Outcome, PostgresAuditSink
+from app.audit.recorder import record_event
+from app.auth.deps import get_principal, require_permission
+from app.auth.models import Permission, Principal
 from app.auth.tokens import StubIdentityProvider, TokenVerifier, jwks_key_resolver
 from app.config import AuthMode, Settings
+from app.middleware import correlation_id_middleware
 
 
 class Health(BaseModel):
@@ -20,9 +26,25 @@ class Me(BaseModel):
     permissions: list[str]
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
+class AuditEventOut(BaseModel):
+    id: str
+    occurred_at: datetime
+    actor: str | None
+    action: str
+    outcome: str
+    resource_type: str | None
+    resource_id: str | None
+    correlation_id: str
+    details: dict[str, str]
+
+
+def create_app(settings: Settings | None = None, audit_sink: AuditSink | None = None) -> FastAPI:
     settings = settings or Settings()  # type: ignore[call-arg]  # read from environment
     app = FastAPI(title="UW Analyzer API", version=__version__)
+    app.middleware("http")(correlation_id_middleware)
+
+    # Engine creation does not connect; the first audit write does.
+    app.state.audit_sink = audit_sink or PostgresAuditSink(create_engine(settings.database_url))
 
     if settings.auth_mode is AuthMode.STUB:
         stub = StubIdentityProvider()
@@ -53,5 +75,36 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             roles=sorted(r.value for r in principal.roles),
             permissions=sorted(p.value for p in principal.permissions),
         )
+
+    @app.get("/audit-events", response_model=list[AuditEventOut], tags=["audit"])
+    def list_audit_events(
+        request: Request,
+        limit: int = Query(50, ge=1, le=100),
+        principal: Principal = Depends(require_permission(Permission.AUDIT_READ)),  # noqa: B008
+    ) -> list[AuditEventOut]:
+        """The caller's own tenant's audit events, newest first. Reading is itself audited."""
+        events = request.app.state.audit_sink.list_for_tenant(principal.tenant_id, limit)
+        record_event(
+            request,
+            Action.AUDIT_READ,
+            Outcome.SUCCESS,
+            tenant_id=principal.tenant_id,
+            actor=principal.subject,
+            details={"limit": str(limit)},
+        )
+        return [
+            AuditEventOut(
+                id=str(e.id),
+                occurred_at=e.occurred_at,
+                actor=e.actor,
+                action=str(e.action),
+                outcome=e.outcome.value,
+                resource_type=e.resource_type,
+                resource_id=e.resource_id,
+                correlation_id=e.correlation_id,
+                details={k: str(v) for k, v in e.details.items()},
+            )
+            for e in events
+        ]
 
     return app

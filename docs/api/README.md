@@ -9,9 +9,13 @@
 
 ## Endpoints (v0.1.0)
 
+Every response carries an `X-Request-ID` header (send your own safe ID in the request to trace a call). Quote it when reporting a problem.
+
+
 | Method | Path | Auth | Purpose |
 |---|---|---|---|
 | GET | `/health` | none | Liveness: `{status, version}` |
 | GET | `/me` | bearer | Caller's `subject`, `tenant_id`, `roles`, `permissions` |
+| GET | `/audit-events?limit=50` | bearer, `audit:read` (auditor) | The caller's own tenant's audit events, newest first (limit 1-100). Reading is itself audited |
 
 There are deliberately no endpoints that approve, decline, rate or set a limit (P-09).
