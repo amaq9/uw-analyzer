@@ -1,6 +1,8 @@
 # ADR 0004: No decision, rating, score or traffic-light presentation anywhere (P-09)
 
-- **Status:** Accepted, 2026-10-07 (stated as a decision by the Product Owner)
+- **Status:** Accepted, 2026-10-07 (stated as a decision by the Product Owner). **Point 1 is amended by
+  ADR 0005**, which allows a labelled Draft recommendation and a human-recorded Underwriter decision
+  in two designated places only. Everything else here stands.
 - **Date:** 2026-10-07 (America/Toronto)
 - **Decider:** Product Owner. Author: Claude Code.
 
@@ -15,7 +17,9 @@ in these words:
 > Never present research readiness as a score or a decision.
 
 ## Decision
-1. **No decision language or UI, anywhere.** The product (UI, API, reports, exports, emails, help text,
+1. **No decision language or UI, anywhere**, except the two designated places in ADR 0005 (a
+   labelled "Draft recommendation for the underwriter" and the human "Underwriter decision", both
+   not built until the later phase and gated there). The product (UI, API, reports, exports, emails, help text,
    documentation shown to users, and the AI agent's output) must not contain wording or controls that
    approve, decline, rate, score, grade, rank, set or suggest a credit limit, give a traffic light
    (green, amber, red or equivalent), or otherwise read as a credit decision or recommendation to
@@ -48,6 +52,9 @@ in these words:
   (`test_no_permission_can_make_an_underwriting_decision`); a test fails if any API path or schema
   property name suggests a decision, score or rating
   (`test_no_case_field_or_path_can_carry_a_decision` and the contract path test).
+- **After ADR 0005 is built:** these tests change from a blanket ban to an allow-list of exact
+  fields and screens; scores, ratings, grades, rankings, traffic lights and readiness-as-verdict stay
+  forbidden.
 - **UI (Codex):** a front-end test renders each screen and fails if any forbidden word appears,
   except in an explicit statement that the system does not decide or in attributed source facts; and
   no traffic-light colouring is used for readiness or status. Review of any new screen checks this.
