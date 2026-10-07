@@ -7,6 +7,7 @@ A test fails if the committed spec drifts from the code, so the two cannot disag
 import json
 import sys
 from pathlib import Path
+from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -16,12 +17,12 @@ from app.main import create_app  # noqa: E402
 SPEC_PATH = Path(__file__).resolve().parents[2] / "docs" / "api" / "openapi.json"
 
 
-def build_spec() -> dict[str, object]:
+def build_spec() -> dict[str, Any]:
     app = create_app(Settings(app_env=AppEnv.TEST, auth_mode=AuthMode.STUB))
     return app.openapi()
 
 
-def render(spec: dict[str, object]) -> str:
+def render(spec: dict[str, Any]) -> str:
     return json.dumps(spec, indent=2, sort_keys=True) + "\n"
 
 
