@@ -16,6 +16,7 @@ from app.cases.entities import (
     Readiness,
     ReopenRequest,
     ResolveRequest,
+    UnconfirmedRequest,
     research_readiness,
 )
 from app.cases.entity_store import (
@@ -136,6 +137,26 @@ def reopen_entity(
     except EntityConflictError as exc:
         raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from None
     _audit(request, principal, Action.ENTITY_REOPENED, case_id, {"case_status": new_status.value})
+    return _reload(request, case_id)
+
+
+@router.post("/{case_id}/entity-resolution/unconfirmed", response_model=CaseOut)
+def record_entity_unconfirmed(
+    request: Request,
+    case_id: uuid.UUID,
+    body: UnconfirmedRequest,
+    principal: Principal = Depends(require_permission(Permission.CASE_WRITE)),  # noqa: B008
+) -> CaseOut:
+    """A person records that the legal entity could not be confirmed or found. A reason is
+    mandatory; it is kept in the append-only resolution log and the action is audited."""
+    load_case_for(request, principal, case_id)
+    try:
+        _entities(request).mark_unconfirmed(
+            case_id, principal.tenant_id, principal.subject, body.reason
+        )
+    except EntityConflictError as exc:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from None
+    _audit(request, principal, Action.ENTITY_UNCONFIRMED, case_id)
     return _reload(request, case_id)
 
 

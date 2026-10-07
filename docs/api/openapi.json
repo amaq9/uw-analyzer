@@ -781,7 +781,8 @@
         "enum": [
           "DRAFT",
           "ENTITY_AMBIGUOUS",
-          "ENTITY_RESOLVED"
+          "ENTITY_RESOLVED",
+          "ENTITY_UNCONFIRMED"
         ],
         "title": "CaseStatus",
         "type": "string"
@@ -1242,6 +1243,23 @@
           "candidate_id"
         ],
         "title": "ResolveRequest",
+        "type": "object"
+      },
+      "UnconfirmedRequest": {
+        "additionalProperties": false,
+        "description": "A person records that the legal entity could not be confirmed or found (reason required).",
+        "properties": {
+          "reason": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "UnconfirmedRequest",
         "type": "object"
       }
     },
@@ -2278,6 +2296,95 @@
           }
         ],
         "summary": "Reopen Entity",
+        "tags": [
+          "entity-resolution"
+        ]
+      }
+    },
+    "/api/v1/cases/{case_id}/entity-resolution/unconfirmed": {
+      "post": {
+        "description": "A person records that the legal entity could not be confirmed or found. A reason is\nmandatory; it is kept in the append-only resolution log and the action is audited.",
+        "operationId": "record_entity_unconfirmed_api_v1_cases__case_id__entity_resolution_unconfirmed_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnconfirmedRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the token is invalid."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Signed in but not permitted."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found (or belongs to another tenant)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request was malformed."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Record Entity Unconfirmed",
         "tags": [
           "entity-resolution"
         ]
