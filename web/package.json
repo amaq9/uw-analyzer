@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "generate:api": "openapi-typescript ../docs/api/openapi.json -o lib/api/schema.d.ts",
+    "api:types": "openapi-typescript ../docs/api/openapi.json -o lib/api/schema.d.ts",
+    "generate:api": "npm run api:types",
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",
