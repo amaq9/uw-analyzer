@@ -106,3 +106,29 @@ export function MenuIcon(props: IconProps) {
     </Icon>
   );
 }
+
+export function SkillsIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="m12 3 1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z" />
+      <path d="m18.5 14 .8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8zM5 15l.8 2.2L8 18l-2.2.8L5 21l-.8-2.2L2 18l2.2-.8z" />
+    </Icon>
+  );
+}
+
+export function AlertIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M12 3 2.8 20h18.4zM12 9v5M12 17.5v.1" />
+    </Icon>
+  );
+}
+
+export function DocumentChartIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M6 3.5h9l3 3v14H6zM15 3.5v4h4" />
+      <path d="M9 16v-3m3 3V9m3 7v-5" />
+    </Icon>
+  );
+}
