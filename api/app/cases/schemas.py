@@ -98,6 +98,9 @@ class CaseRecord(CaseFields):
     tenant_id: str
     owner: str
     status: CaseStatus
+    resolved_candidate_id: uuid.UUID | None = None
+    resolved_by: str | None = None
+    resolved_at: datetime | None = None
     version: int
     created_at: datetime
     updated_at: datetime
@@ -107,6 +110,9 @@ class CaseOut(CaseFields):
     id: uuid.UUID
     owner: str
     status: CaseStatus
+    resolved_candidate_id: uuid.UUID | None = None
+    resolved_by: str | None = None
+    resolved_at: datetime | None = None
     version: int
     created_at: datetime
     updated_at: datetime

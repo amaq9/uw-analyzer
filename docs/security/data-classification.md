@@ -24,5 +24,7 @@ the column below says what must be decided, not a number.
 ## Current tables
 | Table | Class | Notes |
 |---|---|---|
+| `entity_candidates` | Restricted | Entity details entered by users. Tenant-scoped |
+| `entity_resolution_log` | Restricted | Append-only. Free-text notes are never copied into audit events |
 | `cases` | Restricted | Intake data. Tenant-scoped. Never logged or placed in audit details |
 | `audit_events` | Confidential | Append-only. `details` must stay free of Restricted content. `tenant_id` null for unauthenticated events. Retention undecided |

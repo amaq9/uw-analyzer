@@ -11,6 +11,8 @@ from app.audit.recorder import record_event
 from app.auth.deps import get_principal, require_permission
 from app.auth.models import Permission, Principal
 from app.auth.tokens import StubIdentityProvider, TokenVerifier, jwks_key_resolver
+from app.cases.entity_router import router as entity_router
+from app.cases.entity_store import PostgresEntityStore
 from app.cases.router import router as cases_router
 from app.cases.store import PostgresCaseStore
 from app.config import AuthMode, Settings
@@ -46,6 +48,7 @@ def create_app(
     settings: Settings | None = None,
     audit_sink: AuditSink | None = None,
     case_store: PostgresCaseStore | None = None,
+    entity_store: PostgresEntityStore | None = None,
 ) -> FastAPI:
     settings = settings or Settings()  # type: ignore[call-arg]  # read from environment
     app = FastAPI(title="UW Analyzer API", version=__version__)
@@ -68,6 +71,7 @@ def create_app(
     engine = create_engine(settings.database_url)
     app.state.audit_sink = audit_sink or PostgresAuditSink(engine)
     app.state.case_store = case_store or PostgresCaseStore(engine)
+    app.state.entity_store = entity_store or PostgresEntityStore(engine)
 
     if settings.auth_mode is AuthMode.STUB:
         stub = StubIdentityProvider()
@@ -133,5 +137,6 @@ def create_app(
         ]
 
     v1.include_router(cases_router)
+    v1.include_router(entity_router)
     app.include_router(v1)
     return app

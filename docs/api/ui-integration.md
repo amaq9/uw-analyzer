@@ -46,6 +46,13 @@ the front end's decision; the back end needs nothing further for it.
 | `GET /api/v1/audit-events` | An auditor-only activity view (`audit:read`) |
 | `POST/GET/PATCH /api/v1/cases` | Case intake: create, list, view and edit (see README for rules) |
 
+**Entity resolution screens (AC-01, P-03, P-07).** Show candidates side by side. When
+`status` is `ENTITY_AMBIGUOUS`, show a prominent block that explains what is needed (use the
+`blockers[].message` from `research-readiness`) and offer an explicit "Choose this entity" action
+per candidate, with an optional note. Never auto-select, pre-select or hide this. Once resolved,
+show who chose and when, and a "Reopen" action that requires a reason. Disable the choose, add and
+reopen actions without `case:write`. Never present readiness as a score or a decision.
+
 **Case screens.** Show `information_gaps` clearly (they are a feature, not an error). On `409`
 reload the case and let the user redo the edit. Send `expected_version` on every edit. Treat
 `exposure_amount` as a string to avoid rounding. Do not offer `status` as an editable field.

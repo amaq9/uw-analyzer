@@ -1,56 +1,24 @@
 """Case endpoints against a real Postgres (TEST_DATABASE_URL; always required in CI)."""
 
-import os
 import uuid
-from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
 import pytest
-from alembic import command
-from alembic.config import Config
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.audit.events import PostgresAuditSink
 from app.auth.tokens import StubIdentityProvider
-from app.config import AppEnv, AuthMode, Settings
-from app.main import create_app
 from tests.conftest import bearer
 
 API_DIR = Path(__file__).resolve().parents[1]
 CASES = "/api/v1/cases"
 
 
-@pytest.fixture(scope="module")
-def database_url() -> str:
-    url = os.environ.get("TEST_DATABASE_URL")
-    if not url:
-        if os.environ.get("CI"):
-            pytest.fail("TEST_DATABASE_URL must be set in CI")
-        pytest.skip("TEST_DATABASE_URL not set; skipping Postgres integration tests")
-    return url
-
-
-@pytest.fixture(scope="module")
-def db_app(database_url: str) -> Iterator[FastAPI]:
-    with pytest.MonkeyPatch.context() as mp:  # set for the migration, restored afterwards
-        mp.setenv("DATABASE_URL", database_url)
-        cfg = Config(str(API_DIR / "alembic.ini"))
-        cfg.set_main_option("script_location", str(API_DIR / "migrations"))
-        command.upgrade(cfg, "head")
-    settings = Settings(app_env=AppEnv.TEST, auth_mode=AuthMode.STUB, database_url=database_url)
-    yield create_app(settings)
-
-
 @pytest.fixture
 def client(db_app: FastAPI) -> TestClient:
     return TestClient(db_app)
-
-
-@pytest.fixture
-def tenant() -> str:
-    return f"t-{uuid.uuid4().hex[:10]}"  # a fresh tenant per test keeps tests independent
 
 
 def headers(db_app: FastAPI, role: str, tenant: str) -> dict[str, str]:
