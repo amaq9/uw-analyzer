@@ -121,12 +121,12 @@ def test_end_to_end_denials_are_persisted_per_tenant(engine: Engine, database_ur
     def token(role: str, tenant: str) -> str:
         return idp.issue(subject=f"{role}-1", tenant_id=tenant, roles=[role])
 
-    client.get("/me", headers={"X-Request-ID": rid})  # unauthenticated
+    client.get("/api/v1/me", headers={"X-Request-ID": rid})  # unauthenticated
     # Permission denial for tenant-a, via the audit endpoint's own permission check.
-    client.get("/audit-events", headers=bearer(token("underwriter", "tenant-a")))
-    client.get("/audit-events", headers=bearer(token("underwriter", "tenant-b")))
+    client.get("/api/v1/audit-events", headers=bearer(token("underwriter", "tenant-a")))
+    client.get("/api/v1/audit-events", headers=bearer(token("underwriter", "tenant-b")))
 
-    seen = client.get("/audit-events", headers=bearer(token("auditor", "tenant-a"))).json()
+    seen = client.get("/api/v1/audit-events", headers=bearer(token("auditor", "tenant-a"))).json()
     # tenant-a's auditor sees only tenant-a's single denial, not tenant-b's.
     assert [e["action"] for e in seen] == [Action.AUTHZ_DENIED.value]
     # The unauthenticated event has no tenant, so no tenant can read it, but it is stored.

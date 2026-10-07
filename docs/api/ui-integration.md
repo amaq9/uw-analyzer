@@ -22,26 +22,28 @@ For Codex (front end) and anyone wiring the UI to the back end. The contract its
   sign-in); `403` = signed in but not permitted (show a clear "you don't have access" message, not a
   crash); `404` can also mean "belongs to another tenant" (show a normal not-found); `422` = the
   request was malformed.
+- **Errors have one shape:** `{error: {code, message, correlation_id, retryable, field_errors?}}`
+  (see README). Show `message`; use `code` for logic; highlight `field_errors` next to the fields.
 - **Show the request ID on errors.** Every response has an `X-Request-ID` header (readable from
-  browser code). Display it in the error details so users can quote it to support.
+  browser code); error bodies repeat it as `correlation_id`. Display it in the error details so users can quote it to support.
 - **Never show raw error bodies, tokens or stack traces** to users. Never store tokens in
   `localStorage`; keep them in memory (a real session design comes with the identity provider).
 - **P-09:** the UI must not present anything as an approval, decline, rating or limit.
-- **Permissions drive the UI.** `GET /me` returns the caller's `permissions`; hide or disable
+- **Permissions drive the UI.** `GET /api/v1/me` returns the caller's `permissions`; hide or disable
   actions the caller lacks. The server enforces them regardless, so this is for clarity, not security.
 
 ## Sign-in during development
 Real single sign-on is blocked on the identity-provider decision, so the UI cannot sign users in
 yet. Suggested interim: a **development-only** "paste a test token" box, shown only when running
-locally (not in a production build), which keeps the token in memory and calls `GET /me`. This is
+locally (not in a production build), which keeps the token in memory and calls `GET /api/v1/me`. This is
 the front end's decision; the back end needs nothing further for it.
 
 ## What exists today
 | Endpoint | Use it for |
 |---|---|
 | `GET /health` | API reachable check (no auth) |
-| `GET /me` | Signed-in state: who, tenant, roles, permissions |
-| `GET /audit-events` | An auditor-only activity view (`audit:read`) |
+| `GET /api/v1/me` | Signed-in state: who, tenant, roles, permissions |
+| `GET /api/v1/audit-events` | An auditor-only activity view (`audit:read`) |
 
 Case, entity, evidence and report endpoints arrive with Phases 1 to 5. If the UI needs an endpoint
 or field that is missing, request it in the front-end handoff; the Product Owner routes it to the
