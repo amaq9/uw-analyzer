@@ -44,7 +44,7 @@ ROLE_PERMISSIONS: dict[Role, frozenset[Permission]] = {
     Role.RESEARCH_ANALYST: frozenset(
         {Permission.CASE_READ, Permission.EVIDENCE_ANNOTATE, Permission.RESEARCH_RUN}
     ),
-    Role.ADMINISTRATOR: frozenset({Permission.ADMIN_MANAGE, Permission.CASE_READ}),
+    Role.ADMINISTRATOR: frozenset({Permission.ADMIN_MANAGE}),  # no case data: least privilege
     Role.AUDITOR: frozenset({Permission.CASE_READ, Permission.AUDIT_READ}),
     Role.SERVICE: frozenset({Permission.RESEARCH_RUN}),
 }

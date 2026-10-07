@@ -1,6 +1,6 @@
 # ADR 0001: Authentication, roles and tenant isolation
 
-- **Status:** Proposed (implemented in PR #11; awaiting Product Owner confirmation of the role table)
+- **Status:** Accepted, 2026-10-07 (approved by the Product Owner, with the administrator change below)
 - **Date:** 2026-10-07 (America/Toronto)
 - **Decider:** Product Owner (approves). Author: Claude Code.
 
@@ -27,14 +27,14 @@ approves, declines, rates or sets a credit limit.
 5. **No decision permission (P-09):** a test fails if any permission name suggests approving,
    declining, rating, limits or binding.
 
-Role to permission table (proposal from PRD section 3):
+Role to permission table (approved; derived from PRD section 3):
 
 | Role | Permissions |
 |---|---|
 | Underwriter | case read/write, run research, annotate evidence, complete report |
 | Reviewer | everything an underwriter has, plus resolve conflicts |
 | Research analyst | case read, annotate evidence, run research (cannot complete a report) |
-| Administrator | admin manage, case read |
+| Administrator | admin manage only (no case data; least privilege) |
 | Auditor | case read, audit read |
 | Service | run research only |
 
@@ -48,10 +48,15 @@ Role to permission table (proposal from PRD section 3):
 
 ## Consequences
 - Switching IdP is configuration (issuer, audience, JWKS address), not a rewrite.
-- Denials are currently only logged. They become audit events with FR-0.5.
+- Denials are logged and, since FR-0.5 (ADR 0002), written as audit events.
 - The live JWKS path has only been tested with supplied keys until an IdP is chosen.
-- The role table is a proposal; changing it later is a small code and test change but is a
+- The role table is approved. Changing it later is a small code and test change but is a
   security-model change, so it needs Product Owner approval.
+
+## Product Owner decision (2026-10-07)
+Approved with one change from the original proposal: the administrator role no longer has "case read".
+Administrators manage users, roles, sources and policy; they do not need confidential case content.
+If an administrator ever needs case access, assign them a second role.
 
 ## Rollback
 Revert PR #11. Nothing else depends on it yet.

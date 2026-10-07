@@ -160,7 +160,7 @@ def test_cross_tenant_access_is_denied_and_logged(
 ) -> None:
     with caplog.at_level("WARNING", logger="uw.auth"):
         response = client.get(
-            "/_test/cases/t2", headers=bearer(token(idp, ["administrator"], tenant="t1"))
+            "/_test/cases/t2", headers=bearer(token(idp, ["underwriter"], tenant="t1"))
         )
     assert response.status_code == 404  # existence of other tenants' objects is not revealed
     assert "authz.cross_tenant_denied" in caplog.text
@@ -214,3 +214,16 @@ def test_real_key_resolver_path_accepts_a_correctly_signed_token() -> None:
         issuer="i", audience="a", key_resolver=lambda _t: key.public_key()
     ).verify(signed)
     assert principal.roles == {Role.AUDITOR}
+
+
+def test_administrator_cannot_read_case_data() -> None:
+    """Least privilege (ADR 0001): admins manage users and policy, not confidential case content."""
+    assert Permission.CASE_READ not in ROLE_PERMISSIONS[Role.ADMINISTRATOR]
+    assert ROLE_PERMISSIONS[Role.ADMINISTRATOR] == {Permission.ADMIN_MANAGE}
+
+
+def test_administrator_is_refused_case_routes(
+    client: TestClient, idp: StubIdentityProvider
+) -> None:
+    response = client.get("/_test/cases/t1", headers=bearer(token(idp, ["administrator"])))
+    assert response.status_code == 403

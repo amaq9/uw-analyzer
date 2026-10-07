@@ -1,6 +1,6 @@
 # ADR 0002: Append-only audit events and request correlation IDs
 
-- **Status:** Proposed (implemented in the FR-0.5 PR)
+- **Status:** Accepted, 2026-10-07 (approved by the Product Owner, accepting the tamper-resistance gap in Consequences until the restricted database role is in place before production)
 - **Date:** 2026-10-07 (America/Toronto)
 - **Decider:** Product Owner (approves). Author: Claude Code.
 
