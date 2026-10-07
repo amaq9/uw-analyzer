@@ -1,6 +1,7 @@
 import { ControlCards } from "@/components/control-cards";
 import { Readiness } from "@/components/readiness";
 import { Sidebar } from "@/components/sidebar";
+import { SkillSpotlight } from "@/components/skill-spotlight";
 import { Topbar } from "@/components/topbar";
 import { Workflow } from "@/components/workflow";
 
@@ -33,6 +34,7 @@ export default function Home() {
           <div className="dashboard-grid">
             <div className="dashboard-primary">
               <Workflow />
+              <SkillSpotlight />
               <ControlCards />
             </div>
             <Readiness />
