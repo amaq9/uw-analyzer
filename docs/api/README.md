@@ -7,6 +7,19 @@
 - **Changes:** a back-end change that alters a request or response shape updates this file in the same PR. Breaking changes need Product Owner approval before merge (AGENTS.md section 3).
 - **Auth:** all endpoints except `GET /health` need `Authorization: Bearer <token>`. `401` means unauthenticated; `403` means authenticated but not permitted; a `404` can also mean the object belongs to another tenant.
 
+## Keeping the UI's generated types in sync (required on every contract change)
+The UI's types are generated from `openapi.json` and a web test fails if they are stale, so the UI and API
+cannot drift. Because a change to this file makes that test fail until the types are refreshed, **a PR that
+changes `openapi.json` is not finished until the UI types are refreshed in the same PR**:
+
+1. The back-end author changes the API and regenerates `openapi.json` (only their own files).
+2. The front-end owner checks out that PR branch, runs `npm run api:types` in `web/`, and commits **only the
+   regenerated types file** to the same branch (their own files).
+3. CI then passes on both sides and the PR is merged once.
+
+Neither side edits the other's files. A change that is breaking, or needs UI work beyond the types, is
+raised in the PR description and routed by the Product Owner.
+
 ## Conventions
 - **Versioned paths:** everything except `GET /health` lives under `/api/v1/`.
 - **Standard error object** on every non-2xx response:
@@ -35,10 +48,17 @@ Every response carries an `X-Request-ID` header (send your own safe ID in the re
 | POST | `/api/v1/cases/{id}/entity-resolution` | bearer, `case:write` | **A person** chooses the one exact entity: `{candidate_id, note?}`. The only way a case becomes `ENTITY_RESOLVED`. 404 if the candidate is not an open candidate of this case; 409 if already resolved |
 | POST | `/api/v1/cases/{id}/entity-resolution/reopen` | bearer, `case:write` | Override a resolved entity. `{reason}` is mandatory. Returns the case |
 | GET | `/api/v1/cases/{id}/research-readiness` | bearer, `case:read` | `{allowed, status, blockers[{code, message}]}`: whether research may start, and the plain-language reason if not (AC-01) |
+| POST | `/api/v1/cases/{id}/documents` | bearer, `case:write` | Upload a file (`multipart/form-data`: `file` and `category` = `financial_statement`, `credit_report` or `supporting`). 201 with the document record. 413 too large, 415 type not accepted, 422 refused (virus scan, macros, scripts in a PDF, zip bomb), 409 case is full (50 documents), 503 scanner or storage unavailable (nothing saved, retry is safe), 411 missing Content-Length |
+| GET | `/api/v1/cases/{id}/documents` | bearer, `case:read` | The case's documents (name, category, type, size, SHA-256, uploader, time). Never the storage location |
+| GET | `/api/v1/cases/{id}/documents/{document_id}/content` | bearer, `case:read` | Download as an attachment (needs the `Authorization` header, so fetch it in code, not with a plain link) |
 
 **Case notes.** `status` is server-controlled (`DRAFT`, `ENTITY_AMBIGUOUS`, `ENTITY_RESOLVED`; the case also returns `resolved_candidate_id`, `resolved_by`, `resolved_at` once resolved). Candidates are always user-entered (`source: "user_entered"`); the system never invents one. While resolved, changing `legal_name`, `registration_number` or `jurisdiction` returns 409 until the entity is reopened; sending
 `status`, `id`, `owner`, `tenant_id` or `version` is rejected (422). `exposure_amount` is an exact
 decimal (send and treat it as a string such as `"1250000.50"`) and must come with `exposure_currency`
 (3 letters, such as `CAD`). `information_gaps` lists missing inputs; the system never fills them in.
+
+**Upload notes.** Accepted types are PDF, Word (docx), Excel (xlsx), CSV, text, PNG and JPEG, judged by the
+file's contents, and the name must agree with them. The default size limit is 20 MB. Documents cannot be edited or
+deleted through the API. If document storage is not configured on the server, upload endpoints answer 503.
 
 There are deliberately no endpoints that approve, decline, rate or set a limit (P-09).

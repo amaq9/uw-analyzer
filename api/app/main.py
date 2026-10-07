@@ -16,8 +16,13 @@ from app.cases.entity_store import PostgresEntityStore
 from app.cases.router import router as cases_router
 from app.cases.store import PostgresCaseStore
 from app.config import AuthMode, Settings
+from app.documents.router import router as documents_router
+from app.documents.scanner import ClamAVScanner
+from app.documents.service import DocumentService
+from app.documents.storage import S3Storage
+from app.documents.store import PostgresDocumentStore
 from app.errors import ERROR_RESPONSES, register_error_handlers
-from app.middleware import correlation_id_middleware
+from app.middleware import correlation_id_middleware, make_upload_size_guard
 
 
 class Health(BaseModel):
@@ -49,9 +54,13 @@ def create_app(
     audit_sink: AuditSink | None = None,
     case_store: PostgresCaseStore | None = None,
     entity_store: PostgresEntityStore | None = None,
+    document_service: DocumentService | None = None,
 ) -> FastAPI:
     settings = settings or Settings()  # type: ignore[call-arg]  # read from environment
     app = FastAPI(title="UW Analyzer API", version=__version__)
+    max_upload_bytes = settings.max_upload_mb * 1024 * 1024
+    # Registered first = innermost, so the correlation ID exists when the guard answers.
+    app.middleware("http")(make_upload_size_guard(max_upload_bytes))
     app.middleware("http")(correlation_id_middleware)
     register_error_handlers(app)
     if settings.cors_allowed_origins:
@@ -72,6 +81,22 @@ def create_app(
     app.state.audit_sink = audit_sink or PostgresAuditSink(engine)
     app.state.case_store = case_store or PostgresCaseStore(engine)
     app.state.entity_store = entity_store or PostgresEntityStore(engine)
+    if document_service is None and settings.documents_configured:
+        assert settings.s3_access_key and settings.s3_secret_key  # noqa: S101
+        assert settings.s3_endpoint_url and settings.s3_bucket and settings.clamav_host  # noqa: S101
+        document_service = DocumentService(
+            store=PostgresDocumentStore(engine),
+            storage=S3Storage(
+                endpoint_url=settings.s3_endpoint_url,
+                bucket=settings.s3_bucket,
+                access_key=settings.s3_access_key.get_secret_value(),
+                secret_key=settings.s3_secret_key.get_secret_value(),
+                region=settings.s3_region,
+            ),
+            scanner=ClamAVScanner(settings.clamav_host, settings.clamav_port),
+            max_bytes=max_upload_bytes,
+        )
+    app.state.document_service = document_service  # None = uploads switched off (503)
 
     if settings.auth_mode is AuthMode.STUB:
         stub = StubIdentityProvider()
@@ -138,5 +163,6 @@ def create_app(
 
     v1.include_router(cases_router)
     v1.include_router(entity_router)
+    v1.include_router(documents_router)
     app.include_router(v1)
     return app

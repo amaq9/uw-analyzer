@@ -5,10 +5,12 @@ description = "UW Analyzer back-end API (decision support only; no autonomous un
 requires-python = ">=3.12"
 dependencies = [
     "alembic>=1.14",
+    "boto3>=1.43.108",
     "fastapi>=0.115",
     "psycopg[binary]>=3.2",
     "pydantic-settings>=2.6",
     "pyjwt[crypto]>=2.10",
+    "python-multipart>=0.0.32",
     "sqlalchemy>=2.0",
     "uvicorn>=0.32",
 ]
@@ -30,7 +32,7 @@ target-version = "py312"
 select = ["E", "F", "I", "B", "UP", "S", "SIM"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S101"]
+"tests/**" = ["S101", "S105", "S106"]  # asserts and throwaway test credentials
 
 [tool.mypy]
 strict = true
@@ -40,3 +42,7 @@ python_version = "3.12"
 testpaths = ["tests"]
 pythonpath = ["."]
 addopts = "--cov=app --cov-report=term-missing"
+
+[[tool.mypy.overrides]]
+module = ["boto3.*", "botocore.*"]
+ignore_missing_imports = true  # the S3 client is exercised by integration tests

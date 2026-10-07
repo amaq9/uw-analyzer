@@ -7,8 +7,9 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 from app.audit.events import Action, Outcome
 from app.audit.recorder import record_event
-from app.auth.deps import assert_same_tenant, require_permission
+from app.auth.deps import require_permission
 from app.auth.models import Permission, Principal
+from app.cases.access import load_case_for
 from app.cases.entities import (
     CandidateCreate,
     CandidateOut,
@@ -22,7 +23,7 @@ from app.cases.entity_store import (
     EntityConflictError,
     PostgresEntityStore,
 )
-from app.cases.schemas import CaseOut, CaseRecord, to_out
+from app.cases.schemas import CaseOut, to_out
 from app.cases.store import PostgresCaseStore
 
 router = APIRouter(prefix="/cases", tags=["entity-resolution"])
@@ -31,18 +32,6 @@ router = APIRouter(prefix="/cases", tags=["entity-resolution"])
 def _entities(request: Request) -> PostgresEntityStore:
     store: PostgresEntityStore = request.app.state.entity_store
     return store
-
-
-def _case_for(request: Request, principal: Principal, case_id: uuid.UUID) -> CaseRecord:
-    """404 for a missing case; another tenant's case looks missing too, and is audited."""
-    cases: PostgresCaseStore = request.app.state.case_store
-    record = cases.get(case_id)
-    if record is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Case not found.")
-    assert_same_tenant(
-        request, principal, record.tenant_id, resource_type="case", resource_id=str(case_id)
-    )
-    return record
 
 
 def _audit(
@@ -71,7 +60,7 @@ def list_candidates(
     case_id: uuid.UUID,
     principal: Principal = Depends(require_permission(Permission.CASE_READ)),  # noqa: B008
 ) -> list[CandidateOut]:
-    _case_for(request, principal, case_id)
+    load_case_for(request, principal, case_id)
     return _entities(request).list_candidates(case_id, principal.tenant_id)
 
 
@@ -85,7 +74,7 @@ def add_candidate(
     principal: Principal = Depends(require_permission(Permission.CASE_WRITE)),  # noqa: B008
 ) -> CandidateOut:
     """Add a plausible legal entity. Two or more open candidates make the case ambiguous."""
-    _case_for(request, principal, case_id)
+    load_case_for(request, principal, case_id)
     try:
         candidate, new_status = _entities(request).add_candidate(
             case_id, principal.tenant_id, principal.subject, body.model_dump()
@@ -110,7 +99,7 @@ def resolve_entity(
     principal: Principal = Depends(require_permission(Permission.CASE_WRITE)),  # noqa: B008
 ) -> CaseOut:
     """A person chooses the one exact legal entity. This is the only way a case becomes resolved."""
-    _case_for(request, principal, case_id)
+    load_case_for(request, principal, case_id)
     try:
         _entities(request).resolve(
             case_id, principal.tenant_id, principal.subject, body.candidate_id, body.note
@@ -139,7 +128,7 @@ def reopen_entity(
     principal: Principal = Depends(require_permission(Permission.CASE_WRITE)),  # noqa: B008
 ) -> CaseOut:
     """Override a resolved entity. A reason is mandatory; the reopening is audited and logged."""
-    _case_for(request, principal, case_id)
+    load_case_for(request, principal, case_id)
     try:
         new_status = _entities(request).reopen(
             case_id, principal.tenant_id, principal.subject, body.reason
@@ -157,7 +146,7 @@ def get_research_readiness(
     principal: Principal = Depends(require_permission(Permission.CASE_READ)),  # noqa: B008
 ) -> Readiness:
     """Whether research may start, and the plain-language reason if not (AC-01)."""
-    record = _case_for(request, principal, case_id)
+    record = load_case_for(request, principal, case_id)
     open_count = _entities(request).open_candidate_count(case_id)
     return research_readiness(record.status, open_count)
 

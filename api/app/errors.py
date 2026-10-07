@@ -21,10 +21,12 @@ _CODES = {
     404: "not_found",
     405: "method_not_allowed",
     409: "conflict",
+    411: "length_required",
     413: "payload_too_large",
     415: "unsupported_media_type",
     422: "validation_error",
     429: "rate_limited",
+    503: "service_unavailable",
 }
 _RETRYABLE = {429, 502, 503, 504}
 
@@ -77,6 +79,13 @@ def _response(
     response = JSONResponse(status_code=status_code, content=body.model_dump(exclude_none=True))
     response.headers["X-Request-ID"] = correlation_id
     return response
+
+
+def error_response(
+    request: Request, status_code: int, code: str, message: str, *, retryable: bool = False
+) -> JSONResponse:
+    """The standard error object, for code outside the exception handlers (such as middleware)."""
+    return _response(request, status_code, code, message, retryable=retryable)
 
 
 def register_error_handlers(app: FastAPI) -> None:

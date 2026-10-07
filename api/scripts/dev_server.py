@@ -46,6 +46,14 @@ def main() -> None:
     os.environ.setdefault(
         "CORS_ALLOWED_ORIGINS", '["http://localhost:3000","http://127.0.0.1:3000"]'
     )
+    # Local document storage and virus scanner (docker compose services s3 and clamav), with
+    # throwaway local-only credentials. If they are not running, uploads answer 503 and nothing
+    # else is affected.
+    os.environ.setdefault("S3_ENDPOINT_URL", "http://localhost:8333")
+    os.environ.setdefault("S3_BUCKET", "uw-documents")
+    os.environ.setdefault("S3_ACCESS_KEY", "devaccesskey")
+    os.environ.setdefault("S3_SECRET_KEY", "devsecretkey123")
+    os.environ.setdefault("CLAMAV_HOST", "localhost")
     settings = Settings()  # type: ignore[call-arg]
     if settings.app_env is not AppEnv.LOCAL:
         sys.exit("dev_server.py only runs with APP_ENV=local")
@@ -55,6 +63,13 @@ def main() -> None:
     command.upgrade(cfg, "head")  # creates or updates the local audit table
 
     app = create_app(settings)
+    service = app.state.document_service
+    if service is not None:
+        try:
+            service.storage.ensure_bucket()
+            print("Document storage is ready (uploads enabled).")
+        except Exception:  # local convenience only; uploads simply stay unavailable
+            print("Document storage is not running: uploads will answer 503 until it is.")
     idp: StubIdentityProvider = app.state.stub_idp
     print("\nTEST TOKENS (valid 8 hours; they stop working when you stop this server)\n")
     for role, tenant in PEOPLE:

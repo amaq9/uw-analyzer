@@ -10,13 +10,13 @@ from pydantic import ValidationError
 
 from app.audit.events import Action, Outcome
 from app.audit.recorder import record_event
-from app.auth.deps import assert_same_tenant, require_permission
+from app.auth.deps import require_permission
 from app.auth.models import Permission, Principal
+from app.cases.access import load_case_for
 from app.cases.schemas import (
     CaseCreate,
     CaseFields,
     CaseOut,
-    CaseRecord,
     CaseStatus,
     CaseUpdate,
     to_out,
@@ -33,17 +33,6 @@ IDENTITY_FIELDS = {"legal_name", "registration_number", "jurisdiction"}
 def _store(request: Request) -> PostgresCaseStore:
     store: PostgresCaseStore = request.app.state.case_store
     return store
-
-
-def _load_for(request: Request, principal: Principal, case_id: uuid.UUID) -> CaseRecord:
-    """Find a case and enforce tenant isolation. Another tenant's case looks like a missing one."""
-    record = _store(request).get(case_id)
-    if record is None:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Case not found.")
-    assert_same_tenant(
-        request, principal, record.tenant_id, resource_type="case", resource_id=str(case_id)
-    )
-    return record
 
 
 @router.post("", response_model=CaseOut, status_code=status.HTTP_201_CREATED)
@@ -87,7 +76,7 @@ def get_case(
     principal: Principal = Depends(require_permission(Permission.CASE_READ)),  # noqa: B008
 ) -> CaseOut:
     """One case. Viewing Restricted case content is itself audited."""
-    record = _load_for(request, principal, case_id)
+    record = load_case_for(request, principal, case_id)
     record_event(
         request,
         Action.CASE_VIEWED,
@@ -108,7 +97,7 @@ def update_case(
     principal: Principal = Depends(require_permission(Permission.CASE_WRITE)),  # noqa: B008
 ) -> CaseOut:
     """Change some fields. Send `expected_version`; a stale one returns 409 and saves nothing."""
-    record = _load_for(request, principal, case_id)
+    record = load_case_for(request, principal, case_id)
     changes: dict[str, Any] = body.model_dump(exclude={"expected_version"}, exclude_unset=True)
     if not changes:
         raise HTTPException(422, _ChangeNothing)
