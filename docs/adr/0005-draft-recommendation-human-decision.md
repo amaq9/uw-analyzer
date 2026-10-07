@@ -1,7 +1,8 @@
 # ADR 0005: Draft recommendation for the underwriter, and a human-recorded decision (amends P-09)
 
-- **Status:** Accepted in principle, 2026-10-07 (Product Owner decision). **Build is gated** by the
-  conditions in "Gates before it can be built or used", and nothing in this ADR is built yet.
+- **Status:** Accepted, 2026-10-07 (Product Owner decision; Option B confirmed twice). Nothing in this
+  ADR is built yet: it depends on the research and analysis phases and on the Product Owner's
+  recommendation policy (see "What it depends on").
 - **Date:** 2026-10-07 (America/Toronto)
 - **Decider:** Product Owner. Author: Claude Code.
 - **Amends:** invariant P-09 (as worded in `AGENTS.md`, the BRD and the PRD) and ADR 0004 point 1.
@@ -55,20 +56,33 @@ This ADR is that documented change.
 9. **Roles.** Draft generation needs a research permission. Recording the decision needs a new
    permission (for example `decision:record`) held by the Underwriter and Reviewer roles only. Adding
    it changes ADR 0001's role table and needs Product Owner approval when it is built.
+10. **Test-product label.** Every draft recommendation and decision screen, record and export carries a
+    visible "Test product" label while the product is a test product (see below).
 
-## Gates before it can be built or used
-- **Not before the research and analysis exist.** Targeted at Phase 5, after Phases 2 to 4. Phase 1
-  is unaffected.
-- **Personal local pilot (ADR 0003):** the Product Owner may build and evaluate it locally on synthetic
-  or public data, for evaluation only.
-- **Before any other user, real customer decision or hosting:** written **Legal and Compliance review**
-  of the recommendation feature in each jurisdiction of use (including rules on automated decision
-  making and on creditworthiness assessment, and whether individuals such as owners are assessed as well
-  as companies), recorded in a new ADR. The author is not a lawyer and does not assert what the law
-  requires.
-- **Evaluation before enabling:** a golden-case evaluation suite (including adversarial, conflicting
-  and incomplete cases) with release thresholds; consistency testing; monitoring of how often
-  underwriters override drafts; a fairness and bias review where individuals are involved.
+## What it depends on
+- **Technical order.** The research and financial-analysis phases (2 to 4) must exist first, so the
+  feature is targeted at Phase 5. Phase 1 is unaffected.
+- **The Product Owner's recommendation policy** (decision 5). Without written rules the system would be
+  guessing appetite, which is fabrication (P-02 in spirit). This is an input only the Product Owner can supply.
+- **Engineering quality, as for any feature (rulebook section 3):** tests, including golden cases
+  (conflicting, incomplete and adversarial inputs) and consistency checks, and a way to see how often
+  underwriters override drafts.
+
+## Test-product status and the Legal and Compliance gate (Product Owner override)
+The author recommended a written Legal and Compliance review before use. **The Product Owner decided
+on 2026-10-07 that no Legal or Compliance approval is required, because this is a test product.** That
+decision stands for as long as the product is a **test product**, meaning all of the following hold:
+a single Product Owner (or Product Owner-controlled test users), synthetic, public or test data, no real
+customer underwriting decisions made or communicated using it, and no hosting for others (ADR 0003).
+
+- The product always shows a visible **"Test product"** label next to any draft recommendation or
+  decision (decision 10), so nobody mistakes an evaluation output for a real one.
+- **Tripwire, recorded and not enforced as a block:** if the product is ever used for real
+  underwriting decisions, real customers' data, other business users or any hosting, the test-product
+  status ends. Before that, the Product Owner should obtain Legal and Compliance review in each
+  jurisdiction of use (including rules on automated decision making and creditworthiness assessment, and
+  whether individuals such as owners are assessed) and a fairness review, and record it in a new ADR.
+  The author is not a lawyer and does not assert what the law requires.
 
 ## Open points for the Product Owner
 - Precise meaning of the three outcomes: how `NOT_APPROVE` ("no approve") differs from `DECLINE`
@@ -77,8 +91,8 @@ This ADR is that documented change.
 - Phase 5 wording for evidence confidence (ADR 0004 point 6).
 
 ## Alternatives considered
-- **Option A, human-recorded outcome only (no system draft):** the safest, and the recommended
-  default; not chosen by the Product Owner for this project. Its human-decision record is part of this design.
+- **Option A, human-recorded outcome only (no system draft):** the safest; not chosen by the Product
+  Owner for this project. Its human-decision record is part of this design.
 - **Keep P-09 as it was:** rejected by the Product Owner for the project's purpose.
 - **A system-final decision (no human step):** rejected; it is the autonomous decision P-09 exists to prevent.
 
@@ -86,8 +100,9 @@ This ADR is that documented change.
 - Enforcement changes from "no decision words anywhere" to "decision words only in the two designated
   places, always labelled, always human-adopted". Tests move from a blanket ban to an **allow-list** of
   exact fields and screens when the feature is built.
-- More compliance and evaluation work before real use, and a hard dependency on the Product Owner's
-  recommendation policy.
+- A hard dependency on the Product Owner's recommendation policy, and more evaluation work. Legal and
+  Compliance review is **not** required while this is a test product; it becomes relevant if the
+  product stops being one (tripwire above).
 - `AGENTS.md`, the BRD and the PRD (P-09, section 3 and FR-5.x) need matching amendments; `AGENTS.md`
   is proposed by PR for the Product Owner to approve. BRD and PRD are the Product Owner's local documents.
 
