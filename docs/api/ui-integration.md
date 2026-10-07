@@ -28,7 +28,12 @@ For Codex (front end) and anyone wiring the UI to the back end. The contract its
   browser code); error bodies repeat it as `correlation_id`. Display it in the error details so users can quote it to support.
 - **Never show raw error bodies, tokens or stack traces** to users. Never store tokens in
   `localStorage`; keep them in memory (a real session design comes with the identity provider).
-- **P-09:** the UI must not present anything as an approval, decline, rating or limit.
+- **P-09 (ADR 0004, amended by ADR 0005):** no approve, decline, rating, score, traffic light or
+  credit-limit wording or UI anywhere **today**. ADR 0005 will later allow exactly two labelled places
+  (a "Draft recommendation for the underwriter" and the human "Underwriter decision"), only when the
+  back end ships them and Product Owner approval is recorded; do not build them early. Never present research readiness as a score or a decision: show plain wording and the
+  reason from `blockers[].message`, with no percentage, grade, badge that reads as pass or fail, or
+  green/amber/red colouring.
 - **Permissions drive the UI.** `GET /api/v1/me` returns the caller's `permissions`; hide or disable
   actions the caller lacks. The server enforces them regardless, so this is for clarity, not security.
 
