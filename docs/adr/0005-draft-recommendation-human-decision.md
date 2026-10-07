@@ -9,7 +9,8 @@
 
 ## Context
 The Product Owner decided that, for the purpose of the project, the outcome of the research and the
-financial analysis must end in a recommendation: **approve this amount, do not approve, or decline**.
+financial analysis must end in a recommendation: **approve this amount (in full or reduced) or decline**,
+always with the reason why.
 Until now P-09 said the system never approves, declines, rates or sets a credit limit, because that
 boundary is a compliance control: it keeps the product in the "decision support" category and out of
 automated credit decisioning (`compliance-and-documentation.md`). The rulebook (section 1 and 7)
@@ -19,8 +20,10 @@ This ADR is that documented change.
 ## Decision
 1. **Two separate things, never confused.**
    - A **Draft recommendation**: produced by the system for the underwriter, labelled "Draft
-     recommendation for the underwriter. Not a decision." It has an outcome (`APPROVE` with an
-     amount and currency, `NOT_APPROVE`, or `DECLINE`), reasons tied to evidence, and conditions.
+     recommendation for the underwriter. Not a decision." It has one of **two outcomes**: `APPROVE`
+     with an amount and currency (the full requested amount, or a reduced amount), or `DECLINE`. Every
+     draft explains why: why the full amount is supported, why a reduced amount is lower, or why decline.
+     Reasons are tied to evidence, and conditions are listed.
    - An **Underwriter decision**: recorded by a named person who **adopts, changes or rejects** the
      draft. Only this is the decision. It is the only thing that may ever leave the system as an outcome.
 2. **What does not change in P-09.** The system never makes the decision itself, never acts on a
@@ -85,8 +88,8 @@ customer underwriting decisions made or communicated using it, and no hosting fo
   The author is not a lawyer and does not assert what the law requires.
 
 ## Open points for the Product Owner
-- Precise meaning of the three outcomes: how `NOT_APPROVE` ("no approve") differs from `DECLINE`
-  (for example, not approved now / refer or need more information, versus final refusal).
+- ~~Meaning of "do not approve"~~ **Resolved 2026-10-07:** "do not approve" and "decline" are the same
+  outcome. There are two outcomes: Approve (full or reduced amount) and Decline.
 - The recommendation policy itself (appetite, thresholds, limit rules, who must second-review).
 - Phase 5 wording for evidence confidence (ADR 0004 point 6).
 
