@@ -98,8 +98,9 @@ def register_error_handlers(app: FastAPI) -> None:
         # Only the location and the rule that failed. Never echo the submitted value.
         fields = [
             FieldError(
-                field=".".join(str(part) for part in error["loc"][1:]) or str(error["loc"][0]),
-                message=str(error["msg"]),
+                field=".".join(str(part) for part in error["loc"][1:])
+                or (str(error["loc"][0]) if error["loc"] else "body"),
+                message=str(error["msg"]).removeprefix("Value error, "),
             )
             for error in exc.errors()
         ]

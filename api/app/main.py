@@ -11,6 +11,8 @@ from app.audit.recorder import record_event
 from app.auth.deps import get_principal, require_permission
 from app.auth.models import Permission, Principal
 from app.auth.tokens import StubIdentityProvider, TokenVerifier, jwks_key_resolver
+from app.cases.router import router as cases_router
+from app.cases.store import PostgresCaseStore
 from app.config import AuthMode, Settings
 from app.errors import ERROR_RESPONSES, register_error_handlers
 from app.middleware import correlation_id_middleware
@@ -40,7 +42,11 @@ class AuditEventOut(BaseModel):
     details: dict[str, str]
 
 
-def create_app(settings: Settings | None = None, audit_sink: AuditSink | None = None) -> FastAPI:
+def create_app(
+    settings: Settings | None = None,
+    audit_sink: AuditSink | None = None,
+    case_store: PostgresCaseStore | None = None,
+) -> FastAPI:
     settings = settings or Settings()  # type: ignore[call-arg]  # read from environment
     app = FastAPI(title="UW Analyzer API", version=__version__)
     app.middleware("http")(correlation_id_middleware)
@@ -59,7 +65,9 @@ def create_app(settings: Settings | None = None, audit_sink: AuditSink | None = 
         )
 
     # Engine creation does not connect; the first audit write does.
-    app.state.audit_sink = audit_sink or PostgresAuditSink(create_engine(settings.database_url))
+    engine = create_engine(settings.database_url)
+    app.state.audit_sink = audit_sink or PostgresAuditSink(engine)
+    app.state.case_store = case_store or PostgresCaseStore(engine)
 
     if settings.auth_mode is AuthMode.STUB:
         stub = StubIdentityProvider()
@@ -124,5 +132,6 @@ def create_app(settings: Settings | None = None, audit_sink: AuditSink | None = 
             for e in events
         ]
 
+    v1.include_router(cases_router)
     app.include_router(v1)
     return app
