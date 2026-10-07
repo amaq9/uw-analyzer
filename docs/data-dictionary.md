@@ -41,9 +41,42 @@ access (AC-10).
 | `version` | Starts at 1, +1 on each update; used to refuse stale edits (409) |
 | `created_at`, `updated_at` | UTC timestamps |
 
+Also holds `resolved_candidate_id`, `resolved_by`, `resolved_at` (set when a person chooses the
+legal entity; cleared on reopen).
+
 **Information gaps are computed, not stored:** a missing material input (legal name, registration
 number, jurisdiction, address, industry, website, exposure, terms, or ownership) is reported on every
 read as a gap. The system never fills a missing value (FR-1.3, P-02). Stored gap records with a
 resolution state arrive with the research phases.
 
 Retention: TBD (legal). Deletion and export policy: TBD (legal).
+
+## `entity_candidates` (migration 0003) — Restricted
+Plausible legal entities for a case. Always entered by a person (`source` is `user_entered`; later
+phases add connector sources). Tenant-scoped.
+
+| Field | Meaning |
+|---|---|
+| `seq`, `id`, `case_id`, `tenant_id` | Order number, candidate ID, owning case and tenant |
+| `state` | `candidate`, `selected` or `rejected` (database-checked) |
+| `legal_name` | Required |
+| `registration_number`, `jurisdiction`, `address`, `website`, `parent_name` | Optional |
+| `aliases`, `former_names`, `subsidiaries` | Lists kept for later search templates (FR-1.6) |
+| `created_by`, `created_at` | Who entered it and when |
+
+Retention: TBD (legal).
+
+## `entity_resolution_log` (migration 0003) — Restricted
+The permanent record of who chose or reopened a case's legal entity, and why. Append-only: database
+triggers refuse UPDATE, DELETE and TRUNCATE (P-07). The free-text `note` is Restricted and is never
+copied into `audit_events`.
+
+| Field | Meaning |
+|---|---|
+| `seq`, `id`, `case_id`, `tenant_id` | Order number, entry ID, case and tenant |
+| `action` | `resolved` or `reopened` |
+| `candidate_id` | The chosen candidate (for `resolved`) |
+| `actor`, `occurred_at` | Who and when |
+| `note` | The person's reason or note |
+
+Retention: TBD (legal).

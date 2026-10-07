@@ -29,6 +29,9 @@ class Action(StrEnum):
     CASE_CREATED = "case.created"
     CASE_VIEWED = "case.viewed"
     CASE_UPDATED = "case.updated"
+    ENTITY_CANDIDATE_ADDED = "entity.candidate_added"
+    ENTITY_RESOLVED = "entity.resolved"
+    ENTITY_REOPENED = "entity.reopened"
 
 
 @dataclass(frozen=True)

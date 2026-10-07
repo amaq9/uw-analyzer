@@ -30,8 +30,13 @@ Every response carries an `X-Request-ID` header (send your own safe ID in the re
 | GET | `/api/v1/cases?limit=50&offset=0` | bearer, `case:read` | The caller's own tenant's cases, newest first |
 | GET | `/api/v1/cases/{id}` | bearer, `case:read` | One case. Another tenant's case returns 404. Viewing is audited |
 | PATCH | `/api/v1/cases/{id}` | bearer, `case:write` | Change fields. Send `expected_version`; a stale version returns 409 and saves nothing. Send `null` to clear an optional field |
+| GET | `/api/v1/cases/{id}/entity-candidates` | bearer, `case:read` | The candidate legal entities entered for the case |
+| POST | `/api/v1/cases/{id}/entity-candidates` | bearer, `case:write` | Add a candidate (only `legal_name` required; aliases, former names, parent, subsidiaries optional). Two or more open candidates set the case to `ENTITY_AMBIGUOUS`. 409 once the entity is resolved |
+| POST | `/api/v1/cases/{id}/entity-resolution` | bearer, `case:write` | **A person** chooses the one exact entity: `{candidate_id, note?}`. The only way a case becomes `ENTITY_RESOLVED`. 404 if the candidate is not an open candidate of this case; 409 if already resolved |
+| POST | `/api/v1/cases/{id}/entity-resolution/reopen` | bearer, `case:write` | Override a resolved entity. `{reason}` is mandatory. Returns the case |
+| GET | `/api/v1/cases/{id}/research-readiness` | bearer, `case:read` | `{allowed, status, blockers[{code, message}]}`: whether research may start, and the plain-language reason if not (AC-01) |
 
-**Case notes.** `status` is server-controlled (`DRAFT`, `ENTITY_AMBIGUOUS`, `ENTITY_RESOLVED`); sending
+**Case notes.** `status` is server-controlled (`DRAFT`, `ENTITY_AMBIGUOUS`, `ENTITY_RESOLVED`; the case also returns `resolved_candidate_id`, `resolved_by`, `resolved_at` once resolved). Candidates are always user-entered (`source: "user_entered"`); the system never invents one. While resolved, changing `legal_name`, `registration_number` or `jurisdiction` returns 409 until the entity is reopened; sending
 `status`, `id`, `owner`, `tenant_id` or `version` is rejected (422). `exposure_amount` is an exact
 decimal (send and treat it as a string such as `"1250000.50"`) and must come with `exposure_currency`
 (3 letters, such as `CAD`). `information_gaps` lists missing inputs; the system never fills them in.

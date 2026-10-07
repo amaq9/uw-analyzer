@@ -17,6 +17,7 @@ from app.cases.schemas import (
     CaseFields,
     CaseOut,
     CaseRecord,
+    CaseStatus,
     CaseUpdate,
     to_out,
 )
@@ -25,6 +26,8 @@ from app.cases.store import PostgresCaseStore
 router = APIRouter(prefix="/cases", tags=["cases"])
 
 _ChangeNothing = "Nothing to change: send at least one field."
+# Changing these after the entity was chosen would silently invalidate that human decision.
+IDENTITY_FIELDS = {"legal_name", "registration_number", "jurisdiction"}
 
 
 def _store(request: Request) -> PostgresCaseStore:
@@ -109,6 +112,13 @@ def update_case(
     changes: dict[str, Any] = body.model_dump(exclude={"expected_version"}, exclude_unset=True)
     if not changes:
         raise HTTPException(422, _ChangeNothing)
+
+    if record.status is CaseStatus.ENTITY_RESOLVED and changes.keys() & IDENTITY_FIELDS:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "The legal entity has been chosen. Reopen the entity resolution before changing "
+            "the legal name, registration number or jurisdiction. Nothing was saved.",
+        )
 
     merged = {**record.model_dump(include=set(CaseFields.model_fields)), **changes}
     try:
