@@ -72,6 +72,48 @@ export interface paths {
         patch: operations["update_case_api_v1_cases__case_id__patch"];
         trace?: never;
     };
+    "/api/v1/cases/{case_id}/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Documents */
+        get: operations["list_documents_api_v1_cases__case_id__documents_get"];
+        put?: never;
+        /**
+         * Upload Document
+         * @description Upload a financial statement, credit report or supporting file. The file is checked by its
+         *     contents, virus-scanned and only then stored under a random name in private storage.
+         */
+        post: operations["upload_document_api_v1_cases__case_id__documents_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cases/{case_id}/documents/{document_id}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download Document
+         * @description Download as an attachment. The browser is told never to display or sniff the content.
+         */
+        get: operations["download_document_api_v1_cases__case_id__documents__document_id__content_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/cases/{case_id}/entity-candidates": {
         parameters: {
             query?: never;
@@ -229,6 +271,12 @@ export interface components {
             code: string;
             /** Message */
             message: string;
+        };
+        /** Body_upload_document_api_v1_cases__case_id__documents_post */
+        Body_upload_document_api_v1_cases__case_id__documents_post: {
+            category: components["schemas"]["DocumentCategory"];
+            /** File */
+            file: string;
         };
         /**
          * CandidateCreate
@@ -434,6 +482,45 @@ export interface components {
             ubo_name?: string | null;
             /** Website */
             website?: string | null;
+        };
+        /**
+         * DocumentCategory
+         * @enum {string}
+         */
+        DocumentCategory: "financial_statement" | "credit_report" | "supporting";
+        /**
+         * DocumentOut
+         * @description What the API returns about an uploaded document. Never the storage location.
+         */
+        DocumentOut: {
+            /**
+             * Case Id
+             * Format: uuid
+             */
+            case_id: string;
+            category: components["schemas"]["DocumentCategory"];
+            /** Content Type */
+            content_type: string;
+            /** Filename */
+            filename: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Scan Status */
+            scan_status: string;
+            /** Sha256 */
+            sha256: string;
+            /** Size Bytes */
+            size_bytes: number;
+            /**
+             * Uploaded At
+             * Format: date-time
+             */
+            uploaded_at: string;
+            /** Uploaded By */
+            uploaded_by: string;
         };
         /** ErrorBody */
         ErrorBody: {
@@ -779,6 +866,185 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CaseOut"];
+                };
+            };
+            /** @description Not signed in, or the token is invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in but not permitted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found (or belongs to another tenant). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request was malformed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_documents_api_v1_cases__case_id__documents_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentOut"][];
+                };
+            };
+            /** @description Not signed in, or the token is invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in but not permitted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found (or belongs to another tenant). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request was malformed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    upload_document_api_v1_cases__case_id__documents_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_document_api_v1_cases__case_id__documents_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentOut"];
+                };
+            };
+            /** @description Not signed in, or the token is invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in but not permitted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found (or belongs to another tenant). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request was malformed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    download_document_api_v1_cases__case_id__documents__document_id__content_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Not signed in, or the token is invalid. */
