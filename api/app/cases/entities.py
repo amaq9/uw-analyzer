@@ -85,6 +85,14 @@ class ReopenRequest(BaseModel):
     reason: Name = Field(max_length=1000)
 
 
+class UnconfirmedRequest(BaseModel):
+    """A person records that the legal entity could not be confirmed or found (reason required)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    reason: Name = Field(max_length=1000)
+
+
 class Blocker(BaseModel):
     code: str
     message: str
@@ -108,7 +116,15 @@ def research_readiness(status: CaseStatus, open_candidates: int) -> Readiness:
     """Whether substantive research may start, and if not, what a person must do (AC-01)."""
     if status is CaseStatus.ENTITY_RESOLVED:
         return Readiness(allowed=True, status=status, blockers=[])
-    if status is CaseStatus.ENTITY_AMBIGUOUS:
+    if status is CaseStatus.ENTITY_UNCONFIRMED:
+        blocker = Blocker(
+            code="entity_unconfirmed",
+            message=(
+                "The legal entity could not be confirmed or found, so research cannot start. "
+                "A person can reopen the resolution if more information becomes available."
+            ),
+        )
+    elif status is CaseStatus.ENTITY_AMBIGUOUS:
         blocker = Blocker(
             code="entity_ambiguous",
             message=(

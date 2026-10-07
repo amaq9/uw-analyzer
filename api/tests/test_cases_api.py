@@ -11,6 +11,7 @@ from fastapi.testclient import TestClient
 from app.audit.events import PostgresAuditSink
 from app.auth.tokens import StubIdentityProvider
 from tests.conftest import bearer
+from tests.p09 import offending_names
 
 API_DIR = Path(__file__).resolve().parents[1]
 CASES = "/api/v1/cases"
@@ -332,10 +333,6 @@ def test_listing_cases_is_not_audited_per_case(
 # --- P-09 ------------------------------------------------------------------------------------
 
 
-def test_no_case_field_or_path_can_carry_a_decision(db_app: FastAPI) -> None:
-    banned = ("approv", "declin", "rating", "score", "decision", "credit_limit", "bind", "traffic")
-    schema = db_app.openapi()
-    names = [p for p in schema["paths"]]
-    for model in schema["components"]["schemas"].values():
-        names += list(model.get("properties", {}))
-    assert not [n for n in names if any(word in n.lower() for word in banned)]
+def test_decision_wording_exists_only_in_the_designated_places(db_app: FastAPI) -> None:
+    """P-09 (ADR 0004, amended by ADR 0005): an exact allow-list; anything else is a violation."""
+    assert offending_names(db_app.openapi()) == []

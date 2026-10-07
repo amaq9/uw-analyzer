@@ -11,6 +11,7 @@ from app.auth.tokens import StubIdentityProvider
 from app.config import AppEnv, AuthMode, Settings
 from app.main import create_app
 from tests.conftest import bearer
+from tests.p09 import ALLOWED_PERMISSIONS, contains_banned
 
 
 def token(idp: StubIdentityProvider, roles: list[str], tenant: str | None = "t1", **kw: Any) -> str:
@@ -138,10 +139,15 @@ def test_every_role_has_a_permission_set() -> None:
 
 
 def test_no_permission_can_make_an_underwriting_decision() -> None:
-    """P-09: the system has no approve/decline/rate/limit capability to grant."""
-    forbidden = ("approve", "decline", "rate", "limit", "decision", "bind")
+    """P-09 (ADR 0005): the only decision-like permission is recording a human decision."""
     for permission in Permission:
-        assert not any(word in permission.value for word in forbidden), permission
+        if contains_banned(permission.value):
+            assert permission.value in ALLOWED_PERMISSIONS, permission
+    assert not any(
+        word in permission.value
+        for permission in Permission
+        for word in ("approve", "decline", "rate", "limit", "bind", "score")
+    )
 
 
 def test_analyst_cannot_complete_reports_and_auditor_cannot_write() -> None:

@@ -23,6 +23,8 @@ from app.documents.storage import S3Storage
 from app.documents.store import PostgresDocumentStore
 from app.errors import ERROR_RESPONSES, register_error_handlers
 from app.middleware import correlation_id_middleware, make_upload_size_guard
+from app.recommendation.router import router as draft_router
+from app.recommendation.store import PostgresDraftStore
 
 
 class Health(BaseModel):
@@ -81,6 +83,8 @@ def create_app(
     app.state.audit_sink = audit_sink or PostgresAuditSink(engine)
     app.state.case_store = case_store or PostgresCaseStore(engine)
     app.state.entity_store = entity_store or PostgresEntityStore(engine)
+    app.state.draft_store = PostgresDraftStore(engine)
+    app.state.document_store = PostgresDocumentStore(engine)
     if document_service is None and settings.documents_configured:
         assert settings.s3_access_key and settings.s3_secret_key  # noqa: S101
         assert settings.s3_endpoint_url and settings.s3_bucket and settings.clamav_host  # noqa: S101
@@ -164,5 +168,6 @@ def create_app(
     v1.include_router(cases_router)
     v1.include_router(entity_router)
     v1.include_router(documents_router)
+    v1.include_router(draft_router)
     app.include_router(v1)
     return app

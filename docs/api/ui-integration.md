@@ -67,6 +67,16 @@ Download with `fetch` and the `Authorization` header, then save the returned blo
 containing the token will not work and must not be used. Never show a "verified" or "safe" badge: the scan is a
 gate, not a claim about the document's content (P-04).
 
+**Draft recommendation screen (ADR 0005, ADR 0008).** Show the draft clearly labelled with the `notice` and
+a visible "Test product" tag, the outcome and amounts, the AI's proposed figure, the summary, each reason
+with its evidence (document name and quote, or the web source, its date and quote), the factors that lowered
+the amount, the information gaps and the `limitations`. For a reduced amount show requested and
+recommended side by side. Older versions stay available. **Never** show a score, grade, percentage,
+traffic-light colour, badge that reads as pass or fail, or wording that implies the system decided.
+The underwriter's own decision (adopt, change or reject) and the agreement view come next; do not build
+them until the contract ships them. `ENTITY_UNCONFIRMED` is a case status: show it as "The legal entity
+could not be confirmed or found" with a reopen action that needs a reason.
+
 **Case screens.** Show `information_gaps` clearly (they are a feature, not an error). On `409`
 reload the case and let the user redo the edit. Send `expected_version` on every edit. Treat
 `exposure_amount` as a string to avoid rounding. Do not offer `status` as an editable field.

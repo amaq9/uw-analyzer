@@ -98,3 +98,22 @@ are Restricted and never copied into audit events or logs.
 | `uploaded_by`, `uploaded_at` | Who and when |
 
 Retention and controlled deletion: TBD (legal).
+
+## `draft_recommendations` (migration 0006) — Restricted
+A draft recommendation for the underwriter (ADR 0005, ADR 0008). Append-only: database triggers refuse
+UPDATE, DELETE and TRUNCATE; a new analysis is a new version. Tenant-scoped. Outcomes, amounts and reasons
+are Restricted and never copied into audit events or logs.
+
+| Field | Meaning |
+|---|---|
+| `seq`, `id`, `case_id`, `tenant_id`, `version` | Order number, draft ID, case, tenant, and the case's draft version (1, 2, ...) |
+| `outcome`, `band` | `APPROVE` with `FULL` or `REDUCED`, or `DECLINE` with `DECLINE` (database-checked together) |
+| `requested_amount`, `requested_currency` | The case's requested exposure at drafting time |
+| `recommended_amount` | Derived by the policy; never above the request (database-checked); empty for a decline |
+| `ai_proposed_amount` | The analyst's own figure, kept for the agreement view |
+| `rule_codes` | Which decline rules applied (for example `amount_below_floor`) |
+| `content` | Summary, reasons with evidence, verified findings, factors, information gaps |
+| `source`, `policy_version` | Who and what produced it (session, model, skill version) and the policy version used |
+| `created_by`, `created_at` | Who and when |
+
+Retention: TBD (legal).

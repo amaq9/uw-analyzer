@@ -115,9 +115,15 @@ class PostgresEntityStore:
         self, case_id: uuid.UUID, tenant_id: str, actor: str, fields: dict[str, Any]
     ) -> tuple[CandidateOut, CaseStatus]:
         with self._engine.begin() as conn:
-            if _lock_case(conn, case_id, tenant_id) is CaseStatus.ENTITY_RESOLVED:
+            current = _lock_case(conn, case_id, tenant_id)
+            if current is CaseStatus.ENTITY_RESOLVED:
                 raise EntityConflictError(
                     "The legal entity has already been chosen. Reopen the resolution to add "
+                    "another candidate."
+                )
+            if current is CaseStatus.ENTITY_UNCONFIRMED:
+                raise EntityConflictError(
+                    "The entity was recorded as not confirmed. Reopen the resolution to add "
                     "another candidate."
                 )
             row = (
@@ -154,8 +160,13 @@ class PostgresEntityStore:
     ) -> None:
         now = datetime.now(UTC)
         with self._engine.begin() as conn:
-            if _lock_case(conn, case_id, tenant_id) is CaseStatus.ENTITY_RESOLVED:
+            current = _lock_case(conn, case_id, tenant_id)
+            if current is CaseStatus.ENTITY_RESOLVED:
                 raise EntityConflictError("The legal entity has already been chosen.")
+            if current is CaseStatus.ENTITY_UNCONFIRMED:
+                raise EntityConflictError(
+                    "The entity was recorded as not confirmed. Reopen the resolution first."
+                )
             chosen = conn.execute(
                 sa.select(candidates.c.id).where(
                     candidates.c.id == candidate_id,
@@ -196,12 +207,45 @@ class PostgresEntityStore:
                 )
             )
 
+    def mark_unconfirmed(self, case_id: uuid.UUID, tenant_id: str, actor: str, reason: str) -> None:
+        """A person records that the entity could not be confirmed or found."""
+        now = datetime.now(UTC)
+        with self._engine.begin() as conn:
+            current = _lock_case(conn, case_id, tenant_id)
+            if current is CaseStatus.ENTITY_RESOLVED:
+                raise EntityConflictError(
+                    "The legal entity has already been chosen. Reopen the resolution first."
+                )
+            if current is CaseStatus.ENTITY_UNCONFIRMED:
+                raise EntityConflictError("The entity is already recorded as not confirmed.")
+            conn.execute(
+                sa.update(cases)
+                .where(cases.c.id == case_id)
+                .values(status=CaseStatus.ENTITY_UNCONFIRMED.value)
+            )
+            conn.execute(
+                sa.insert(resolution_log).values(
+                    id=uuid.uuid4(),
+                    case_id=case_id,
+                    tenant_id=tenant_id,
+                    action="unconfirmed",
+                    candidate_id=None,
+                    actor=actor,
+                    note=reason,
+                    occurred_at=now,
+                )
+            )
+
     def reopen(self, case_id: uuid.UUID, tenant_id: str, actor: str, reason: str) -> CaseStatus:
         now = datetime.now(UTC)
         with self._engine.begin() as conn:
-            if _lock_case(conn, case_id, tenant_id) is not CaseStatus.ENTITY_RESOLVED:
+            if _lock_case(conn, case_id, tenant_id) not in (
+                CaseStatus.ENTITY_RESOLVED,
+                CaseStatus.ENTITY_UNCONFIRMED,
+            ):
                 raise EntityConflictError(
-                    "The legal entity has not been chosen, so there is nothing to reopen."
+                    "The legal entity has not been chosen or recorded as not confirmed, so there "
+                    "is nothing to reopen."
                 )
             conn.execute(
                 sa.update(candidates)
