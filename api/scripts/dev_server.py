@@ -42,6 +42,10 @@ def main() -> None:
     os.environ.setdefault("APP_ENV", "local")
     os.environ.setdefault("AUTH_MODE", "stub")
     os.environ.setdefault("DATABASE_URL", DEFAULT_DB)
+    # Let the local UI (npm run dev, port 3000) call this API from the browser.
+    os.environ.setdefault(
+        "CORS_ALLOWED_ORIGINS", '["http://localhost:3000","http://127.0.0.1:3000"]'
+    )
     settings = Settings()  # type: ignore[call-arg]
     if settings.app_env is not AppEnv.LOCAL:
         sys.exit("dev_server.py only runs with APP_ENV=local")
@@ -59,7 +63,9 @@ def main() -> None:
         )
         print(f"--- {role} in {tenant} ---\n{token}\n")
     print("Open http://127.0.0.1:8000/docs  ->  Authorize  ->  paste a token. Ctrl+C to stop.\n")
-    uvicorn.run(app, host="127.0.0.1", port=8000, log_level="warning")
+    uvicorn.run(
+        app, host="127.0.0.1", port=int(os.environ.get("API_PORT", "8000")), log_level="warning"
+    )
 
 
 if __name__ == "__main__":
