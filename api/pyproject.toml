@@ -5,6 +5,8 @@ description = "UW Analyzer back-end API (decision support only; no autonomous un
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115",
+    "pydantic-settings>=2.6",
+    "pyjwt[crypto]>=2.10",
     "uvicorn>=0.32",
 ]
 
