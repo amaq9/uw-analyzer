@@ -114,6 +114,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cases/{case_id}/draft-recommendations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Drafts
+         * @description The case's drafts, newest first. Older drafts are kept; nothing is overwritten.
+         */
+        get: operations["list_drafts_api_v1_cases__case_id__draft_recommendations_get"];
+        put?: never;
+        /**
+         * Import Draft
+         * @description Record a draft recommendation written by an analyst session (assisted mode). The server
+         *     derives the outcome and amount from the approved policy; the author cannot choose them.
+         */
+        post: operations["import_draft_api_v1_cases__case_id__draft_recommendations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cases/{case_id}/draft-recommendations/{draft_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Draft */
+        get: operations["get_draft_api_v1_cases__case_id__draft_recommendations__draft_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/cases/{case_id}/entity-candidates": {
         parameters: {
             query?: never;
@@ -169,6 +211,27 @@ export interface paths {
          * @description Override a resolved entity. A reason is mandatory; the reopening is audited and logged.
          */
         post: operations["reopen_entity_api_v1_cases__case_id__entity_resolution_reopen_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cases/{case_id}/entity-resolution/unconfirmed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record Entity Unconfirmed
+         * @description A person records that the legal entity could not be confirmed or found. A reason is
+         *     mandatory; it is kept in the append-only resolution log and the action is audited.
+         */
+        post: operations["record_entity_unconfirmed_api_v1_cases__case_id__entity_resolution_unconfirmed_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -265,6 +328,11 @@ export interface components {
             /** Resource Type */
             resource_type: string | null;
         };
+        /**
+         * Band
+         * @enum {string}
+         */
+        Band: "FULL" | "REDUCED" | "DECLINE";
         /** Blocker */
         Blocker: {
             /** Code */
@@ -445,7 +513,7 @@ export interface components {
          * @description Phase 1 statuses. Later phases add research and review statuses.
          * @enum {string}
          */
-        CaseStatus: "DRAFT" | "ENTITY_AMBIGUOUS" | "ENTITY_RESOLVED";
+        CaseStatus: "DRAFT" | "ENTITY_AMBIGUOUS" | "ENTITY_RESOLVED" | "ENTITY_UNCONFIRMED";
         /**
          * CaseUpdate
          * @description Partial update. `expected_version` guards against overwriting someone else's change.
@@ -482,6 +550,21 @@ export interface components {
             ubo_name?: string | null;
             /** Website */
             website?: string | null;
+        };
+        /**
+         * DeclineFinding
+         * @description A finding that always means decline, but only once verified under the protocol.
+         */
+        DeclineFinding: {
+            /**
+             * Code
+             * @enum {string}
+             */
+            code: "insolvency" | "sanctions" | "fraud_or_regulatory" | "going_concern";
+            /** Evidence */
+            evidence: components["schemas"]["EvidenceRef"][];
+            /** Verified */
+            verified: boolean;
         };
         /**
          * DocumentCategory
@@ -522,6 +605,86 @@ export interface components {
             /** Uploaded By */
             uploaded_by: string;
         };
+        /** DraftImport */
+        DraftImport: {
+            /** Ai Proposed Amount */
+            ai_proposed_amount?: number | string | null;
+            /** Decline Findings */
+            decline_findings?: components["schemas"]["DeclineFinding"][];
+            /** Factors */
+            factors?: components["schemas"]["Factor"][];
+            /** Financial Findings Weak */
+            financial_findings_weak: boolean;
+            /** Information Gaps */
+            information_gaps?: string[];
+            /** Reasons */
+            reasons: components["schemas"]["Reason"][];
+            source: components["schemas"]["SourceInfo"];
+            /** Summary */
+            summary: string;
+        };
+        /**
+         * DraftOut
+         * @description A draft recommendation for the underwriter. Always labelled; never a decision.
+         */
+        DraftOut: {
+            /** Ai Proposed Amount */
+            ai_proposed_amount: string | null;
+            band: components["schemas"]["Band"];
+            /**
+             * Case Id
+             * Format: uuid
+             */
+            case_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By */
+            created_by: string;
+            /** Decline Findings */
+            decline_findings: components["schemas"]["DeclineFinding"][];
+            /** Factors */
+            factors: components["schemas"]["Factor"][];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Information Gaps */
+            information_gaps: string[];
+            /** Limitations */
+            limitations: string[];
+            /**
+             * Notice
+             * @default Draft recommendation for the underwriter. Not a decision.
+             */
+            notice: string;
+            outcome: components["schemas"]["Outcome"];
+            /** Policy Version */
+            policy_version: string;
+            /** Reasons */
+            reasons: components["schemas"]["Reason"][];
+            /** Recommended Amount */
+            recommended_amount: string | null;
+            /** Requested Amount */
+            requested_amount: string | null;
+            /** Requested Currency */
+            requested_currency: string | null;
+            /** Rule Codes */
+            rule_codes: string[];
+            source: components["schemas"]["SourceInfo"];
+            /** Summary */
+            summary: string;
+            /**
+             * Test Product
+             * @default true
+             */
+            test_product: boolean;
+            /** Version */
+            version: number;
+        };
         /** ErrorBody */
         ErrorBody: {
             /** Code */
@@ -538,6 +701,41 @@ export interface components {
         /** ErrorResponse */
         ErrorResponse: {
             error: components["schemas"]["ErrorBody"];
+        };
+        /**
+         * EvidenceRef
+         * @description Where a reason comes from. Documents must be real uploads of this case; web sources need a
+         *     secure address, the date it was read, and the quoted words.
+         */
+        EvidenceRef: {
+            /** Document Id */
+            document_id?: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "document" | "web";
+            /** Location */
+            location?: string | null;
+            /** Quote */
+            quote: string;
+            /** Retrieved At */
+            retrieved_at?: string | null;
+            /** Url */
+            url?: string | null;
+        };
+        /**
+         * Factor
+         * @description Something that lowered the proposed amount, and how.
+         */
+        Factor: {
+            /**
+             * Code
+             * @enum {string}
+             */
+            code: "sector_outlook" | "acceptable_not_strong" | "missing_information" | "concentration";
+            /** Explanation */
+            explanation: string;
         };
         /** FieldError */
         FieldError: {
@@ -571,6 +769,11 @@ export interface components {
             /** Tenant Id */
             tenant_id: string;
         };
+        /**
+         * Outcome
+         * @enum {string}
+         */
+        Outcome: "APPROVE" | "DECLINE";
         /** Readiness */
         Readiness: {
             /** Allowed */
@@ -578,6 +781,13 @@ export interface components {
             /** Blockers */
             blockers: components["schemas"]["Blocker"][];
             status: components["schemas"]["CaseStatus"];
+        };
+        /** Reason */
+        Reason: {
+            /** Evidence */
+            evidence: components["schemas"]["EvidenceRef"][];
+            /** Text */
+            text: string;
         };
         /**
          * ReopenRequest
@@ -599,6 +809,31 @@ export interface components {
             candidate_id: string;
             /** Note */
             note?: string | null;
+        };
+        /**
+         * SourceInfo
+         * @description Who produced the draft and with what, so the run can be reproduced (P-10).
+         */
+        SourceInfo: {
+            /**
+             * Kind
+             * @constant
+             */
+            kind: "claude_code_session";
+            /** Model */
+            model: string;
+            /** Policy Version */
+            policy_version: string;
+            /** Skill Version */
+            skill_version: string;
+        };
+        /**
+         * UnconfirmedRequest
+         * @description A person records that the legal entity could not be confirmed or found (reason required).
+         */
+        UnconfirmedRequest: {
+            /** Reason */
+            reason: string;
         };
     };
     responses: never;
@@ -1085,6 +1320,185 @@ export interface operations {
             };
         };
     };
+    list_drafts_api_v1_cases__case_id__draft_recommendations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DraftOut"][];
+                };
+            };
+            /** @description Not signed in, or the token is invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in but not permitted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found (or belongs to another tenant). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request was malformed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    import_draft_api_v1_cases__case_id__draft_recommendations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DraftImport"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DraftOut"];
+                };
+            };
+            /** @description Not signed in, or the token is invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in but not permitted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found (or belongs to another tenant). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request was malformed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_draft_api_v1_cases__case_id__draft_recommendations__draft_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+                draft_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DraftOut"];
+                };
+            };
+            /** @description Not signed in, or the token is invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in but not permitted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found (or belongs to another tenant). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request was malformed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     list_candidates_api_v1_cases__case_id__entity_candidates_get: {
         parameters: {
             query?: never;
@@ -1279,6 +1693,68 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["ReopenRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseOut"];
+                };
+            };
+            /** @description Not signed in, or the token is invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in but not permitted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found (or belongs to another tenant). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request was malformed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    record_entity_unconfirmed_api_v1_cases__case_id__entity_resolution_unconfirmed_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UnconfirmedRequest"];
             };
         };
         responses: {
