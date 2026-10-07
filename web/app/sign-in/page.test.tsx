@@ -10,5 +10,6 @@ describe("enterprise access screen", () => {
     expect(screen.getByRole("button", { name: /enterprise sso/i })).toBeDisabled();
     expect(screen.getByText(/being configured/i)).toBeInTheDocument();
     expect(screen.getByText(/local passwords are not stored/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText(/local development token/i)).not.toBeInTheDocument();
   });
 });

@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { Brand } from "@/components/brand";
+import { DevTokenSignIn } from "@/components/dev-token-sign-in";
 import { LockIcon, ShieldIcon } from "@/components/icons";
 
 export default function SignInPage() {
@@ -38,8 +39,17 @@ export default function SignInPage() {
             Continue with enterprise SSO
           </button>
           <p className="configuration-note">Identity provider connection is being configured.</p>
-          <div className="access-divider"><span>Development preview</span></div>
-          <Link className="preview-link" href="/">View the workspace foundation</Link>
+          {process.env.NODE_ENV === "development" ? (
+            <>
+              <div className="access-divider"><span>Local pilot access</span></div>
+              <DevTokenSignIn />
+            </>
+          ) : (
+            <>
+              <div className="access-divider"><span>Preview</span></div>
+              <Link className="preview-link" href="/">View the workspace foundation</Link>
+            </>
+          )}
         </div>
         <p className="access-footer">Authorized internal users only · Activity will be audited</p>
       </section>
