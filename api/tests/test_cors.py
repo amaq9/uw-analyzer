@@ -21,7 +21,7 @@ def make_client(origins: list[str]) -> TestClient:
 
 def preflight(client: TestClient, origin: str) -> object:
     return client.options(
-        "/me",
+        "/api/v1/me",
         headers={
             "Origin": origin,
             "Access-Control-Request-Method": "GET",

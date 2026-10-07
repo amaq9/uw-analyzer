@@ -21,15 +21,15 @@ def token(idp: StubIdentityProvider, roles: list[str], tenant: str | None = "t1"
 
 
 def test_missing_token_is_401(client: TestClient) -> None:
-    assert client.get("/me").status_code == 401
+    assert client.get("/api/v1/me").status_code == 401
 
 
 def test_garbage_token_is_401(client: TestClient) -> None:
-    assert client.get("/me", headers=bearer("not-a-jwt")).status_code == 401
+    assert client.get("/api/v1/me", headers=bearer("not-a-jwt")).status_code == 401
 
 
 def test_valid_token_returns_principal(client: TestClient, idp: StubIdentityProvider) -> None:
-    response = client.get("/me", headers=bearer(token(idp, ["underwriter"])))
+    response = client.get("/api/v1/me", headers=bearer(token(idp, ["underwriter"])))
     assert response.status_code == 200
     body = response.json()
     assert body["subject"] == "user-1"
@@ -40,22 +40,24 @@ def test_valid_token_returns_principal(client: TestClient, idp: StubIdentityProv
 
 def test_expired_token_is_401(client: TestClient, idp: StubIdentityProvider) -> None:
     expired = token(idp, ["underwriter"], ttl_seconds=-60)
-    assert client.get("/me", headers=bearer(expired)).status_code == 401
+    assert client.get("/api/v1/me", headers=bearer(expired)).status_code == 401
 
 
 def test_wrong_audience_is_401(client: TestClient, idp: StubIdentityProvider) -> None:
     bad = token(idp, ["underwriter"], aud="some-other-api")
-    assert client.get("/me", headers=bearer(bad)).status_code == 401
+    assert client.get("/api/v1/me", headers=bearer(bad)).status_code == 401
 
 
 def test_wrong_issuer_is_401(client: TestClient, idp: StubIdentityProvider) -> None:
     bad = token(idp, ["underwriter"], iss="https://evil.example/")
-    assert client.get("/me", headers=bearer(bad)).status_code == 401
+    assert client.get("/api/v1/me", headers=bearer(bad)).status_code == 401
 
 
 def test_token_signed_by_another_key_is_401(client: TestClient, idp: StubIdentityProvider) -> None:
     other = StubIdentityProvider()
-    assert client.get("/me", headers=bearer(token(other, ["administrator"]))).status_code == 401
+    assert (
+        client.get("/api/v1/me", headers=bearer(token(other, ["administrator"]))).status_code == 401
+    )
 
 
 def test_unsigned_alg_none_token_is_401(client: TestClient, idp: StubIdentityProvider) -> None:
@@ -65,7 +67,7 @@ def test_unsigned_alg_none_token_is_401(client: TestClient, idp: StubIdentityPro
         "roles": ["administrator"], "exp": now + 300,
     }  # fmt: skip
     unsigned = jwt.encode(claims, key=None, algorithm="none")  # type: ignore[arg-type]
-    assert client.get("/me", headers=bearer(unsigned)).status_code == 401
+    assert client.get("/api/v1/me", headers=bearer(unsigned)).status_code == 401
 
 
 def test_hs256_key_confusion_is_401(client: TestClient, idp: StubIdentityProvider) -> None:
@@ -77,23 +79,25 @@ def test_hs256_key_confusion_is_401(client: TestClient, idp: StubIdentityProvide
     forged = jwt.encode(
         claims, "a-shared-secret-of-sufficient-length-0123456789", algorithm="HS256"
     )
-    assert client.get("/me", headers=bearer(forged)).status_code == 401
+    assert client.get("/api/v1/me", headers=bearer(forged)).status_code == 401
 
 
 def test_missing_tenant_claim_is_401(client: TestClient, idp: StubIdentityProvider) -> None:
     assert (
-        client.get("/me", headers=bearer(token(idp, ["underwriter"], tenant=None))).status_code
+        client.get(
+            "/api/v1/me", headers=bearer(token(idp, ["underwriter"], tenant=None))
+        ).status_code
         == 401
     )
 
 
 def test_malformed_roles_claim_is_401(client: TestClient, idp: StubIdentityProvider) -> None:
     bad = idp.issue(subject="u", tenant_id="t1", roles="administrator")  # type: ignore[arg-type]
-    assert client.get("/me", headers=bearer(bad)).status_code == 401
+    assert client.get("/api/v1/me", headers=bearer(bad)).status_code == 401
 
 
 def test_unknown_roles_grant_nothing(client: TestClient, idp: StubIdentityProvider) -> None:
-    response = client.get("/me", headers=bearer(token(idp, ["superuser", "god"])))
+    response = client.get("/api/v1/me", headers=bearer(token(idp, ["superuser", "god"])))
     assert response.status_code == 200
     assert response.json()["permissions"] == []
 
@@ -102,9 +106,9 @@ def test_rejection_message_does_not_leak_reason(
     client: TestClient, idp: StubIdentityProvider
 ) -> None:
     expired = token(idp, ["underwriter"], ttl_seconds=-60)
-    assert client.get("/me", headers=bearer(expired)).json() == {
-        "detail": "Authentication required."
-    }
+    error = client.get("/api/v1/me", headers=bearer(expired)).json()["error"]
+    assert error["message"] == "Authentication required."
+    assert "expired" not in str(error).lower()
 
 
 # --- authorization: RBAC ---------------------------------------------------------------------

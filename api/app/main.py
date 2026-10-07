@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from fastapi import Depends, FastAPI, Query, Request
+from fastapi import APIRouter, Depends, FastAPI, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy import create_engine
@@ -12,6 +12,7 @@ from app.auth.deps import get_principal, require_permission
 from app.auth.models import Permission, Principal
 from app.auth.tokens import StubIdentityProvider, TokenVerifier, jwks_key_resolver
 from app.config import AuthMode, Settings
+from app.errors import ERROR_RESPONSES, register_error_handlers
 from app.middleware import correlation_id_middleware
 
 
@@ -43,6 +44,7 @@ def create_app(settings: Settings | None = None, audit_sink: AuditSink | None = 
     settings = settings or Settings()  # type: ignore[call-arg]  # read from environment
     app = FastAPI(title="UW Analyzer API", version=__version__)
     app.middleware("http")(correlation_id_middleware)
+    register_error_handlers(app)
     if settings.cors_allowed_origins:
         # Added last so it is outermost: preflight requests are answered before auth runs.
         # Auth uses a bearer header, not cookies, so credentials are deliberately not allowed.
@@ -79,7 +81,9 @@ def create_app(settings: Settings | None = None, audit_sink: AuditSink | None = 
         """Liveness check. Reports service status only; no case or tenant data."""
         return Health(status="ok", version=__version__)
 
-    @app.get("/me", response_model=Me, tags=["auth"])
+    v1 = APIRouter(prefix="/api/v1", responses=ERROR_RESPONSES)
+
+    @v1.get("/me", response_model=Me, tags=["auth"])
     def me(principal: Principal = Depends(get_principal)) -> Me:  # noqa: B008
         """Who the caller is and what they may do. Informational; grants nothing."""
         return Me(
@@ -89,7 +93,7 @@ def create_app(settings: Settings | None = None, audit_sink: AuditSink | None = 
             permissions=sorted(p.value for p in principal.permissions),
         )
 
-    @app.get("/audit-events", response_model=list[AuditEventOut], tags=["audit"])
+    @v1.get("/audit-events", response_model=list[AuditEventOut], tags=["audit"])
     def list_audit_events(
         request: Request,
         limit: int = Query(50, ge=1, le=100),
@@ -120,4 +124,5 @@ def create_app(settings: Settings | None = None, audit_sink: AuditSink | None = 
             for e in events
         ]
 
+    app.include_router(v1)
     return app

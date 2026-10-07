@@ -23,11 +23,11 @@ It prepares the local database, prints a **test token for each role**, and start
 | Try this | Expected |
 |---|---|
 | `GET /health` (no token needed) | `{"status":"ok", ...}` |
-| `GET /me` with the underwriter token | the underwriter's permissions |
-| `GET /audit-events` with the underwriter token | **403 Not permitted** (underwriters cannot read the audit log) |
-| `GET /audit-events` with the **auditor** token | the list of events for `demo-tenant`, including the 403 you just caused |
-| `GET /audit-events` with the **other-tenant auditor** token | an empty list: they cannot see `demo-tenant`'s events |
-| `GET /me` with no token (click Authorize, Logout) | **401 Authentication required** |
+| `GET /api/v1/me` with the underwriter token | the underwriter's permissions |
+| `GET /api/v1/audit-events` with the underwriter token | **403 Not permitted** (underwriters cannot read the audit log) |
+| `GET /api/v1/audit-events` with the **auditor** token | the list of events for `demo-tenant`, including the 403 you just caused |
+| `GET /api/v1/audit-events` with the **other-tenant auditor** token | an empty list: they cannot see `demo-tenant`'s events |
+| `GET /api/v1/me` with no token (click Authorize, Logout) | **401 Authentication required** |
 
 Every response has an `X-Request-ID` header; the same ID appears in the audit event.
 

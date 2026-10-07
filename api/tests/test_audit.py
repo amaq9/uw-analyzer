@@ -15,7 +15,7 @@ def tok(idp: StubIdentityProvider, role: str, tenant: str = "t1") -> str:
 
 
 def test_missing_token_is_audited(client: TestClient, sink: InMemoryAuditSink) -> None:
-    client.get("/me")
+    client.get("/api/v1/me")
     (event,) = sink.events
     assert event.action == Action.AUTH_REJECTED
     assert event.outcome is Outcome.DENIED
@@ -26,7 +26,7 @@ def test_missing_token_is_audited(client: TestClient, sink: InMemoryAuditSink) -
 def test_invalid_token_is_audited_without_leaking_it(
     client: TestClient, sink: InMemoryAuditSink
 ) -> None:
-    client.get("/me", headers=bearer("not-a-jwt"))
+    client.get("/api/v1/me", headers=bearer("not-a-jwt"))
     (event,) = sink.events
     assert event.action == Action.AUTH_REJECTED
     assert "not-a-jwt" not in str(event)
@@ -58,7 +58,7 @@ def test_successful_requests_are_not_noise(
     client: TestClient, idp: StubIdentityProvider, sink: InMemoryAuditSink
 ) -> None:
     client.get("/health")
-    client.get("/me", headers=bearer(tok(idp, "underwriter")))
+    client.get("/api/v1/me", headers=bearer(tok(idp, "underwriter")))
     assert sink.events == []
 
 
@@ -69,7 +69,7 @@ def test_audit_failure_never_grants_access(
         raise RuntimeError("database down")
 
     sink.record = boom  # type: ignore[assignment]
-    assert client.get("/me").status_code == 401
+    assert client.get("/api/v1/me").status_code == 401
     assert (
         client.get("/_test/conflicts", headers=bearer(tok(idp, "underwriter"))).status_code == 403
     )
@@ -86,7 +86,7 @@ def test_response_carries_a_generated_request_id(client: TestClient) -> None:
 def test_safe_incoming_request_id_is_kept_and_stored(
     client: TestClient, sink: InMemoryAuditSink
 ) -> None:
-    response = client.get("/me", headers={"X-Request-ID": "trace-abc-12345"})
+    response = client.get("/api/v1/me", headers={"X-Request-ID": "trace-abc-12345"})
     assert response.headers["X-Request-ID"] == "trace-abc-12345"
     assert sink.events[0].correlation_id == "trace-abc-12345"
 
@@ -100,9 +100,9 @@ def test_unsafe_incoming_request_id_is_replaced(bad: str) -> None:
 
 
 def test_audit_read_requires_the_permission(client: TestClient, idp: StubIdentityProvider) -> None:
-    assert client.get("/audit-events").status_code == 401
+    assert client.get("/api/v1/audit-events").status_code == 401
     for role in ["underwriter", "reviewer", "research_analyst", "administrator", "service"]:
-        assert client.get("/audit-events", headers=bearer(tok(idp, role))).status_code == 403
+        assert client.get("/api/v1/audit-events", headers=bearer(tok(idp, role))).status_code == 403
 
 
 def test_auditor_sees_only_their_own_tenants_events(
@@ -110,7 +110,9 @@ def test_auditor_sees_only_their_own_tenants_events(
 ) -> None:
     client.get("/_test/conflicts", headers=bearer(tok(idp, "underwriter", "tenant-a")))
     client.get("/_test/conflicts", headers=bearer(tok(idp, "underwriter", "tenant-b")))
-    events = client.get("/audit-events", headers=bearer(tok(idp, "auditor", "tenant-a"))).json()
+    events = client.get(
+        "/api/v1/audit-events", headers=bearer(tok(idp, "auditor", "tenant-a"))
+    ).json()
     # Exactly tenant-a's own denial; tenant-b's event is invisible to tenant-a.
     assert [(e["action"], e["actor"]) for e in events] == [("authz.denied", "underwriter-1")]
 
@@ -118,12 +120,14 @@ def test_auditor_sees_only_their_own_tenants_events(
 def test_reading_the_audit_log_is_itself_audited(
     client: TestClient, idp: StubIdentityProvider, sink: InMemoryAuditSink
 ) -> None:
-    client.get("/audit-events", headers=bearer(tok(idp, "auditor")))
+    client.get("/api/v1/audit-events", headers=bearer(tok(idp, "auditor")))
     assert sink.events[-1].action == Action.AUDIT_READ
     assert sink.events[-1].outcome is Outcome.SUCCESS
 
 
 @pytest.mark.parametrize("limit", [0, 101, -1])
 def test_limit_is_bounded(client: TestClient, idp: StubIdentityProvider, limit: int) -> None:
-    response = client.get(f"/audit-events?limit={limit}", headers=bearer(tok(idp, "auditor")))
+    response = client.get(
+        f"/api/v1/audit-events?limit={limit}", headers=bearer(tok(idp, "auditor"))
+    )
     assert response.status_code == 422
