@@ -42,11 +42,18 @@ This ADR is that documented change.
    - a **PO-approved, versioned recommendation policy** exists (see 5);
    - evidence rules (P-01, P-02, P-04 to P-06) are satisfied for every material claim the reasons use.
    If a precondition fails, no draft is produced, and the reasons are listed in plain language.
-5. **No invented policy.** The system must not guess underwriting appetite. Outcomes and amounts are
-   produced by a **versioned recommendation policy** (criteria, thresholds, limit rules) written and
-   approved by the Product Owner. The policy version is stored with every draft. The AI may help
-   draft the narrative, but its output is untrusted input: schema- and rule-validated, and it cannot
-   set the outcome or amount; the policy rules do.
+5. **No invented policy; bounded AI judgement.** The system must not guess underwriting appetite.
+   The outcome and the amount are governed by a **versioned recommendation policy** (criteria,
+   thresholds, limit rules) written and approved by the Product Owner, and its version is stored with
+   every draft. *Product Owner decision, 2026-10-07:* the **AI analyzer exercises judgement** on the
+   size of a reduction (for example how much a weak sector outlook reduces the amount). That judgement
+   is allowed only inside the policy's **guardrails**: the AI proposes a reduction **within bounds the
+   policy sets**; the server validates the proposal against the policy (schema, range, the outcome rules,
+   a floor below which the case is a decline instead) and rejects anything outside it. The AI cannot
+   change the outcome rules, raise the amount above the amount requested, or override a decline rule.
+   Its output is untrusted input, and every judgement must give reasons tied to evidence (decision 6),
+   be recorded as AI-proposed with the model, prompt and policy versions (P-10), and be tested for
+   consistency on golden cases. A human always adopts, changes or rejects the result (decision 7).
 6. **Transparent reasoning.** Every reason links to claims and evidence (AC-08). The draft shows key
    strengths, weaknesses, information gaps, assumptions and conditions, and how the amount follows
    from the policy and the requested exposure.
