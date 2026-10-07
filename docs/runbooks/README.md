@@ -5,6 +5,7 @@ on-call engineer: plain English first, commands second. Each runbook states how 
 
 | Runbook | When to use |
 |---|---|
+| [Try the API on your own computer](local-development.md) | Running and testing locally with test tokens |
 | [Database migrations](database-migrations.md) | Applying or rolling back a schema change |
 | [Security incident](security-incident.md) | Suspected leak, breach, or authentication/tenant defect |
 
