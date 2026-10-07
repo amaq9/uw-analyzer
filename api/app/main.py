@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from fastapi import Depends, FastAPI, Query, Request
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy import create_engine
 
@@ -42,6 +43,18 @@ def create_app(settings: Settings | None = None, audit_sink: AuditSink | None = 
     settings = settings or Settings()  # type: ignore[call-arg]  # read from environment
     app = FastAPI(title="UW Analyzer API", version=__version__)
     app.middleware("http")(correlation_id_middleware)
+    if settings.cors_allowed_origins:
+        # Added last so it is outermost: preflight requests are answered before auth runs.
+        # Auth uses a bearer header, not cookies, so credentials are deliberately not allowed.
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=settings.cors_allowed_origins,
+            allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+            allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
+            expose_headers=["X-Request-ID"],
+            allow_credentials=False,
+            max_age=600,
+        )
 
     # Engine creation does not connect; the first audit write does.
     app.state.audit_sink = audit_sink or PostgresAuditSink(create_engine(settings.database_url))
