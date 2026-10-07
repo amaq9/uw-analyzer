@@ -1,12 +1,23 @@
 # Codex Front-End Handoff
 
+## Latest: API connection foundation
+
+- Generated frontend types directly from the approved OpenAPI contract with a repeatable command.
+- Added a validated, environment-configured API base URL and typed `/api/v1/me` client.
+- Added development-only token sign-in for the accepted local pilot. Tokens stay in memory and are
+  never persisted; safe API errors include the request ID without exposing raw responses.
+- Confirmed ADR 0003 and the `/api/v1/cases` contract are present on the synced main branch.
+- Generation, lint, type-checking, 11 tests, production build, dependency audit, and local browser
+  inspection pass.
+- No backend change is requested. Next frontend slice: contract-driven case intake and listing.
+
 ## Ownership
 
 - Codex implements front-end UI work only, following the Product Owner's narrower assignment.
 - Back-end, infrastructure, CI/CD, shared governance, and Claude Code's handoff remain outside Codex's ownership.
 - Work uses a separate Git worktree and short-lived `codex/<topic>` branches.
 
-## Current Status
+## Previous Status
 
 - The Skills information-architecture slice is complete on `codex/skills-interface`.
 - The interface now exposes the configured Financial Statement Assessment methodology without implying backend execution exists.
