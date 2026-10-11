@@ -1,11 +1,21 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
+import { SessionProvider } from "@/components/session-provider";
+
 import Home from "./page";
+
+function renderHome() {
+  return render(
+    <SessionProvider>
+      <Home />
+    </SessionProvider>,
+  );
+}
 
 describe("workspace foundation", () => {
   it("keeps the human-underwriter boundary explicit", () => {
-    render(<Home />);
+    renderHome();
 
     expect(
       screen.getByRole("heading", { name: /evidence you can follow/i }),
@@ -15,7 +25,7 @@ describe("workspace foundation", () => {
   });
 
   it("surfaces the entity ambiguity stop-control", () => {
-    render(<Home />);
+    renderHome();
 
     expect(screen.getByText("Entity resolution")).toBeInTheDocument();
     expect(screen.getByText("Required gate")).toBeInTheDocument();
@@ -23,7 +33,7 @@ describe("workspace foundation", () => {
   });
 
   it("separates source access from claim verification", () => {
-    render(<Home />);
+    renderHome();
 
     expect(screen.getByText(/access and verification remain separate/i)).toBeInTheDocument();
   });

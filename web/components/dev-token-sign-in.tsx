@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { FormEvent, useState } from "react";
 
-import { ApiRequestError, getCurrentUser, type CurrentUser } from "@/lib/api/client";
+import { useSession } from "@/components/session-provider";
+import { ApiRequestError } from "@/lib/api/client";
 import { ApiConfigurationError } from "@/lib/api/config";
 
 type SignInError = {
@@ -12,10 +14,9 @@ type SignInError = {
 
 export function DevTokenSignIn() {
   const [token, setToken] = useState("");
-  const [sessionToken, setSessionToken] = useState<string>();
-  const [currentUser, setCurrentUser] = useState<CurrentUser>();
   const [error, setError] = useState<SignInError>();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { session, signIn, signOut: clearSession } = useSession();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -30,9 +31,7 @@ export function DevTokenSignIn() {
     setIsSubmitting(true);
 
     try {
-      const user = await getCurrentUser(submittedToken);
-      setSessionToken(submittedToken);
-      setCurrentUser(user);
+      await signIn(submittedToken);
       setToken("");
     } catch (caughtError) {
       setToken("");
@@ -48,37 +47,39 @@ export function DevTokenSignIn() {
     }
   }
 
-  function signOut() {
-    setCurrentUser(undefined);
-    setSessionToken(undefined);
+  function handleSignOut() {
+    clearSession();
     setError(undefined);
   }
 
-  if (currentUser && sessionToken) {
+  if (session) {
     return (
       <section aria-labelledby="local-session-title" className="local-session">
         <div className="local-session-heading">
           <div>
             <p className="eyebrow">Local session active</p>
-            <h3 id="local-session-title">Signed in as {currentUser.subject}</h3>
+            <h3 id="local-session-title">Signed in as {session.user.subject}</h3>
           </div>
           <span className="local-status">Verified by /me</span>
         </div>
         <dl className="identity-details">
           <div>
             <dt>Tenant</dt>
-            <dd>{currentUser.tenant_id}</dd>
+            <dd>{session.user.tenant_id}</dd>
           </div>
           <div>
             <dt>Roles</dt>
-            <dd>{currentUser.roles.join(", ") || "None"}</dd>
+            <dd>{session.user.roles.join(", ") || "None"}</dd>
           </div>
           <div>
             <dt>Permissions</dt>
-            <dd>{currentUser.permissions.join(", ") || "None"}</dd>
+            <dd>{session.user.permissions.join(", ") || "None"}</dd>
           </div>
         </dl>
-        <button className="secondary-button" onClick={signOut} type="button">
+        <Link className="dev-sign-in-button session-continue-link" href="/">
+          Continue to workspace
+        </Link>
+        <button className="secondary-button" onClick={handleSignOut} type="button">
           End local session
         </button>
         <p className="memory-note">The token is held in memory only and is cleared on refresh.</p>
