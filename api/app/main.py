@@ -22,6 +22,8 @@ from app.documents.service import DocumentService
 from app.documents.storage import S3Storage
 from app.documents.store import PostgresDocumentStore
 from app.errors import ERROR_RESPONSES, register_error_handlers
+from app.evidence.router import router as evidence_router
+from app.evidence.store import PostgresEvidenceStore
 from app.middleware import correlation_id_middleware, make_upload_size_guard
 from app.recommendation.agreement import router as agreement_router
 from app.recommendation.decision_store import PostgresDecisionStore
@@ -96,6 +98,7 @@ def create_app(
     app.state.source_store = PostgresSourceStore(engine)
     app.state.research_store = PostgresResearchStore(engine)
     app.state.run_queue = PostgresRunQueue(engine)
+    app.state.evidence_store = PostgresEvidenceStore(engine)
     if document_service is None and settings.documents_configured:
         assert settings.s3_access_key and settings.s3_secret_key  # noqa: S101
         assert settings.s3_endpoint_url and settings.s3_bucket and settings.clamav_host  # noqa: S101
@@ -182,6 +185,7 @@ def create_app(
     v1.include_router(draft_router)
     v1.include_router(sources_router)
     v1.include_router(research_router)
+    v1.include_router(evidence_router)
     v1.include_router(agreement_router)
     app.include_router(v1)
     return app

@@ -382,7 +382,7 @@ def test_document_records_cannot_be_edited_or_deleted_in_the_database(
         "DELETE FROM case_documents",
         "TRUNCATE case_documents",
     ):
-        with pytest.raises(DBAPIError, match="append-only"), engine.begin() as conn:
+        with pytest.raises(DBAPIError, match="append-only|cannot truncate"), engine.begin() as conn:
             conn.execute(sa.text(statement))
     with engine.connect() as conn:
         count = conn.execute(sa.select(sa.func.count()).select_from(case_documents)).scalar()

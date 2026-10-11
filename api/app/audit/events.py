@@ -42,6 +42,9 @@ class Action(StrEnum):
     RESEARCH_PLANNED = "research.planned"
     RESEARCH_BLOCKED = "research.blocked"
     RESEARCH_STARTED = "research.started"
+    EVIDENCE_ADDED = "evidence.added"
+    CLAIM_ADDED = "claim.added"
+    CLAIM_LINKED = "claim.linked"
     SOURCE_UPDATED = "source.updated"
 
 

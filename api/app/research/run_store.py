@@ -157,3 +157,12 @@ class PostgresRunQueue:
         )
         with self._engine.connect() as conn:
             return [_call(r) for r in conn.execute(stmt).mappings().all()]
+
+    def get_call(self, call_id: uuid.UUID) -> CallRecord | None:
+        with self._engine.connect() as conn:
+            row = (
+                conn.execute(sa.select(connector_calls).where(connector_calls.c.id == call_id))
+                .mappings()
+                .first()
+            )
+        return _call(row) if row else None
