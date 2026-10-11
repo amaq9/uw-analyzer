@@ -17,12 +17,19 @@ class RetryableConnectorError(Exception):
 
 
 class PermanentConnectorError(Exception):
-    """A failure that retrying will not fix (bad request, refused access)."""
+    """A failure that retrying will not fix (bad request, refused access, no unique match).
+
+    `code` is a short machine-readable reason kept in the call log, e.g. no_unique_match."""
+
+    def __init__(self, code: str = "", message: str = "") -> None:
+        super().__init__(message or code)
+        self.code = code
 
 
 @dataclass(frozen=True)
 class ConnectorRequest:
     case_id: uuid.UUID
+    tenant_id: str
     category: Category
     source_key: str
     jurisdictions: list[str]

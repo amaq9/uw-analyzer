@@ -49,6 +49,7 @@ class Action(StrEnum):
     ESCALATION_RESOLVED = "escalation.resolved"
     REPORT_COMPLETED = "report.completed"
     REPORT_BLOCKED = "report.blocked"
+    SNAPSHOT_READ = "snapshot.read"
     SOURCE_UPDATED = "source.updated"
 
 

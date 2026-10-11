@@ -35,6 +35,7 @@ from app.reports.router import router as reports_router
 from app.reports.store import PostgresReportStore
 from app.research.router import router as research_router
 from app.research.run_store import PostgresRunQueue
+from app.research.snapshot_router import router as snapshot_router
 from app.research.store import PostgresResearchStore
 from app.sources.router import router as sources_router
 from app.sources.store import PostgresSourceStore
@@ -191,6 +192,7 @@ def create_app(
     v1.include_router(draft_router)
     v1.include_router(sources_router)
     v1.include_router(research_router)
+    v1.include_router(snapshot_router)
     v1.include_router(evidence_router)
     v1.include_router(escalations_router)
     v1.include_router(reports_router)

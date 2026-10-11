@@ -7808,6 +7808,95 @@
         ]
       }
     },
+    "/api/v1/cases/{case_id}/snapshots": {
+      "get": {
+        "description": "The stored source material for a provenance reference of this case.",
+        "operationId": "read_snapshot_api_v1_cases__case_id__snapshots_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "A provenance reference from a connector call",
+            "in": "query",
+            "name": "ref",
+            "required": true,
+            "schema": {
+              "description": "A provenance reference from a connector call",
+              "maxLength": 300,
+              "title": "Ref",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the token is invalid."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Signed in but not permitted."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found (or belongs to another tenant)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request was malformed."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Read Snapshot",
+        "tags": [
+          "research"
+        ]
+      }
+    },
     "/api/v1/me": {
       "get": {
         "description": "Who the caller is and what they may do. Informational; grants nothing.",
