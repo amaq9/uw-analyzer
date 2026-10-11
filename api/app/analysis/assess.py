@@ -52,6 +52,8 @@ def money(millions: float | None, currency: str = "USD") -> str:
     a = Decimal(str(abs(millions)))
     if a >= 1000:
         return f"{sign}{currency} {(a / 1000).quantize(Decimal('0.01'), ROUND_HALF_UP):,}bn"
+    if a < 10:
+        return f"{sign}{currency} {a.quantize(Decimal('0.01'), ROUND_HALF_UP)}m"
     return f"{sign}{currency} {a.quantize(Decimal('1'), ROUND_HALF_UP):,}m"
 
 
