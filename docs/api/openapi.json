@@ -212,6 +212,178 @@
         "title": "AgreementTotals",
         "type": "object"
       },
+      "AnalysisIn": {
+        "additionalProperties": false,
+        "properties": {
+          "run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          }
+        },
+        "title": "AnalysisIn",
+        "type": "object"
+      },
+      "AnalysisOut": {
+        "properties": {
+          "claims_created": {
+            "title": "Claims Created",
+            "type": "integer"
+          },
+          "consolidated_assessment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consolidated Assessment"
+          },
+          "consolidated_why": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consolidated Why"
+          },
+          "currency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency"
+          },
+          "draft": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DraftOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "evidence_created": {
+            "title": "Evidence Created",
+            "type": "integer"
+          },
+          "factors": {
+            "items": {
+              "$ref": "#/components/schemas/FactorOut"
+            },
+            "title": "Factors",
+            "type": "array"
+          },
+          "information_gaps": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Information Gaps",
+            "type": "array"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "notice": {
+            "default": "The analyzer applies written rules to the retrieved figures. Its draft is a recommendation for the underwriter, not a decision.",
+            "title": "Notice",
+            "type": "string"
+          },
+          "periods_reviewed": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Periods Reviewed",
+            "type": "array"
+          },
+          "proposed_amount": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Proposed Amount"
+          },
+          "requested_amount": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested Amount"
+          },
+          "review_item_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Item Id"
+          },
+          "sections": {
+            "items": {
+              "$ref": "#/components/schemas/SectionOut"
+            },
+            "title": "Sections",
+            "type": "array"
+          },
+          "status": {
+            "enum": [
+              "DRAFT_PREPARED",
+              "NEEDS_REVIEW"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "message",
+          "sections",
+          "consolidated_assessment",
+          "consolidated_why",
+          "periods_reviewed",
+          "requested_amount",
+          "proposed_amount",
+          "currency",
+          "factors",
+          "information_gaps",
+          "evidence_created",
+          "claims_created",
+          "draft",
+          "review_item_id"
+        ],
+        "title": "AnalysisOut",
+        "type": "object"
+      },
       "AuditEventOut": {
         "properties": {
           "action": {
@@ -2920,6 +3092,24 @@
         "title": "Factor",
         "type": "object"
       },
+      "FactorOut": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "explanation": {
+            "title": "Explanation",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "explanation"
+        ],
+        "title": "FactorOut",
+        "type": "object"
+      },
       "FieldError": {
         "properties": {
           "field": {
@@ -3770,6 +3960,47 @@
         "title": "RunStatus",
         "type": "string"
       },
+      "SectionOut": {
+        "properties": {
+          "assessment": {
+            "title": "Assessment",
+            "type": "string"
+          },
+          "flags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Flags",
+            "type": "array"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "trend": {
+            "title": "Trend",
+            "type": "string"
+          },
+          "why": {
+            "title": "Why",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "title",
+          "assessment",
+          "trend",
+          "why",
+          "flags"
+        ],
+        "title": "SectionOut",
+        "type": "object"
+      },
       "SourceClass": {
         "enum": [
           "OFFICIAL",
@@ -3863,7 +4094,10 @@
         "description": "Who produced the draft and with what, so the run can be reproduced (P-10).",
         "properties": {
           "kind": {
-            "const": "claude_code_session",
+            "enum": [
+              "claude_code_session",
+              "analyzer_v1"
+            ],
             "title": "Kind",
             "type": "string"
           },
@@ -4932,6 +5166,95 @@
         "summary": "Update Case",
         "tags": [
           "cases"
+        ]
+      }
+    },
+    "/api/v1/cases/{case_id}/analysis": {
+      "post": {
+        "description": "Analyse the case's latest finished research run and prepare a draft recommendation.",
+        "operationId": "run_analysis_api_v1_cases__case_id__analysis_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalysisIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the token is invalid."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Signed in but not permitted."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found (or belongs to another tenant)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request was malformed."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Run Analysis",
+        "tags": [
+          "analysis"
         ]
       }
     },

@@ -94,7 +94,7 @@ class SourceInfo(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    kind: Literal["claude_code_session"]
+    kind: Literal["claude_code_session", "analyzer_v1"]
     model: ShortText
     skill_version: Annotated[Text, StringConstraints(max_length=50)]
     policy_version: Annotated[Text, StringConstraints(max_length=20)]
