@@ -41,6 +41,7 @@ class Action(StrEnum):
     SOURCE_CREATED = "source.created"
     RESEARCH_PLANNED = "research.planned"
     RESEARCH_BLOCKED = "research.blocked"
+    RESEARCH_STARTED = "research.started"
     SOURCE_UPDATED = "source.updated"
 
 

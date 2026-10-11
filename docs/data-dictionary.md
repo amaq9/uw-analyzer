@@ -171,3 +171,19 @@ Restricted.
 | step `discovery_only` | Can find leads but cannot verify a material claim alone (P-06) |
 | step `reason` | Why a step is not available (no source, licence not held, unavailable, down) |
 | step `attempts`, `max_attempts`, `error_class` | Bounded retries (FR-2.5) |
+
+## `connector_calls` (FR-2.6; migration 0010)
+
+One row per executed connector attempt, written only by the executor and append-only (database triggers).
+This log, not any model output, is what shows a source was accessed. Restricted (case-linked).
+
+| Field | Meaning |
+|---|---|
+| `seq`, `id`, `tenant_id`, `case_id`, `run_id`, `step_id`, `source_id`, `source_key` | Order number, ID, ownership and the source reached |
+| `connector_version`, `attempt` | Which connector build, and which try (unique per step) |
+| `action` | Plain-language statement of what the call did |
+| `access_status` | The source's access category at call time |
+| `started_at`, `ended_at` | When it ran |
+| `outcome` | `SUCCESS`, `ERROR` or `TIMEOUT`; `SUCCESS` requires a provenance reference (database-checked) |
+| `error_class` | `retryable`, `permanent`, `timeout`, `no_provenance` |
+| `provenance_ref` | Where the returned material is kept |

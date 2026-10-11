@@ -28,6 +28,7 @@ from app.recommendation.decision_store import PostgresDecisionStore
 from app.recommendation.router import router as draft_router
 from app.recommendation.store import PostgresDraftStore
 from app.research.router import router as research_router
+from app.research.run_store import PostgresRunQueue
 from app.research.store import PostgresResearchStore
 from app.sources.router import router as sources_router
 from app.sources.store import PostgresSourceStore
@@ -94,6 +95,7 @@ def create_app(
     app.state.document_store = PostgresDocumentStore(engine)
     app.state.source_store = PostgresSourceStore(engine)
     app.state.research_store = PostgresResearchStore(engine)
+    app.state.run_queue = PostgresRunQueue(engine)
     if document_service is None and settings.documents_configured:
         assert settings.s3_access_key and settings.s3_secret_key  # noqa: S101
         assert settings.s3_endpoint_url and settings.s3_bucket and settings.clamav_host  # noqa: S101

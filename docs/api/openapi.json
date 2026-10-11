@@ -344,6 +344,93 @@
         "title": "Body_upload_document_api_v1_cases__case_id__documents_post",
         "type": "object"
       },
+      "CallOut": {
+        "description": "One executed connector call. This log, not any model output, is what shows a source was\naccessed (FR-2.6, FR-2.7).",
+        "properties": {
+          "access_status": {
+            "title": "Access Status",
+            "type": "string"
+          },
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "attempt": {
+            "title": "Attempt",
+            "type": "integer"
+          },
+          "connector_version": {
+            "title": "Connector Version",
+            "type": "string"
+          },
+          "ended_at": {
+            "format": "date-time",
+            "title": "Ended At",
+            "type": "string"
+          },
+          "error_class": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Class"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "outcome": {
+            "title": "Outcome",
+            "type": "string"
+          },
+          "provenance_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provenance Ref"
+          },
+          "source_key": {
+            "title": "Source Key",
+            "type": "string"
+          },
+          "started_at": {
+            "format": "date-time",
+            "title": "Started At",
+            "type": "string"
+          },
+          "step_id": {
+            "format": "uuid",
+            "title": "Step Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "step_id",
+          "source_key",
+          "connector_version",
+          "attempt",
+          "action",
+          "access_status",
+          "started_at",
+          "ended_at",
+          "outcome",
+          "error_class",
+          "provenance_ref"
+        ],
+        "title": "CallOut",
+        "type": "object"
+      },
       "CandidateCreate": {
         "additionalProperties": false,
         "description": "A plausible legal entity for the case. Only the legal name is required.",
@@ -2565,6 +2652,12 @@
       },
       "StepOut": {
         "properties": {
+          "accessed": {
+            "default": false,
+            "description": "True only if an executed connector call returned a provenance reference. This is not verification.",
+            "title": "Accessed",
+            "type": "boolean"
+          },
           "attempts": {
             "title": "Attempts",
             "type": "integer"
@@ -4714,6 +4807,188 @@
           }
         ],
         "summary": "Get Run",
+        "tags": [
+          "research"
+        ]
+      }
+    },
+    "/api/v1/cases/{case_id}/research-runs/{run_id}/connector-calls": {
+      "get": {
+        "description": "Every connector call this run made, in order. Read-only: nothing can add to this log\nexcept an executed call.",
+        "operationId": "list_connector_calls_api_v1_cases__case_id__research_runs__run_id__connector_calls_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CallOut"
+                  },
+                  "title": "Response List Connector Calls Api V1 Cases  Case Id  Research Runs  Run Id  Connector Calls Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the token is invalid."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Signed in but not permitted."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found (or belongs to another tenant)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request was malformed."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Connector Calls",
+        "tags": [
+          "research"
+        ]
+      }
+    },
+    "/api/v1/cases/{case_id}/research-runs/{run_id}/start": {
+      "post": {
+        "description": "Queue a planned run for the worker. A failed run can be queued again to resume: finished\nsteps are not repeated. The entity gate is checked again here (the entity may have been\nreopened since planning).",
+        "operationId": "start_run_api_v1_cases__case_id__research_runs__run_id__start_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the token is invalid."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Signed in but not permitted."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found (or belongs to another tenant)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request was malformed."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Start Run",
         "tags": [
           "research"
         ]
