@@ -1,11 +1,21 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
+import { SessionProvider } from "@/components/session-provider";
+
 import SkillsPage from "./page";
+
+function renderSkillsPage() {
+  return render(
+    <SessionProvider>
+      <SkillsPage />
+    </SessionProvider>,
+  );
+}
 
 describe("financial statement assessment skill", () => {
   it("shows the complete five-area method in its required order", () => {
-    render(<SkillsPage />);
+    renderSkillsPage();
 
     const headings = screen.getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent);
     expect(headings).toEqual([
@@ -18,7 +28,7 @@ describe("financial statement assessment skill", () => {
   });
 
   it("keeps execution disabled until the backend contract exists", () => {
-    render(<SkillsPage />);
+    renderSkillsPage();
 
     expect(screen.getByText(/backend connection required/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /run assessment/i })).toBeDisabled();
@@ -26,7 +36,7 @@ describe("financial statement assessment skill", () => {
   });
 
   it("makes decision and evidence boundaries explicit", () => {
-    render(<SkillsPage />);
+    renderSkillsPage();
 
     expect(screen.getByText(/no approval, decline, rating, or credit-limit output/i)).toBeInTheDocument();
     expect(screen.getByText(/missing figures remain not disclosed/i)).toBeInTheDocument();

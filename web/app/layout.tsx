@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
+import { SessionProvider } from "@/components/session-provider";
+import { TestProductLabel } from "@/components/test-product-label";
+
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -11,7 +14,12 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <SessionProvider>
+          <TestProductLabel />
+          {children}
+        </SessionProvider>
+      </body>
     </html>
   );
 }

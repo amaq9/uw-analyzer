@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { DevTokenSignIn } from "./dev-token-sign-in";
+import { SessionProvider } from "./session-provider";
 
 const originalBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -30,7 +31,12 @@ describe("development token sign-in", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    render(<DevTokenSignIn />);
+    const storageSpy = vi.spyOn(Storage.prototype, "setItem");
+    render(
+      <SessionProvider>
+        <DevTokenSignIn />
+      </SessionProvider>,
+    );
     fireEvent.change(screen.getByLabelText(/local development token/i), {
       target: { value: "test-token" },
     });
@@ -43,6 +49,11 @@ describe("development token sign-in", () => {
       expect.objectContaining({
         headers: expect.objectContaining({ Authorization: "Bearer test-token" }),
       }),
+    );
+    expect(storageSpy).not.toHaveBeenCalled();
+    expect(screen.getByRole("link", { name: /continue to workspace/i })).toHaveAttribute(
+      "href",
+      "/",
     );
   });
 
@@ -65,7 +76,11 @@ describe("development token sign-in", () => {
       ),
     );
 
-    render(<DevTokenSignIn />);
+    render(
+      <SessionProvider>
+        <DevTokenSignIn />
+      </SessionProvider>,
+    );
     fireEvent.change(screen.getByLabelText(/local development token/i), {
       target: { value: "secret-test-token" },
     });
