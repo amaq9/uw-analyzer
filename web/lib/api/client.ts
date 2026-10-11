@@ -61,15 +61,16 @@ function isErrorResponse(value: unknown): value is ErrorResponse {
 
 type RequestOptions = {
   body?: unknown;
+  form?: FormData;
   method?: "GET" | "PATCH" | "POST";
   signal?: AbortSignal;
 };
 
-async function requestJson<T>(
+async function request(
   path: string,
   token: string,
-  { body, method = "GET", signal }: RequestOptions = {},
-): Promise<T> {
+  { body, form, method = "GET", signal }: RequestOptions = {},
+): Promise<Response> {
   let response: Response;
   const headers: Record<string, string> = {
     Accept: "application/json",
@@ -80,7 +81,7 @@ async function requestJson<T>(
 
   try {
     response = await fetch(`${getApiBaseUrl()}${path}`, {
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: form ?? (body === undefined ? undefined : JSON.stringify(body)),
       headers,
       method,
       signal,
@@ -127,7 +128,38 @@ async function requestJson<T>(
     });
   }
 
+  return response;
+}
+
+async function requestJson<T>(path: string, token: string, options: RequestOptions = {}): Promise<T> {
+  const response = await request(path, token, options);
   return (await response.json()) as T;
+}
+
+/** Generic JSON call for the screens that read or write the case workspace. */
+export function api<T>(
+  token: string,
+  method: "GET" | "PATCH" | "POST",
+  path: string,
+  body?: unknown,
+  signal?: AbortSignal,
+) {
+  return requestJson<T>(path, token, { body, method, signal });
+}
+
+/** Upload a document. The server checks the type, size and virus status. */
+export function uploadDocument(token: string, caseId: string, form: FormData) {
+  return requestJson<components["schemas"]["DocumentOut"]>(
+    `/api/v1/cases/${encodeURIComponent(caseId)}/documents`,
+    token,
+    { form, method: "POST" },
+  );
+}
+
+/** Fetch a stored file (a document or a source snapshot) as a blob, with the sign-in token. */
+export async function fetchBlob(token: string, path: string) {
+  const response = await request(path, token);
+  return response.blob();
 }
 
 export function getCurrentUser(token: string, signal?: AbortSignal) {
