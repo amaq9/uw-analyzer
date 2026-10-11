@@ -3,6 +3,7 @@ proposed amount; the server applies the approved policy and derives the outcome 
 Every output is labelled as a draft for the underwriter and as a test product."""
 
 import uuid
+from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 
@@ -14,7 +15,10 @@ from app.auth.models import Permission, Principal
 from app.cases.access import load_case_for
 from app.cases.schemas import CaseStatus
 from app.documents.store import PostgresDocumentStore
-from app.recommendation.policy import Band, DeclineRule, PolicyInputError, derive
+from app.recommendation.decision_schemas import DecisionAction, DecisionIn, DecisionOut
+from app.recommendation.decision_schemas import to_out as decision_out
+from app.recommendation.decision_store import AlreadyDecidedError, PostgresDecisionStore
+from app.recommendation.policy import Band, DeclineRule, Outcome, PolicyInputError, derive
 from app.recommendation.schemas import DraftImport, DraftOut, DraftRecord, EvidenceRef, to_out
 from app.recommendation.store import PostgresDraftStore
 
@@ -165,3 +169,98 @@ def get_draft(
     principal: Principal = Depends(require_permission(Permission.CASE_READ)),  # noqa: B008
 ) -> DraftOut:
     return to_out(load_draft_for(request, principal, case_id, draft_id))
+
+
+def _decisions(request: Request) -> PostgresDecisionStore:
+    store: PostgresDecisionStore = request.app.state.decision_store
+    return store
+
+
+@router.post(
+    "/{case_id}/draft-recommendations/{draft_id}/decision",
+    response_model=DecisionOut,
+    status_code=status.HTTP_201_CREATED,
+)
+def record_decision(
+    request: Request,
+    case_id: uuid.UUID,
+    draft_id: uuid.UUID,
+    body: DecisionIn,
+    principal: Principal = Depends(require_permission(Permission.DECISION_RECORD)),  # noqa: B008
+) -> DecisionOut:
+    """The named underwriter adopts, changes or rejects the draft. This is the only place a
+    decision is recorded; the system never records one on anyone's behalf. One per draft."""
+    case = load_case_for(request, principal, case_id)
+    draft = load_draft_for(request, principal, case_id, draft_id)
+    newest = _drafts(request).list_for_case(case_id, principal.tenant_id)[0]
+    if newest.id != draft.id:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            "A newer draft exists for this case. Review the newest draft instead.",
+        )
+
+    outcome: Outcome | None
+    amount: Decimal | None
+    if body.action is DecisionAction.ADOPT:
+        outcome, amount = draft.outcome, draft.recommended_amount
+    elif body.action is DecisionAction.REJECT:
+        outcome, amount = None, None
+    else:
+        outcome, amount = body.final_outcome, body.final_amount
+        if (
+            outcome is Outcome.APPROVE
+            and amount is not None
+            and case.exposure_amount is not None
+            and amount > case.exposure_amount
+        ):
+            raise _unprocessable("The amount cannot be above the amount requested.")
+        if outcome is draft.outcome and amount == draft.recommended_amount:
+            raise _unprocessable("This matches the draft. Use adopt instead of change.")
+
+    try:
+        record = _decisions(request).add(
+            case_id=case_id,
+            draft_id=draft_id,
+            tenant_id=principal.tenant_id,
+            action=body.action,
+            final_outcome=outcome,
+            final_amount=amount,
+            currency=case.exposure_currency if amount is not None else None,
+            reason=body.reason,
+            agrees=body.action is DecisionAction.ADOPT,
+            decided_by=principal.subject,
+        )
+    except AlreadyDecidedError:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, "This draft already has a recorded decision."
+        ) from None
+    record_event(
+        request,
+        Action.DECISION_RECORDED,
+        AuditOutcome.SUCCESS,
+        tenant_id=principal.tenant_id,
+        actor=principal.subject,
+        resource_type="case",
+        resource_id=str(case_id),
+        # Ids and the kind of action only. Outcomes, amounts and reasons are Restricted.
+        details={
+            "decision_id": str(record.id),
+            "draft_id": str(draft_id),
+            "action": body.action.value,
+        },
+    )
+    return decision_out(record)
+
+
+@router.get("/{case_id}/draft-recommendations/{draft_id}/decision", response_model=DecisionOut)
+def get_decision(
+    request: Request,
+    case_id: uuid.UUID,
+    draft_id: uuid.UUID,
+    principal: Principal = Depends(require_permission(Permission.CASE_READ)),  # noqa: B008
+) -> DecisionOut:
+    load_draft_for(request, principal, case_id, draft_id)
+    record = _decisions(request).get_for_draft(draft_id)
+    if record is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "No decision has been recorded yet.")
+    return decision_out(record)

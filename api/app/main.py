@@ -23,6 +23,7 @@ from app.documents.storage import S3Storage
 from app.documents.store import PostgresDocumentStore
 from app.errors import ERROR_RESPONSES, register_error_handlers
 from app.middleware import correlation_id_middleware, make_upload_size_guard
+from app.recommendation.decision_store import PostgresDecisionStore
 from app.recommendation.router import router as draft_router
 from app.recommendation.store import PostgresDraftStore
 from app.sources.router import router as sources_router
@@ -86,6 +87,7 @@ def create_app(
     app.state.case_store = case_store or PostgresCaseStore(engine)
     app.state.entity_store = entity_store or PostgresEntityStore(engine)
     app.state.draft_store = PostgresDraftStore(engine)
+    app.state.decision_store = PostgresDecisionStore(engine)
     app.state.document_store = PostgresDocumentStore(engine)
     app.state.source_store = PostgresSourceStore(engine)
     if document_service is None and settings.documents_configured:

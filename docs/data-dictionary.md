@@ -137,3 +137,18 @@ credential column: secrets live in a secrets store and are never saved or return
 | `version`, `created_by`, `created_at`, `updated_at` | Optimistic concurrency and bookkeeping |
 
 Retention: TBD (legal).
+
+## `underwriter_decisions` (the human decision, ADR 0005 items 7 and 8; migration 0008)
+
+The only decision in the system. Written only by a named person holding `decision:record`; append-only
+(database triggers). One per draft, and only for the newest draft of a case. Restricted case content:
+reasons and amounts never go into audit events or logs.
+
+| Field | Meaning |
+|---|---|
+| `seq`, `id`, `case_id`, `draft_id`, `tenant_id` | Order number, ID, case, the draft decided on (unique), tenant |
+| `action` | `ADOPT` (keep the draft), `CHANGE` (different outcome or amount), `REJECT` (set aside, no outcome) |
+| `final_outcome`, `final_amount`, `currency` | The person's outcome and amount (empty for a reject; amount only when approving, never above the request) |
+| `reason` | Written reason, required for change and reject |
+| `agrees` | True only for adopt; feeds the agreement view |
+| `decided_by`, `decided_at` | Who and when |
