@@ -255,4 +255,6 @@ def test_money_helpers_show_currency_and_billions() -> None:
     assert rules.money(9027.0, "USD") == "USD 9.03bn"
     assert rules.money(-369.0, "USD") == "-USD 369m"
     assert rules.money(1085.0, "CAD") == "CAD 1.09bn"
+    assert rules.money(0.75, "CAD") == "CAD 0.75m"
+    assert rules.money(1.0, "CAD") == "CAD 1.00m"
     assert rules.money(None) == "not available"

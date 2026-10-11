@@ -85,7 +85,10 @@ def main() -> None:
         print(f"--- {role} in {tenant} ---\n{token}\n")
         lines += [f"{role.upper()} (tenant {tenant})", token, ""]
     # A plain file is far easier to copy from than a terminal window. It is git-ignored.
-    tokens_file = Path(__file__).resolve().parents[2] / "MY-LOGIN-TOKENS.txt"
+    tokens_file = Path(
+        os.environ.get("LOGIN_TOKENS_FILE")
+        or Path(__file__).resolve().parents[2] / "MY-LOGIN-TOKENS.txt"
+    )
     tokens_file.write_text("\n".join(lines), encoding="utf-8")
     print(f"The same codes were saved to {tokens_file}\nOpen it with Notepad to copy them.\n")
     print("Open http://127.0.0.1:8000/docs  ->  Authorize  ->  paste a token. Ctrl+C to stop.\n")

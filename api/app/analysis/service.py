@@ -660,8 +660,6 @@ def analyse(
     gaps.append("Court records and regulators other than the OFAC sanctions list were not searched")
     gaps.append("Receivables aging and allowance for credit losses were not available as figures")
     gaps.extend(fin.gaps)
-    for key, text in latest.derived.items():
-        gaps.append(f"Figure derived: {key} is {text}")
     for section in sections.values():
         if section.level is Level.NOT_ASSESSED:
             gaps.append(f"{section.title} could not be assessed: {section.why}")
