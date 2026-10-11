@@ -37,6 +37,10 @@ The run is `COMPLETED`, steps are in a finished state, and `connector-calls` lis
 4. Read what came back: `scripts/assisted.py run <case> <run>` lists steps and the call log;
    `scripts/assisted.py snapshot <case> <provenance_ref> <file>` saves the exact material.
 
+Also enabled: `ofac-sdn` (sanctions name screening), `world-bank` (country macro indicators) and `gdelt-news`
+(news leads, discovery-only; the index allows one request every 5 seconds and may refuse, in which case the
+step ends `FAILED` with `retryable`; run `start` again later to resume).
+
 What each connector does and does not do: SEC EDGAR covers U.S. SEC filers only (Nike yes; a private or
 non-U.S. company is not found and the step ends with `permanent:no_unique_match`). GLEIF covers any entity
 that has a Legal Entity Identifier. Neither covers adverse news, courts, sanctions or sector outlook.
