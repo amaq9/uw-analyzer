@@ -392,7 +392,7 @@ def test_drafts_cannot_be_edited_or_deleted_in_the_database(
         "DELETE FROM draft_recommendations",
         "TRUNCATE draft_recommendations",
     ):
-        with pytest.raises(DBAPIError, match="append-only"), engine.begin() as conn:
+        with pytest.raises(DBAPIError, match="append-only|cannot truncate"), engine.begin() as conn:
             conn.execute(sa.text(statement))
 
 

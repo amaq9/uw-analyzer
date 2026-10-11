@@ -156,6 +156,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cases/{case_id}/draft-recommendations/{draft_id}/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Decision */
+        get: operations["get_decision_api_v1_cases__case_id__draft_recommendations__draft_id__decision_get"];
+        put?: never;
+        /**
+         * Record Decision
+         * @description The named underwriter adopts, changes or rejects the draft. This is the only place a
+         *     decision is recorded; the system never records one on anyone's behalf. One per draft.
+         */
+        post: operations["record_decision_api_v1_cases__case_id__draft_recommendations__draft_id__decision_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/cases/{case_id}/entity-candidates": {
         parameters: {
             query?: never;
@@ -606,6 +628,69 @@ export interface components {
             ubo_name?: string | null;
             /** Website */
             website?: string | null;
+        };
+        /**
+         * DecisionAction
+         * @enum {string}
+         */
+        DecisionAction: "ADOPT" | "CHANGE" | "REJECT";
+        /** DecisionIn */
+        DecisionIn: {
+            action: components["schemas"]["DecisionAction"];
+            /**
+             * Final Amount
+             * @description Change to approve only
+             */
+            final_amount?: number | string | null;
+            /** @description Change only */
+            final_outcome?: components["schemas"]["Outcome"] | null;
+            /** Reason */
+            reason?: string | null;
+        };
+        /** DecisionOut */
+        DecisionOut: {
+            action: components["schemas"]["DecisionAction"];
+            /** Agrees */
+            agrees: boolean;
+            /**
+             * Case Id
+             * Format: uuid
+             */
+            case_id: string;
+            /** Currency */
+            currency: string | null;
+            /**
+             * Decided At
+             * Format: date-time
+             */
+            decided_at: string;
+            /** Decided By */
+            decided_by: string;
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Final Amount */
+            final_amount: string | null;
+            final_outcome: components["schemas"]["Outcome"] | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Notice
+             * @default Underwriter decision, recorded by a named person.
+             */
+            notice: string;
+            /** Reason */
+            reason: string | null;
+            /**
+             * Test Product
+             * @default true
+             */
+            test_product: boolean;
         };
         /**
          * DeclineFinding
@@ -1622,6 +1707,128 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DraftOut"];
+                };
+            };
+            /** @description Not signed in, or the token is invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in but not permitted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found (or belongs to another tenant). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request was malformed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_decision_api_v1_cases__case_id__draft_recommendations__draft_id__decision_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+                draft_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionOut"];
+                };
+            };
+            /** @description Not signed in, or the token is invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in but not permitted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found (or belongs to another tenant). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request was malformed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    record_decision_api_v1_cases__case_id__draft_recommendations__draft_id__decision_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+                draft_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecisionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecisionOut"];
                 };
             };
             /** @description Not signed in, or the token is invalid. */

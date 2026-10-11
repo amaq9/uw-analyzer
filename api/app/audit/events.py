@@ -34,6 +34,7 @@ class Action(StrEnum):
     ENTITY_REOPENED = "entity.reopened"
     ENTITY_UNCONFIRMED = "entity.unconfirmed"
     DRAFT_IMPORTED = "draft.imported"
+    DECISION_RECORDED = "decision.recorded"
     DOCUMENT_UPLOADED = "document.uploaded"
     DOCUMENT_REJECTED = "document.rejected"
     DOCUMENT_DOWNLOADED = "document.downloaded"
