@@ -40,6 +40,8 @@ from app.research.snapshot_router import router as snapshot_router
 from app.research.store import PostgresResearchStore
 from app.sources.router import router as sources_router
 from app.sources.store import PostgresSourceStore
+from app.statements.router import router as statements_router
+from app.statements.store import PostgresStatementStore
 
 
 class Health(BaseModel):
@@ -105,6 +107,7 @@ def create_app(
     app.state.research_store = PostgresResearchStore(engine)
     app.state.run_queue = PostgresRunQueue(engine)
     app.state.evidence_store = PostgresEvidenceStore(engine)
+    app.state.statement_store = PostgresStatementStore(engine)
     app.state.report_store = PostgresReportStore(engine)
     app.state.escalation_store = PostgresEscalationStore(engine)
     if document_service is None and settings.documents_configured:
@@ -198,6 +201,7 @@ def create_app(
     v1.include_router(escalations_router)
     v1.include_router(reports_router)
     v1.include_router(analysis_router)
+    v1.include_router(statements_router)
     v1.include_router(agreement_router)
     app.include_router(v1)
     return app

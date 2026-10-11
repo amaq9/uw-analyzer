@@ -235,3 +235,16 @@ Restricted case content.
 | `content_hash` | SHA-256 of the canonical content; recomputed on read |
 | `versions` | App, evidence rules, confidence rules, connector versions and run ids used (P-10) |
 | `created_by`, `created_at` | Who completed it and when |
+
+## `financial_statements` (uploaded statements confirmed by a person; migration 0014)
+
+Append-only. Restricted case content. A later confirmation for the same period supersedes the earlier one for analysis.
+
+| Field | Meaning |
+|---|---|
+| `id`, `case_id`, `tenant_id`, `document_id` | The case and the uploaded document the figures came from (required) |
+| `period_end` | The end of the period the figures are for |
+| `currency`, `unit` | Currency and unit (`units`, `thousands`, `millions`) the figures are stated in |
+| `audit_status` | `AUDITED`, `REVIEWED` or `UNAUDITED`, as declared by the person |
+| `figures` | Named figures (total assets, current liabilities, revenue, operating cash flow, ...); only figures the person confirmed |
+| `notes`, `confirmed_by`, `confirmed_at` | Optional note, who confirmed and when |

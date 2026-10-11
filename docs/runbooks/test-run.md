@@ -31,6 +31,15 @@ companies only (SEC filings).
 9. **Audit trail** (sidebar, sign in with the AUDITOR code): every action above is listed, with no case content.
 10. **Draft against decision** (sidebar): your decision appears next to the draft.
 
+## Test 1b: your own financial statements (private or any company)
+1. Create the case and choose the entity as in Test 1 (steps 1 and 2). Research is not needed.
+2. **Documents tab, upload** your financial statements (PDF with selectable text, Excel, CSV or Word), category *Financial statement*.
+3. Press **Read figures** next to the file. The product suggests figures next to the exact line label it found. Check each
+   against your document, correct or fill any, choose **unit** (units, thousands, millions), **currency** and whether the
+   statements are **audited**, then press **Confirm these figures**.
+4. **Draft recommendation tab, Analyse.** The analysis uses your confirmed figures (the currency must match the request).
+   Unaudited statements show as weaker evidence in the findings.
+
 ## Test 2: things that must refuse
 - Research before the entity is chosen: blocked with a plain reason.
 - Reject or change a draft without a reason: the button stays disabled.
