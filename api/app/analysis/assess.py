@@ -219,7 +219,7 @@ def _receivables(c: YearContext, p: YearContext | None, cur: str) -> Section:
     if prior_dso is not None:
         why += f" (was {prior_dso:.1f})"
     if gap is not None:
-        why += f"; receivables grew {pct(rec_growth)} against revenue growth of {pct(rev_growth)}"
+        why += f"; receivables changed by {pct(rec_growth)} against a revenue change of {pct(rev_growth)}"
     why += ". No aging schedule is disclosed."
     return Section("receivables", level, why, flags=flags)
 
