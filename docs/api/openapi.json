@@ -1289,6 +1289,233 @@
         "title": "Category",
         "type": "string"
       },
+      "ClaimCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "adverse": {
+            "default": false,
+            "title": "Adverse",
+            "type": "boolean"
+          },
+          "basis_claim_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Basis Claim Ids",
+            "type": "array"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "enum": [
+                  "ENTITY_REGISTRY",
+                  "FINANCIALS",
+                  "ADVERSE_SEARCH",
+                  "COUNTRY_INDUSTRY",
+                  "OTHER"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "classification": {
+            "$ref": "#/components/schemas/Classification"
+          },
+          "credit_relevance": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Credit Relevance"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/LinkIn"
+            },
+            "maxItems": 30,
+            "title": "Evidence",
+            "type": "array"
+          },
+          "material": {
+            "title": "Material",
+            "type": "boolean"
+          },
+          "text": {
+            "description": "The exact proposition",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          },
+          "unavailable_step_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "A research step that could not reach the source",
+            "title": "Unavailable Step Id"
+          }
+        },
+        "required": [
+          "text",
+          "classification",
+          "material"
+        ],
+        "title": "ClaimCreate",
+        "type": "object"
+      },
+      "ClaimOut": {
+        "properties": {
+          "adverse": {
+            "title": "Adverse",
+            "type": "boolean"
+          },
+          "basis_claim_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Basis Claim Ids",
+            "type": "array"
+          },
+          "case_id": {
+            "format": "uuid",
+            "title": "Case Id",
+            "type": "string"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "classification": {
+            "$ref": "#/components/schemas/Classification"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "title": "Created By",
+            "type": "string"
+          },
+          "credit_relevance": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Credit Relevance"
+          },
+          "freshness": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Freshness"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Freshness of the newest reliable supporting evidence, if any"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/LinkOut"
+            },
+            "title": "Links",
+            "type": "array"
+          },
+          "material": {
+            "title": "Material",
+            "type": "boolean"
+          },
+          "notice": {
+            "default": "Verification status is computed from the linked evidence by fixed rules; it cannot be set by a person or a model.",
+            "title": "Notice",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "unavailable_step_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unavailable Step Id"
+          },
+          "verification": {
+            "$ref": "#/components/schemas/Verification"
+          }
+        },
+        "required": [
+          "id",
+          "case_id",
+          "text",
+          "classification",
+          "material",
+          "adverse",
+          "credit_relevance",
+          "category",
+          "unavailable_step_id",
+          "basis_claim_ids",
+          "verification",
+          "freshness",
+          "links",
+          "created_by",
+          "created_at"
+        ],
+        "title": "ClaimOut",
+        "type": "object"
+      },
+      "Classification": {
+        "enum": [
+          "FACT",
+          "INTERPRETATION",
+          "INFERENCE",
+          "UNVERIFIED"
+        ],
+        "title": "Classification",
+        "type": "string"
+      },
       "DecisionAction": {
         "enum": [
           "ADOPT",
@@ -1861,6 +2088,346 @@
         "title": "ErrorResponse",
         "type": "object"
       },
+      "EvidenceCreate": {
+        "additionalProperties": false,
+        "description": "What a person or session may submit. For connector evidence the server derives the source,\nclass, provenance and discovery flag from the logged call; the author cannot set them.",
+        "properties": {
+          "connector_call_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Connector Call Id"
+          },
+          "content_hash": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Hash"
+          },
+          "document_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Id"
+          },
+          "event_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event On"
+          },
+          "evidence_type": {
+            "$ref": "#/components/schemas/EvidenceType"
+          },
+          "excerpt": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Excerpt",
+            "type": "string"
+          },
+          "is_primary": {
+            "default": false,
+            "description": "The originating record itself, not a report about it",
+            "title": "Is Primary",
+            "type": "boolean"
+          },
+          "kind": {
+            "enum": [
+              "DOCUMENT",
+              "CONNECTOR",
+              "WEB"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "origin": {
+            "description": "Who published it (organisation or domain). Different origins count as independent.",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Origin",
+            "type": "string"
+          },
+          "published_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published On"
+          },
+          "retrieved_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retrieved At"
+          },
+          "source_class": {
+            "anyOf": [
+              {
+                "enum": [
+                  "OFFICIAL",
+                  "COMMERCIAL",
+                  "SECONDARY",
+                  "WEAK"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Class"
+          },
+          "title": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "kind",
+          "evidence_type",
+          "title",
+          "origin",
+          "excerpt"
+        ],
+        "title": "EvidenceCreate",
+        "type": "object"
+      },
+      "EvidenceOut": {
+        "properties": {
+          "accessed_at": {
+            "format": "date-time",
+            "title": "Accessed At",
+            "type": "string"
+          },
+          "case_id": {
+            "format": "uuid",
+            "title": "Case Id",
+            "type": "string"
+          },
+          "connector_call_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Connector Call Id"
+          },
+          "content_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Hash"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "title": "Created By",
+            "type": "string"
+          },
+          "discovery_only": {
+            "title": "Discovery Only",
+            "type": "boolean"
+          },
+          "document_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Document Id"
+          },
+          "event_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event On"
+          },
+          "evidence_type": {
+            "$ref": "#/components/schemas/EvidenceType"
+          },
+          "excerpt": {
+            "title": "Excerpt",
+            "type": "string"
+          },
+          "freshness": {
+            "$ref": "#/components/schemas/Freshness"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_primary": {
+            "title": "Is Primary",
+            "type": "boolean"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "origin": {
+            "title": "Origin",
+            "type": "string"
+          },
+          "provenance_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provenance Ref"
+          },
+          "published_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published On"
+          },
+          "source_class": {
+            "title": "Source Class",
+            "type": "string"
+          },
+          "source_class_basis": {
+            "description": "registry, or author_declared",
+            "title": "Source Class Basis",
+            "type": "string"
+          },
+          "source_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Id"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "id",
+          "case_id",
+          "kind",
+          "evidence_type",
+          "source_class",
+          "source_class_basis",
+          "source_id",
+          "connector_call_id",
+          "document_id",
+          "title",
+          "origin",
+          "url",
+          "published_on",
+          "event_on",
+          "accessed_at",
+          "excerpt",
+          "provenance_ref",
+          "content_hash",
+          "is_primary",
+          "discovery_only",
+          "freshness",
+          "created_by",
+          "created_at"
+        ],
+        "title": "EvidenceOut",
+        "type": "object"
+      },
       "EvidenceRef": {
         "additionalProperties": false,
         "description": "Where a reason comes from. Documents must be real uploads of this case; web sources need a\nsecure address, the date it was read, and the quoted words.",
@@ -1935,6 +2502,18 @@
         "title": "EvidenceRef",
         "type": "object"
       },
+      "EvidenceType": {
+        "enum": [
+          "REGISTRY",
+          "FINANCIAL",
+          "LEGAL_REGULATORY",
+          "NEWS",
+          "MACRO_INDUSTRY",
+          "OTHER"
+        ],
+        "title": "EvidenceType",
+        "type": "string"
+      },
       "Factor": {
         "additionalProperties": false,
         "description": "Something that lowered the proposed amount, and how.",
@@ -1981,6 +2560,16 @@
         "title": "FieldError",
         "type": "object"
       },
+      "Freshness": {
+        "enum": [
+          "CURRENT",
+          "RECENT",
+          "STALE",
+          "HISTORICAL"
+        ],
+        "title": "Freshness",
+        "type": "string"
+      },
       "Health-Input": {
         "enum": [
           "UNKNOWN",
@@ -2007,6 +2596,72 @@
           "description"
         ],
         "title": "InformationGap",
+        "type": "object"
+      },
+      "LinkIn": {
+        "additionalProperties": false,
+        "properties": {
+          "evidence_id": {
+            "format": "uuid",
+            "title": "Evidence Id",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "relation": {
+            "$ref": "#/components/schemas/Relation"
+          }
+        },
+        "required": [
+          "evidence_id",
+          "relation"
+        ],
+        "title": "LinkIn",
+        "type": "object"
+      },
+      "LinkOut": {
+        "properties": {
+          "evidence": {
+            "$ref": "#/components/schemas/EvidenceOut"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "relation": {
+            "$ref": "#/components/schemas/Relation"
+          }
+        },
+        "required": [
+          "id",
+          "relation",
+          "notes",
+          "evidence"
+        ],
+        "title": "LinkOut",
         "type": "object"
       },
       "Me": {
@@ -2101,6 +2756,14 @@
         ],
         "title": "Reason",
         "type": "object"
+      },
+      "Relation": {
+        "enum": [
+          "SUPPORTS",
+          "CONTRADICTS"
+        ],
+        "title": "Relation",
+        "type": "string"
       },
       "ReopenRequest": {
         "additionalProperties": false,
@@ -2796,6 +3459,55 @@
         "title": "UnconfirmedRequest",
         "type": "object"
       },
+      "Verification": {
+        "properties": {
+          "conflict": {
+            "title": "Conflict",
+            "type": "boolean"
+          },
+          "needs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Needs",
+            "type": "array"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "rules_version": {
+            "title": "Rules Version",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/VerificationStatus"
+          }
+        },
+        "required": [
+          "status",
+          "reasons",
+          "needs",
+          "conflict",
+          "rules_version"
+        ],
+        "title": "Verification",
+        "type": "object"
+      },
+      "VerificationStatus": {
+        "enum": [
+          "VERIFIED",
+          "PARTIALLY_VERIFIED",
+          "UNVERIFIED",
+          "SOURCE_UNAVAILABLE",
+          "NOT_APPLICABLE"
+        ],
+        "title": "VerificationStatus",
+        "type": "string"
+      },
       "app__main__Health": {
         "properties": {
           "status": {
@@ -3338,6 +4050,362 @@
         "summary": "Update Case",
         "tags": [
           "cases"
+        ]
+      }
+    },
+    "/api/v1/cases/{case_id}/claims": {
+      "get": {
+        "operationId": "list_claims_api_v1_cases__case_id__claims_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ClaimOut"
+                  },
+                  "title": "Response List Claims Api V1 Cases  Case Id  Claims Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the token is invalid."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Signed in but not permitted."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found (or belongs to another tenant)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request was malformed."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Claims",
+        "tags": [
+          "evidence"
+        ]
+      },
+      "post": {
+        "description": "Record a claim with its evidence links. The response shows the verification status the\nserver computed; there is no way to send one.",
+        "operationId": "add_claim_api_v1_cases__case_id__claims_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClaimCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the token is invalid."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Signed in but not permitted."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found (or belongs to another tenant)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request was malformed."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Add Claim",
+        "tags": [
+          "evidence"
+        ]
+      }
+    },
+    "/api/v1/cases/{case_id}/claims/{claim_id}": {
+      "get": {
+        "operationId": "get_claim_api_v1_cases__case_id__claims__claim_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "claim_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Claim Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the token is invalid."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Signed in but not permitted."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found (or belongs to another tenant)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request was malformed."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Claim",
+        "tags": [
+          "evidence"
+        ]
+      }
+    },
+    "/api/v1/cases/{case_id}/claims/{claim_id}/evidence-links": {
+      "post": {
+        "description": "Add evidence to an existing claim. Links are never edited or removed.",
+        "operationId": "link_evidence_api_v1_cases__case_id__claims__claim_id__evidence_links_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "claim_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Claim Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the token is invalid."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Signed in but not permitted."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found (or belongs to another tenant)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request was malformed."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Link Evidence",
+        "tags": [
+          "evidence"
         ]
       }
     },
@@ -4473,6 +5541,263 @@
         "summary": "Record Entity Unconfirmed",
         "tags": [
           "entity-resolution"
+        ]
+      }
+    },
+    "/api/v1/cases/{case_id}/evidence": {
+      "get": {
+        "operationId": "list_evidence_api_v1_cases__case_id__evidence_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EvidenceOut"
+                  },
+                  "title": "Response List Evidence Api V1 Cases  Case Id  Evidence Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the token is invalid."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Signed in but not permitted."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found (or belongs to another tenant)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request was malformed."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Evidence",
+        "tags": [
+          "evidence"
+        ]
+      },
+      "post": {
+        "description": "Record a piece of evidence. Connector evidence must come from a logged successful call.",
+        "operationId": "add_evidence_api_v1_cases__case_id__evidence_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvidenceCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvidenceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the token is invalid."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Signed in but not permitted."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found (or belongs to another tenant)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request was malformed."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Add Evidence",
+        "tags": [
+          "evidence"
+        ]
+      }
+    },
+    "/api/v1/cases/{case_id}/evidence/{evidence_id}": {
+      "get": {
+        "operationId": "get_evidence_api_v1_cases__case_id__evidence__evidence_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "evidence_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Evidence Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvidenceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the token is invalid."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Signed in but not permitted."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found (or belongs to another tenant)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request was malformed."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Evidence",
+        "tags": [
+          "evidence"
         ]
       }
     },

@@ -177,3 +177,18 @@ class PostgresResearchStore:
         )
         with self._engine.connect() as conn:
             return [_step(r) for r in conn.execute(stmt).mappings().all()]
+
+    def get_step(self, step_id: uuid.UUID) -> StepRecord | None:
+        with self._engine.connect() as conn:
+            row = (
+                conn.execute(sa.select(research_steps).where(research_steps.c.id == step_id))
+                .mappings()
+                .first()
+            )
+        return _step(row) if row else None
+
+    def case_of_step(self, step_id: uuid.UUID) -> uuid.UUID | None:
+        with self._engine.connect() as conn:
+            return conn.execute(
+                sa.select(research_steps.c.case_id).where(research_steps.c.id == step_id)
+            ).scalar_one_or_none()

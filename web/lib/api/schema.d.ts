@@ -92,6 +92,65 @@ export interface paths {
         patch: operations["update_case_api_v1_cases__case_id__patch"];
         trace?: never;
     };
+    "/api/v1/cases/{case_id}/claims": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Claims */
+        get: operations["list_claims_api_v1_cases__case_id__claims_get"];
+        put?: never;
+        /**
+         * Add Claim
+         * @description Record a claim with its evidence links. The response shows the verification status the
+         *     server computed; there is no way to send one.
+         */
+        post: operations["add_claim_api_v1_cases__case_id__claims_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cases/{case_id}/claims/{claim_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Claim */
+        get: operations["get_claim_api_v1_cases__case_id__claims__claim_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cases/{case_id}/claims/{claim_id}/evidence-links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Link Evidence
+         * @description Add evidence to an existing claim. Links are never edited or removed.
+         */
+        post: operations["link_evidence_api_v1_cases__case_id__claims__claim_id__evidence_links_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/cases/{case_id}/documents": {
         parameters: {
             query?: never;
@@ -274,6 +333,44 @@ export interface paths {
          *     mandatory; it is kept in the append-only resolution log and the action is audited.
          */
         post: operations["record_entity_unconfirmed_api_v1_cases__case_id__entity_resolution_unconfirmed_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cases/{case_id}/evidence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Evidence */
+        get: operations["list_evidence_api_v1_cases__case_id__evidence_get"];
+        put?: never;
+        /**
+         * Add Evidence
+         * @description Record a piece of evidence. Connector evidence must come from a logged successful call.
+         */
+        post: operations["add_evidence_api_v1_cases__case_id__evidence_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cases/{case_id}/evidence/{evidence_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Evidence */
+        get: operations["get_evidence_api_v1_cases__case_id__evidence__evidence_id__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -851,6 +948,85 @@ export interface components {
          * @enum {string}
          */
         Category: "ENTITY_REGISTRY" | "FINANCIALS" | "ADVERSE_SEARCH" | "COUNTRY_INDUSTRY";
+        /** ClaimCreate */
+        ClaimCreate: {
+            /**
+             * Adverse
+             * @default false
+             */
+            adverse: boolean;
+            /** Basis Claim Ids */
+            basis_claim_ids?: string[];
+            /** Category */
+            category?: ("ENTITY_REGISTRY" | "FINANCIALS" | "ADVERSE_SEARCH" | "COUNTRY_INDUSTRY" | "OTHER") | null;
+            classification: components["schemas"]["Classification"];
+            /** Credit Relevance */
+            credit_relevance?: string | null;
+            /** Evidence */
+            evidence?: components["schemas"]["LinkIn"][];
+            /** Material */
+            material: boolean;
+            /**
+             * Text
+             * @description The exact proposition
+             */
+            text: string;
+            /**
+             * Unavailable Step Id
+             * @description A research step that could not reach the source
+             */
+            unavailable_step_id?: string | null;
+        };
+        /** ClaimOut */
+        ClaimOut: {
+            /** Adverse */
+            adverse: boolean;
+            /** Basis Claim Ids */
+            basis_claim_ids: string[];
+            /**
+             * Case Id
+             * Format: uuid
+             */
+            case_id: string;
+            /** Category */
+            category: string | null;
+            classification: components["schemas"]["Classification"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By */
+            created_by: string;
+            /** Credit Relevance */
+            credit_relevance: string | null;
+            /** @description Freshness of the newest reliable supporting evidence, if any */
+            freshness: components["schemas"]["Freshness"] | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Links */
+            links: components["schemas"]["LinkOut"][];
+            /** Material */
+            material: boolean;
+            /**
+             * Notice
+             * @default Verification status is computed from the linked evidence by fixed rules; it cannot be set by a person or a model.
+             */
+            notice: string;
+            /** Text */
+            text: string;
+            /** Unavailable Step Id */
+            unavailable_step_id: string | null;
+            verification: components["schemas"]["Verification"];
+        };
+        /**
+         * Classification
+         * @enum {string}
+         */
+        Classification: "FACT" | "INTERPRETATION" | "INFERENCE" | "UNVERIFIED";
         /**
          * DecisionAction
          * @enum {string}
@@ -1066,6 +1242,112 @@ export interface components {
             error: components["schemas"]["ErrorBody"];
         };
         /**
+         * EvidenceCreate
+         * @description What a person or session may submit. For connector evidence the server derives the source,
+         *     class, provenance and discovery flag from the logged call; the author cannot set them.
+         */
+        EvidenceCreate: {
+            /** Connector Call Id */
+            connector_call_id?: string | null;
+            /** Content Hash */
+            content_hash?: string | null;
+            /** Document Id */
+            document_id?: string | null;
+            /** Event On */
+            event_on?: string | null;
+            evidence_type: components["schemas"]["EvidenceType"];
+            /** Excerpt */
+            excerpt: string;
+            /**
+             * Is Primary
+             * @description The originating record itself, not a report about it
+             * @default false
+             */
+            is_primary: boolean;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "DOCUMENT" | "CONNECTOR" | "WEB";
+            /**
+             * Origin
+             * @description Who published it (organisation or domain). Different origins count as independent.
+             */
+            origin: string;
+            /** Published On */
+            published_on?: string | null;
+            /** Retrieved At */
+            retrieved_at?: string | null;
+            /** Source Class */
+            source_class?: ("OFFICIAL" | "COMMERCIAL" | "SECONDARY" | "WEAK") | null;
+            /** Title */
+            title: string;
+            /** Url */
+            url?: string | null;
+        };
+        /** EvidenceOut */
+        EvidenceOut: {
+            /**
+             * Accessed At
+             * Format: date-time
+             */
+            accessed_at: string;
+            /**
+             * Case Id
+             * Format: uuid
+             */
+            case_id: string;
+            /** Connector Call Id */
+            connector_call_id: string | null;
+            /** Content Hash */
+            content_hash: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By */
+            created_by: string;
+            /** Discovery Only */
+            discovery_only: boolean;
+            /** Document Id */
+            document_id: string | null;
+            /** Event On */
+            event_on: string | null;
+            evidence_type: components["schemas"]["EvidenceType"];
+            /** Excerpt */
+            excerpt: string;
+            freshness: components["schemas"]["Freshness"];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Primary */
+            is_primary: boolean;
+            /** Kind */
+            kind: string;
+            /** Origin */
+            origin: string;
+            /** Provenance Ref */
+            provenance_ref: string | null;
+            /** Published On */
+            published_on: string | null;
+            /** Source Class */
+            source_class: string;
+            /**
+             * Source Class Basis
+             * @description registry, or author_declared
+             */
+            source_class_basis: string;
+            /** Source Id */
+            source_id: string | null;
+            /** Title */
+            title: string;
+            /** Url */
+            url: string | null;
+        };
+        /**
          * EvidenceRef
          * @description Where a reason comes from. Documents must be real uploads of this case; web sources need a
          *     secure address, the date it was read, and the quoted words.
@@ -1088,6 +1370,11 @@ export interface components {
             url?: string | null;
         };
         /**
+         * EvidenceType
+         * @enum {string}
+         */
+        EvidenceType: "REGISTRY" | "FINANCIAL" | "LEGAL_REGULATORY" | "NEWS" | "MACRO_INDUSTRY" | "OTHER";
+        /**
          * Factor
          * @description Something that lowered the proposed amount, and how.
          */
@@ -1108,6 +1395,11 @@ export interface components {
             message: string;
         };
         /**
+         * Freshness
+         * @enum {string}
+         */
+        Freshness: "CURRENT" | "RECENT" | "STALE" | "HISTORICAL";
+        /**
          * Health
          * @enum {string}
          */
@@ -1118,6 +1410,29 @@ export interface components {
             description: string;
             /** Field */
             field: string;
+        };
+        /** LinkIn */
+        LinkIn: {
+            /**
+             * Evidence Id
+             * Format: uuid
+             */
+            evidence_id: string;
+            /** Notes */
+            notes?: string | null;
+            relation: components["schemas"]["Relation"];
+        };
+        /** LinkOut */
+        LinkOut: {
+            evidence: components["schemas"]["EvidenceOut"];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Notes */
+            notes: string | null;
+            relation: components["schemas"]["Relation"];
         };
         /** Me */
         Me: {
@@ -1150,6 +1465,11 @@ export interface components {
             /** Text */
             text: string;
         };
+        /**
+         * Relation
+         * @enum {string}
+         */
+        Relation: "SUPPORTS" | "CONTRADICTS";
         /**
          * ReopenRequest
          * @description Reopening a resolved entity is an override, so a reason is mandatory.
@@ -1393,6 +1713,23 @@ export interface components {
             /** Reason */
             reason: string;
         };
+        /** Verification */
+        Verification: {
+            /** Conflict */
+            conflict: boolean;
+            /** Needs */
+            needs: string[];
+            /** Reasons */
+            reasons: string[];
+            /** Rules Version */
+            rules_version: string;
+            status: components["schemas"]["VerificationStatus"];
+        };
+        /**
+         * VerificationStatus
+         * @enum {string}
+         */
+        VerificationStatus: "VERIFIED" | "PARTIALLY_VERIFIED" | "UNVERIFIED" | "SOURCE_UNAVAILABLE" | "NOT_APPLICABLE";
         /** Health */
         app__main__Health: {
             /** Status */
@@ -1729,6 +2066,248 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CaseOut"];
+                };
+            };
+            /** @description Not signed in, or the token is invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in but not permitted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found (or belongs to another tenant). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request was malformed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_claims_api_v1_cases__case_id__claims_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimOut"][];
+                };
+            };
+            /** @description Not signed in, or the token is invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in but not permitted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found (or belongs to another tenant). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request was malformed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    add_claim_api_v1_cases__case_id__claims_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimOut"];
+                };
+            };
+            /** @description Not signed in, or the token is invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in but not permitted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found (or belongs to another tenant). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request was malformed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_claim_api_v1_cases__case_id__claims__claim_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+                claim_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimOut"];
+                };
+            };
+            /** @description Not signed in, or the token is invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in but not permitted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found (or belongs to another tenant). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request was malformed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    link_evidence_api_v1_cases__case_id__claims__claim_id__evidence_links_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+                claim_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimOut"];
                 };
             };
             /** @description Not signed in, or the token is invalid. */
@@ -2515,6 +3094,185 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CaseOut"];
+                };
+            };
+            /** @description Not signed in, or the token is invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in but not permitted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found (or belongs to another tenant). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request was malformed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_evidence_api_v1_cases__case_id__evidence_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvidenceOut"][];
+                };
+            };
+            /** @description Not signed in, or the token is invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in but not permitted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found (or belongs to another tenant). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request was malformed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    add_evidence_api_v1_cases__case_id__evidence_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EvidenceCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvidenceOut"];
+                };
+            };
+            /** @description Not signed in, or the token is invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in but not permitted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found (or belongs to another tenant). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request was malformed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_evidence_api_v1_cases__case_id__evidence__evidence_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+                evidence_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvidenceOut"];
                 };
             };
             /** @description Not signed in, or the token is invalid. */

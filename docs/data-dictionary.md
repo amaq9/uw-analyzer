@@ -187,3 +187,23 @@ This log, not any model output, is what shows a source was accessed. Restricted 
 | `outcome` | `SUCCESS`, `ERROR` or `TIMEOUT`; `SUCCESS` requires a provenance reference (database-checked) |
 | `error_class` | `retryable`, `permanent`, `timeout`, `no_provenance` |
 | `provenance_ref` | Where the returned material is kept |
+
+## `evidence`, `claims`, `claim_basis`, `claim_evidence` (Phase 3; migration 0011)
+
+All four are append-only (database triggers). Restricted case content. There is **no verification
+column**: the status is computed from the links on every read (ADR 0012).
+
+| Table / field | Meaning |
+|---|---|
+| evidence `kind` | `DOCUMENT` (an upload of this case), `CONNECTOR` (a logged successful call), `WEB` (https address and read time) |
+| evidence `evidence_type` | `REGISTRY`, `FINANCIAL`, `LEGAL_REGULATORY`, `NEWS`, `MACRO_INDUSTRY`, `OTHER` (sets freshness thresholds) |
+| evidence `source_class`, `class_basis` | `OFFICIAL`, `COMMERCIAL`, `SECONDARY`, `WEAK`; basis `registry` (connector evidence) or `author_declared` |
+| evidence `origin` | Publisher; different origins count as independent |
+| evidence `is_primary`, `discovery_only` | The originating record itself; can find leads but not verify alone |
+| evidence `accessed_at`, `provenance_ref`, `content_hash` | When and where it was read; hash where known |
+| evidence `published_on`, `event_on` | Dates kept for freshness |
+| claim `text`, `classification` | Exact proposition; `FACT`, `INTERPRETATION`, `INFERENCE`, `UNVERIFIED` |
+| claim `material`, `adverse`, `credit_relevance`, `category` | Materiality and relevance |
+| claim `unavailable_step_id` | A real unavailable, failed or skipped research step (for `SOURCE_UNAVAILABLE`) |
+| claim_basis | The facts an interpretation or inference rests on |
+| claim_evidence `relation`, `notes` | `SUPPORTS` or `CONTRADICTS`; reviewer notes |
