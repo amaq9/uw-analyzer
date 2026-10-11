@@ -104,27 +104,35 @@ export function CaseList() {
                 <th scope="col">Status</th>
                 <th scope="col">Information gaps</th>
                 <th scope="col">Updated</th>
-                {canWrite && <th scope="col"><span className="visually-hidden">Actions</span></th>}
+                <th scope="col"><span className="visually-hidden">Actions</span></th>
               </tr>
             </thead>
             <tbody>
               {records.map((record) => (
                 <tr key={record.id}>
                   <td>
-                    <strong>{caseName(record)}</strong>
+                    <Link className="table-action" href={`/cases/${record.id}`}>
+                      <strong>{caseName(record)}</strong>
+                    </Link>
                     {record.legal_name && record.trading_name && <span>{record.trading_name}</span>}
                   </td>
                   <td>{record.jurisdiction || "Not provided"}</td>
                   <td className="case-status">{readableStatus(record.status)}</td>
                   <td>{record.information_gaps.length}</td>
                   <td>{new Date(record.updated_at).toLocaleString()}</td>
-                  {canWrite && (
-                    <td>
-                      <Link className="table-action" href={`/cases/${record.id}/edit`}>
-                        Edit
-                      </Link>
-                    </td>
-                  )}
+                  <td>
+                    <Link className="table-action" href={`/cases/${record.id}`}>
+                      Open
+                    </Link>
+                    {canWrite && (
+                      <>
+                        {" · "}
+                        <Link className="table-action" href={`/cases/${record.id}/edit`}>
+                          Edit
+                        </Link>
+                      </>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

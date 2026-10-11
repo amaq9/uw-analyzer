@@ -2563,3 +2563,307 @@ textarea {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Case workspace screens (research, evidence, review, recommendation, report). */
+.ws {
+  display: grid;
+  gap: 18px;
+  max-width: 1180px;
+}
+
+.ws-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.ws-header h1 {
+  margin: 4px 0;
+  font-family: var(--font-serif);
+  font-size: 34px;
+}
+
+.ws-stack {
+  display: grid;
+  gap: 16px;
+}
+
+.ws-card {
+  padding: 20px 24px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+  box-shadow: var(--shadow);
+}
+
+.ws-card h2,
+.ws-card h3,
+.ws-card h4 {
+  margin: 0 0 8px;
+}
+
+.ws-card h2 {
+  font-family: var(--font-serif);
+  font-size: 24px;
+}
+
+.ws-card p {
+  line-height: 1.5;
+}
+
+.ws-muted {
+  display: block;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.ws-note {
+  margin: 8px 0;
+  padding: 10px 14px;
+  border-left: 3px solid var(--warning);
+  background: #f8f1e4;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.ws-error {
+  margin: 8px 0 0;
+  padding: 10px 14px;
+  border-left: 3px solid #a23b3b;
+  background: #f8e9e9;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.ws-error small {
+  display: block;
+  color: var(--ink-soft);
+}
+
+.ws-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 8px;
+}
+
+.ws-tab {
+  padding: 8px 14px;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--white);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.ws-tab.active {
+  color: var(--white);
+  border-color: var(--navy);
+  background: var(--navy);
+}
+
+.ws-button {
+  padding: 8px 14px;
+  color: var(--ink);
+  border: 1px solid var(--navy);
+  border-radius: 6px;
+  background: var(--white);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ws-button.primary {
+  color: var(--white);
+  background: var(--teal);
+  border-color: var(--teal);
+}
+
+.ws-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ws-link {
+  padding: 0;
+  color: var(--teal);
+  border: 0;
+  background: none;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.ws-form {
+  display: grid;
+  gap: 12px;
+  max-width: 640px;
+}
+
+.ws-field {
+  display: grid;
+  gap: 4px;
+  font-size: 14px;
+}
+
+.ws-field input,
+.ws-field select,
+.ws-field textarea {
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--white);
+  font: inherit;
+}
+
+.ws-radios {
+  display: grid;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+
+.ws-radios label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ws-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.ws-list {
+  display: grid;
+  gap: 12px;
+  margin: 8px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ws-bullets {
+  margin: 6px 0;
+  padding-left: 20px;
+  line-height: 1.5;
+}
+
+.ws-steps {
+  padding-left: 20px;
+  line-height: 1.7;
+}
+
+.ws-checks {
+  display: grid;
+  gap: 6px;
+  margin: 8px 0 14px;
+  padding: 0;
+  list-style: none;
+}
+
+.ws-pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 6px 0;
+}
+
+.ws-pill {
+  display: inline-block;
+  padding: 3px 10px;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--mint);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.ws-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: 24px;
+}
+
+.ws-claim-text {
+  font-family: var(--font-serif);
+  font-size: 18px;
+}
+
+.ws-quote {
+  margin: 6px 0;
+  padding: 6px 12px;
+  border-left: 3px solid var(--line);
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.ws-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px 24px;
+  margin: 0;
+}
+
+.ws-facts dt {
+  color: var(--ink-soft);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ws-facts dd {
+  margin: 2px 0 0;
+  font-weight: 600;
+}
+
+.ws-table-wrap {
+  overflow-x: auto;
+}
+
+.ws-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.ws-table th,
+.ws-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.ws-table th {
+  color: var(--ink-soft);
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.ws-pre {
+  max-height: 360px;
+  overflow: auto;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--white);
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.ws-decision {
+  border-color: var(--navy);
+}
+
+@media (max-width: 800px) {
+  .ws-split {
+    grid-template-columns: 1fr;
+  }
+}
