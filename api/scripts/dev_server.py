@@ -72,11 +72,22 @@ def main() -> None:
             print("Document storage is not running: uploads will answer 503 until it is.")
     idp: StubIdentityProvider = app.state.stub_idp
     print("\nTEST TOKENS (valid 8 hours; they stop working when you stop this server)\n")
+    lines = [
+        "LOCAL TEST LOGIN CODES (valid 8 hours; they stop working when the server is stopped).",
+        "Copy the long code under the role you need and paste it into the sign-in box.",
+        "For the normal test, use the UNDERWRITER code.",
+        "",
+    ]
     for role, tenant in PEOPLE:
         token = idp.issue(
             subject=f"{role}-demo", tenant_id=tenant, roles=[role], ttl_seconds=EIGHT_HOURS
         )
         print(f"--- {role} in {tenant} ---\n{token}\n")
+        lines += [f"{role.upper()} (tenant {tenant})", token, ""]
+    # A plain file is far easier to copy from than a terminal window. It is git-ignored.
+    tokens_file = Path(__file__).resolve().parents[2] / "MY-LOGIN-TOKENS.txt"
+    tokens_file.write_text("\n".join(lines), encoding="utf-8")
+    print(f"The same codes were saved to {tokens_file}\nOpen it with Notepad to copy them.\n")
     print("Open http://127.0.0.1:8000/docs  ->  Authorize  ->  paste a token. Ctrl+C to stop.\n")
     uvicorn.run(
         app, host="127.0.0.1", port=int(os.environ.get("API_PORT", "8000")), log_level="warning"
