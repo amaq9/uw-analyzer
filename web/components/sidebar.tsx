@@ -15,7 +15,7 @@ import {
 const workspaceLinks = [
   { id: "overview", label: "Overview", icon: OverviewIcon, href: "/" },
   { id: "skills", label: "Skills", icon: SkillsIcon, href: "/skills", badge: "1" },
-  { label: "Cases", icon: CasesIcon },
+  { id: "cases", label: "Cases", icon: CasesIcon, href: "/cases" },
   { label: "Research queue", icon: ResearchIcon },
   { label: "Evidence", icon: EvidenceIcon },
   { label: "Reports", icon: ReportsIcon },
@@ -27,7 +27,7 @@ const governanceLinks = [
 ];
 
 type SidebarProps = {
-  activePage?: "overview" | "skills";
+  activePage?: "cases" | "overview" | "skills";
 };
 
 export function Sidebar({ activePage = "overview" }: SidebarProps) {

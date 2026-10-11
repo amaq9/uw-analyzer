@@ -2,23 +2,30 @@ import { ApiConfigurationError, getApiBaseUrl } from "@/lib/api/config";
 import type { components } from "@/lib/api/schema";
 
 export type CurrentUser = components["schemas"]["Me"];
+export type CaseCreate = components["schemas"]["CaseCreate"];
+export type CaseRecord = components["schemas"]["CaseOut"];
+export type CaseUpdate = components["schemas"]["CaseUpdate"];
 export type DraftRecommendation = components["schemas"]["DraftOut"];
+export type FieldError = components["schemas"]["FieldError"];
 type ErrorResponse = components["schemas"]["ErrorResponse"];
 
 export class ApiRequestError extends Error {
   readonly code: string;
+  readonly fieldErrors: FieldError[];
   readonly requestId?: string;
   readonly retryable: boolean;
   readonly status: number;
 
   constructor({
     code,
+    fieldErrors = [],
     message,
     requestId,
     retryable,
     status,
   }: {
     code: string;
+    fieldErrors?: FieldError[];
     message: string;
     requestId?: string;
     retryable: boolean;
@@ -27,6 +34,7 @@ export class ApiRequestError extends Error {
     super(message);
     this.name = "ApiRequestError";
     this.code = code;
+    this.fieldErrors = fieldErrors;
     this.requestId = requestId;
     this.retryable = retryable;
     this.status = status;
@@ -51,16 +59,30 @@ function isErrorResponse(value: unknown): value is ErrorResponse {
   );
 }
 
-async function requestJson<T>(path: string, token: string, signal?: AbortSignal): Promise<T> {
+type RequestOptions = {
+  body?: unknown;
+  method?: "GET" | "PATCH" | "POST";
+  signal?: AbortSignal;
+};
+
+async function requestJson<T>(
+  path: string,
+  token: string,
+  { body, method = "GET", signal }: RequestOptions = {},
+): Promise<T> {
   let response: Response;
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+    Authorization: `Bearer ${token}`,
+  };
+
+  if (body !== undefined) headers["Content-Type"] = "application/json";
 
   try {
     response = await fetch(`${getApiBaseUrl()}${path}`, {
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      method: "GET",
+      body: body === undefined ? undefined : JSON.stringify(body),
+      headers,
+      method,
       signal,
     });
   } catch (error) {
@@ -88,6 +110,7 @@ async function requestJson<T>(path: string, token: string, signal?: AbortSignal)
     if (isErrorResponse(body)) {
       throw new ApiRequestError({
         code: body.error.code,
+        fieldErrors: body.error.field_errors ?? [],
         message: body.error.message,
         requestId: requestId ?? body.error.correlation_id,
         retryable: body.error.retryable,
@@ -108,7 +131,37 @@ async function requestJson<T>(path: string, token: string, signal?: AbortSignal)
 }
 
 export function getCurrentUser(token: string, signal?: AbortSignal) {
-  return requestJson<CurrentUser>("/api/v1/me", token, signal);
+  return requestJson<CurrentUser>("/api/v1/me", token, { signal });
+}
+
+export function listCases(token: string, limit: number, offset: number, signal?: AbortSignal) {
+  const query = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+  return requestJson<CaseRecord[]>(`/api/v1/cases?${query}`, token, { signal });
+}
+
+export function getCase(token: string, caseId: string, signal?: AbortSignal) {
+  return requestJson<CaseRecord>(`/api/v1/cases/${encodeURIComponent(caseId)}`, token, { signal });
+}
+
+export function createCase(token: string, input: CaseCreate, signal?: AbortSignal) {
+  return requestJson<CaseRecord>("/api/v1/cases", token, {
+    body: input,
+    method: "POST",
+    signal,
+  });
+}
+
+export function updateCase(
+  token: string,
+  caseId: string,
+  input: CaseUpdate,
+  signal?: AbortSignal,
+) {
+  return requestJson<CaseRecord>(`/api/v1/cases/${encodeURIComponent(caseId)}`, token, {
+    body: input,
+    method: "PATCH",
+    signal,
+  });
 }
 
 export function getDraftRecommendation(
@@ -120,6 +173,6 @@ export function getDraftRecommendation(
   return requestJson<DraftRecommendation>(
     `/api/v1/cases/${encodeURIComponent(caseId)}/draft-recommendations/${encodeURIComponent(draftId)}`,
     token,
-    signal,
+    { signal },
   );
 }
