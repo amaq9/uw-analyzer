@@ -33,3 +33,4 @@
    (ADR 0004 point 6). The Product Owner confirms the wording; changing it is a copy change.
 8. **No decision content.** A report has no recommendation, outcome or amount. The draft recommendation
    (ADR 0005) is separate and unchanged. The P-09 contract test covers the new schemas.
+9. **Financial period reviewed is always stated.** The report lists every FINANCIAL evidence item with the period or date the figures are for (`event_on`), the publication date, the access time and how its source class was set; with none, it says "No financial statements were reviewed." (Product Owner feedback, 2026-10-11.)

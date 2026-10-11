@@ -3,7 +3,7 @@ claims, research runs and escalations said at one moment. It never contains a re
 score or a decision: those live elsewhere (ADR 0004, 0005)."""
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from enum import StrEnum
 from typing import Annotated, Any
 
@@ -59,6 +59,20 @@ class EscalationRow(BaseModel):
     resolution_outcome: str | None
 
 
+class FinancialsRow(BaseModel):
+    """A set of financial statements the analysis rests on, with the period they cover."""
+
+    evidence_id: uuid.UUID
+    title: str
+    origin: str
+    period_end: date | None = Field(description="The period or date the figures are for")
+    published_on: date | None = Field(description="When the filing or document was published")
+    accessed_at: datetime
+    kind: str
+    source_class: str
+    source_class_basis: str
+
+
 class Counts(BaseModel):
     connector_sources_accessed: int
     documents_reviewed: int
@@ -82,6 +96,7 @@ class ReportContent(BaseModel):
     as_of: datetime
     notice: str = NOTICE
     test_product: bool = True
+    financials_reviewed: list[FinancialsRow]
     verification_log: list[SourceRow]
     material_findings: list[ClaimRow]
     unverified_claims: list[ClaimRow]
