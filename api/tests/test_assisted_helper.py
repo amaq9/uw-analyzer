@@ -25,6 +25,10 @@ def test_read_and_submit_through_the_helper(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
+    # The helper fills in missing settings; register each with monkeypatch so none leak into
+    # other tests (config tests rely on a clean environment).
+    for key, value in assisted.DEFAULTS.items():
+        monkeypatch.setenv(key, value)
     monkeypatch.setenv("DATABASE_URL", database_url)
     monkeypatch.setenv("ASSISTED_TENANT", tenant)
     case_id = resolved_case(client, db_app, tenant)
