@@ -339,6 +339,49 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cases/{case_id}/research-runs/{run_id}/connector-calls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Connector Calls
+         * @description Every connector call this run made, in order. Read-only: nothing can add to this log
+         *     except an executed call.
+         */
+        get: operations["list_connector_calls_api_v1_cases__case_id__research_runs__run_id__connector_calls_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cases/{case_id}/research-runs/{run_id}/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Run
+         * @description Queue a planned run for the worker. A failed run can be queued again to resume: finished
+         *     steps are not repeated. The entity gate is checked again here (the entity may have been
+         *     reopened since planning).
+         */
+        post: operations["start_run_api_v1_cases__case_id__research_runs__run_id__start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/me": {
         parameters: {
             query?: never;
@@ -554,6 +597,49 @@ export interface components {
             category: components["schemas"]["DocumentCategory"];
             /** File */
             file: string;
+        };
+        /**
+         * CallOut
+         * @description One executed connector call. This log, not any model output, is what shows a source was
+         *     accessed (FR-2.6, FR-2.7).
+         */
+        CallOut: {
+            /** Access Status */
+            access_status: string;
+            /** Action */
+            action: string;
+            /** Attempt */
+            attempt: number;
+            /** Connector Version */
+            connector_version: string;
+            /**
+             * Ended At
+             * Format: date-time
+             */
+            ended_at: string;
+            /** Error Class */
+            error_class: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Outcome */
+            outcome: string;
+            /** Provenance Ref */
+            provenance_ref: string | null;
+            /** Source Key */
+            source_key: string;
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /**
+             * Step Id
+             * Format: uuid
+             */
+            step_id: string;
         };
         /**
          * CandidateCreate
@@ -1258,6 +1344,12 @@ export interface components {
         };
         /** StepOut */
         StepOut: {
+            /**
+             * Accessed
+             * @description True only if an executed connector call returned a provenance reference. This is not verification.
+             * @default false
+             */
+            accessed: boolean;
             /** Attempts */
             attempts: number;
             category: components["schemas"]["Category"];
@@ -2642,6 +2734,124 @@ export interface operations {
         };
     };
     get_run_api_v1_cases__case_id__research_runs__run_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunOut"];
+                };
+            };
+            /** @description Not signed in, or the token is invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in but not permitted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found (or belongs to another tenant). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request was malformed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_connector_calls_api_v1_cases__case_id__research_runs__run_id__connector_calls_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CallOut"][];
+                };
+            };
+            /** @description Not signed in, or the token is invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in but not permitted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found (or belongs to another tenant). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request was malformed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    start_run_api_v1_cases__case_id__research_runs__run_id__start_post: {
         parameters: {
             query?: never;
             header?: never;
