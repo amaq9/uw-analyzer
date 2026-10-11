@@ -45,6 +45,8 @@ class Action(StrEnum):
     EVIDENCE_ADDED = "evidence.added"
     CLAIM_ADDED = "claim.added"
     CLAIM_LINKED = "claim.linked"
+    ESCALATION_RAISED = "escalation.raised"
+    ESCALATION_RESOLVED = "escalation.resolved"
     SOURCE_UPDATED = "source.updated"
 
 

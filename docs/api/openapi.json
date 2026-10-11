@@ -2088,6 +2088,157 @@
         "title": "ErrorResponse",
         "type": "object"
       },
+      "EscalationCreate": {
+        "additionalProperties": false,
+        "description": "A person raising something for review. Conflicts are raised by the system, not here.",
+        "properties": {
+          "claim_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Claim Id"
+          },
+          "description": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Description",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "MATERIAL_AMBIGUITY",
+              "OTHER"
+            ],
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "description"
+        ],
+        "title": "EscalationCreate",
+        "type": "object"
+      },
+      "EscalationList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/EscalationOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "open_count": {
+            "title": "Open Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "open_count",
+          "items"
+        ],
+        "title": "EscalationList",
+        "type": "object"
+      },
+      "EscalationOut": {
+        "properties": {
+          "case_id": {
+            "format": "uuid",
+            "title": "Case Id",
+            "type": "string"
+          },
+          "claim_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Claim Id"
+          },
+          "comparison": {
+            "description": "Conflicts only: each side of the dispute compared on authority, date, specificity, independence and data quality",
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Comparison",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "title": "Created By",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/Kind"
+          },
+          "label": {
+            "default": "HUMAN_REVIEW_REQUIRED",
+            "title": "Label",
+            "type": "string"
+          },
+          "raised_by_system": {
+            "title": "Raised By System",
+            "type": "boolean"
+          },
+          "resolution": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Resolution"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "state": {
+            "enum": [
+              "OPEN",
+              "RESOLVED"
+            ],
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "case_id",
+          "kind",
+          "state",
+          "claim_id",
+          "description",
+          "raised_by_system",
+          "created_by",
+          "created_at",
+          "resolution"
+        ],
+        "title": "EscalationOut",
+        "type": "object"
+      },
       "EvidenceCreate": {
         "additionalProperties": false,
         "description": "What a person or session may submit. For connector evidence the server derives the source,\nclass, provenance and discovery flag from the logged call; the author cannot set them.",
@@ -2598,6 +2749,15 @@
         "title": "InformationGap",
         "type": "object"
       },
+      "Kind": {
+        "enum": [
+          "CONFLICT",
+          "MATERIAL_AMBIGUITY",
+          "OTHER"
+        ],
+        "title": "Kind",
+        "type": "string"
+      },
       "LinkIn": {
         "additionalProperties": false,
         "properties": {
@@ -2780,6 +2940,89 @@
           "reason"
         ],
         "title": "ReopenRequest",
+        "type": "object"
+      },
+      "Resolution": {
+        "properties": {
+          "explanation": {
+            "title": "Explanation",
+            "type": "string"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/ResolutionOutcome"
+          },
+          "preferred_evidence_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preferred Evidence Id"
+          },
+          "resolved_at": {
+            "format": "date-time",
+            "title": "Resolved At",
+            "type": "string"
+          },
+          "resolved_by": {
+            "title": "Resolved By",
+            "type": "string"
+          }
+        },
+        "required": [
+          "outcome",
+          "preferred_evidence_id",
+          "explanation",
+          "resolved_by",
+          "resolved_at"
+        ],
+        "title": "Resolution",
+        "type": "object"
+      },
+      "ResolutionOutcome": {
+        "enum": [
+          "SUPPORTING_PREVAILS",
+          "CONTRADICTING_PREVAILS",
+          "NO_CLAIM_CHANGE"
+        ],
+        "title": "ResolutionOutcome",
+        "type": "string"
+      },
+      "ResolveIn": {
+        "additionalProperties": false,
+        "properties": {
+          "explanation": {
+            "description": "Why this evidence or decision was preferred",
+            "maxLength": 2000,
+            "minLength": 10,
+            "title": "Explanation",
+            "type": "string"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/ResolutionOutcome"
+          },
+          "preferred_evidence_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preferred Evidence Id"
+          }
+        },
+        "required": [
+          "outcome",
+          "explanation"
+        ],
+        "title": "ResolveIn",
         "type": "object"
       },
       "ResolveRequest": {
@@ -5541,6 +5784,359 @@
         "summary": "Record Entity Unconfirmed",
         "tags": [
           "entity-resolution"
+        ]
+      }
+    },
+    "/api/v1/cases/{case_id}/escalations": {
+      "get": {
+        "description": "All escalations of the case, with how many are still open.",
+        "operationId": "list_escalations_api_v1_cases__case_id__escalations_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EscalationList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the token is invalid."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Signed in but not permitted."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found (or belongs to another tenant)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request was malformed."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Escalations",
+        "tags": [
+          "escalations"
+        ]
+      },
+      "post": {
+        "description": "A person flags something that needs review (for example a material ambiguity).",
+        "operationId": "raise_escalation_api_v1_cases__case_id__escalations_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EscalationCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EscalationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the token is invalid."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Signed in but not permitted."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found (or belongs to another tenant)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request was malformed."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Raise Escalation",
+        "tags": [
+          "escalations"
+        ]
+      }
+    },
+    "/api/v1/cases/{case_id}/escalations/{escalation_id}": {
+      "get": {
+        "operationId": "get_escalation_api_v1_cases__case_id__escalations__escalation_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "escalation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Escalation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EscalationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the token is invalid."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Signed in but not permitted."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found (or belongs to another tenant)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request was malformed."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Escalation",
+        "tags": [
+          "escalations"
+        ]
+      }
+    },
+    "/api/v1/cases/{case_id}/escalations/{escalation_id}/resolution": {
+      "post": {
+        "description": "A named reviewer resolves the escalation in writing. For a conflict they choose which side\nprevails and name the evidence preferred; a claim's verification then follows that choice.",
+        "operationId": "resolve_escalation_api_v1_cases__case_id__escalations__escalation_id__resolution_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "escalation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Escalation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EscalationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the token is invalid."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Signed in but not permitted."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found (or belongs to another tenant)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request was malformed."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Resolve Escalation",
+        "tags": [
+          "escalations"
         ]
       }
     },
