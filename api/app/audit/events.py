@@ -37,6 +37,8 @@ class Action(StrEnum):
     DOCUMENT_UPLOADED = "document.uploaded"
     DOCUMENT_REJECTED = "document.rejected"
     DOCUMENT_DOWNLOADED = "document.downloaded"
+    SOURCE_CREATED = "source.created"
+    SOURCE_UPDATED = "source.updated"
 
 
 @dataclass(frozen=True)

@@ -1,6 +1,16 @@
 {
   "components": {
     "schemas": {
+      "AccessCategory": {
+        "enum": [
+          "ACTUALLY_ACCESSIBLE",
+          "RESTRICTED_LICENSED",
+          "DISCOVERY_ONLY",
+          "TECHNICALLY_UNAVAILABLE"
+        ],
+        "title": "AccessCategory",
+        "type": "string"
+      },
       "AuditEventOut": {
         "properties": {
           "action": {
@@ -78,6 +88,15 @@
         ],
         "title": "AuditEventOut",
         "type": "object"
+      },
+      "AuthState": {
+        "enum": [
+          "NOT_REQUIRED",
+          "CONFIGURED",
+          "MISSING"
+        ],
+        "title": "AuthState",
+        "type": "string"
       },
       "Band": {
         "enum": [
@@ -1497,23 +1516,15 @@
         "title": "FieldError",
         "type": "object"
       },
-      "Health": {
-        "properties": {
-          "status": {
-            "title": "Status",
-            "type": "string"
-          },
-          "version": {
-            "title": "Version",
-            "type": "string"
-          }
-        },
-        "required": [
-          "status",
-          "version"
+      "Health-Input": {
+        "enum": [
+          "UNKNOWN",
+          "HEALTHY",
+          "DEGRADED",
+          "DOWN"
         ],
         "title": "Health",
-        "type": "object"
+        "type": "string"
       },
       "InformationGap": {
         "properties": {
@@ -1671,6 +1682,94 @@
         "title": "ResolveRequest",
         "type": "object"
       },
+      "SourceClass": {
+        "enum": [
+          "OFFICIAL",
+          "COMMERCIAL",
+          "SECONDARY",
+          "WEAK"
+        ],
+        "title": "SourceClass",
+        "type": "string"
+      },
+      "SourceCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "access_category": {
+            "$ref": "#/components/schemas/AccessCategory"
+          },
+          "auth_state": {
+            "$ref": "#/components/schemas/AuthState"
+          },
+          "jurisdictions": {
+            "description": "ISO 3166-1 alpha-2 codes, or GLOBAL",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 60,
+            "minItems": 1,
+            "title": "Jurisdictions",
+            "type": "array"
+          },
+          "key": {
+            "description": "Stable lowercase identifier, unique per tenant",
+            "title": "Key",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "rate_limit_per_minute": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 100000.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rate Limit Per Minute"
+          },
+          "source_class": {
+            "$ref": "#/components/schemas/SourceClass"
+          },
+          "source_type": {
+            "description": "e.g. company_registry, court_records, news",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Source Type",
+            "type": "string"
+          },
+          "terms_notes": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Terms Notes"
+          }
+        },
+        "required": [
+          "name",
+          "source_class",
+          "source_type",
+          "jurisdictions",
+          "access_category",
+          "auth_state",
+          "key"
+        ],
+        "title": "SourceCreate",
+        "type": "object"
+      },
       "SourceInfo": {
         "additionalProperties": false,
         "description": "Who produced the draft and with what, so the run can be reproduced (P-10).",
@@ -1708,6 +1807,241 @@
         "title": "SourceInfo",
         "type": "object"
       },
+      "SourceOut": {
+        "properties": {
+          "access_category": {
+            "$ref": "#/components/schemas/AccessCategory"
+          },
+          "auth_state": {
+            "$ref": "#/components/schemas/AuthState"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "health": {
+            "$ref": "#/components/schemas/app__sources__schemas__Health"
+          },
+          "health_checked_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Health Checked At"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "jurisdictions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Jurisdictions",
+            "type": "array"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "notice": {
+            "default": "Registry entry: what the product can reach. It is not proof that a source was accessed.",
+            "title": "Notice",
+            "type": "string"
+          },
+          "rate_limit_per_minute": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rate Limit Per Minute"
+          },
+          "source_class": {
+            "$ref": "#/components/schemas/SourceClass"
+          },
+          "source_type": {
+            "title": "Source Type",
+            "type": "string"
+          },
+          "terms_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Terms Notes"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "name",
+          "source_class",
+          "source_type",
+          "jurisdictions",
+          "access_category",
+          "auth_state",
+          "terms_notes",
+          "rate_limit_per_minute",
+          "health",
+          "health_checked_at",
+          "version",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "SourceOut",
+        "type": "object"
+      },
+      "SourceUpdate": {
+        "additionalProperties": false,
+        "description": "Any subset of the fields, plus the version the caller last saw.",
+        "properties": {
+          "access_category": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AccessCategory"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "auth_state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AuthState"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "health": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Health-Input"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "jurisdictions": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 60,
+                "minItems": 1,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Jurisdictions"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "rate_limit_per_minute": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 100000.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rate Limit Per Minute"
+          },
+          "source_class": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SourceClass"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source_type": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Type"
+          },
+          "terms_notes": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Terms Notes"
+          }
+        },
+        "required": [
+          "expected_version"
+        ],
+        "title": "SourceUpdate",
+        "type": "object"
+      },
       "UnconfirmedRequest": {
         "additionalProperties": false,
         "description": "A person records that the legal entity could not be confirmed or found (reason required).",
@@ -1724,6 +2058,34 @@
         ],
         "title": "UnconfirmedRequest",
         "type": "object"
+      },
+      "app__main__Health": {
+        "properties": {
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "version"
+        ],
+        "title": "Health",
+        "type": "object"
+      },
+      "app__sources__schemas__Health": {
+        "enum": [
+          "UNKNOWN",
+          "HEALTHY",
+          "DEGRADED",
+          "DOWN"
+        ],
+        "title": "Health",
+        "type": "string"
       }
     },
     "securitySchemes": {
@@ -3257,6 +3619,352 @@
         ]
       }
     },
+    "/api/v1/sources": {
+      "get": {
+        "description": "The tenant's registry. `jurisdiction` also returns GLOBAL sources.",
+        "operationId": "list_sources_api_v1_sources_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "jurisdiction",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "pattern": "^[A-Za-z]{2}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Jurisdiction"
+            }
+          },
+          {
+            "in": "query",
+            "name": "access_category",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/AccessCategory"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Access Category"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SourceOut"
+                  },
+                  "title": "Response List Sources Api V1 Sources Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the token is invalid."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Signed in but not permitted."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found (or belongs to another tenant)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request was malformed."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Sources",
+        "tags": [
+          "sources"
+        ]
+      },
+      "post": {
+        "description": "Register a source. Health starts as UNKNOWN until something checks it.",
+        "operationId": "create_source_api_v1_sources_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the token is invalid."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Signed in but not permitted."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found (or belongs to another tenant)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request was malformed."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Source",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/api/v1/sources/{source_id}": {
+      "get": {
+        "operationId": "get_source_api_v1_sources__source_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Source Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the token is invalid."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Signed in but not permitted."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found (or belongs to another tenant)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request was malformed."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Source",
+        "tags": [
+          "sources"
+        ]
+      },
+      "patch": {
+        "description": "Change some fields (also how health is recorded for now). Send `expected_version`; a stale\none returns 409 and saves nothing. The key never changes.",
+        "operationId": "update_source_api_v1_sources__source_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Source Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SourceUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the token is invalid."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Signed in but not permitted."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found (or belongs to another tenant)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request was malformed."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Source",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
     "/health": {
       "get": {
         "description": "Liveness check. Reports service status only; no case or tenant data.",
@@ -3266,7 +3974,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Health"
+                  "$ref": "#/components/schemas/app__main__Health"
                 }
               }
             },

@@ -117,3 +117,23 @@ are Restricted and never copied into audit events or logs.
 | `created_by`, `created_at` | Who and when |
 
 Retention: TBD (legal).
+
+## `sources` (source and connector registry, FR-2.1/2.2; migration 0007)
+
+What the product is *capable* of reaching, per tenant. It is not evidence that a source was accessed:
+only a recorded connector call can show that (FR-2.6, FR-2.7). Not case content; Internal. There is no
+credential column: secrets live in a secrets store and are never saved or returned here.
+
+| Field | Meaning |
+|---|---|
+| `seq`, `id`, `tenant_id`, `key` | Order number, ID, tenant, and a stable lowercase key unique within the tenant (never changes) |
+| `name`, `source_type` | Display name and kind (for example `company_registry`, `court_records`, `news`) |
+| `source_class` | `OFFICIAL`, `COMMERCIAL`, `SECONDARY` or `WEAK` |
+| `jurisdictions` | Two-letter country codes, or `GLOBAL` (a GLOBAL source matches every jurisdiction filter) |
+| `access_category` | `ACTUALLY_ACCESSIBLE`, `RESTRICTED_LICENSED`, `DISCOVERY_ONLY` or `TECHNICALLY_UNAVAILABLE` |
+| `auth_state` | `NOT_REQUIRED`, `CONFIGURED` or `MISSING`; `ACTUALLY_ACCESSIBLE` with `MISSING` is refused (database-checked) |
+| `terms_notes`, `rate_limit_per_minute` | Licence or terms notes; request quota |
+| `health`, `health_checked_at` | `UNKNOWN`, `HEALTHY`, `DEGRADED`, `DOWN`; set by the administrator until automatic checks exist |
+| `version`, `created_by`, `created_at`, `updated_at` | Optimistic concurrency and bookkeeping |
+
+Retention: TBD (legal).
