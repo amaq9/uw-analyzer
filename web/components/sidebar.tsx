@@ -19,11 +19,11 @@ const workspaceLinks = [
 
 const governanceLinks = [
   { id: "sources", label: "Source access", icon: ShieldIcon, href: "/sources" },
-  { label: "Audit trail", icon: AuditIcon },
+  { id: "audit", label: "Audit trail", icon: AuditIcon, href: "/audit" },
 ];
 
 type SidebarProps = {
-  activePage?: "agreement" | "cases" | "overview" | "skills" | "sources";
+  activePage?: "agreement" | "audit" | "cases" | "overview" | "skills" | "sources";
 };
 
 export function Sidebar({ activePage = "overview" }: SidebarProps) {

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+import { AnalysisPanel } from "@/components/case/analysis-panel";
 import { DecisionForm, DecisionSummary } from "@/components/case/decision-form";
 import { type DecisionRecord, type DraftRecord, type TabProps, can } from "@/components/case/types";
 import { useLoad } from "@/components/use-api";
@@ -38,9 +39,20 @@ export function RecommendationTab({ caseId, onChanged, permissions, token }: Tab
         </p>
       </section>
 
+      <AnalysisPanel
+        base={`/api/v1/cases/${encodeURIComponent(caseId)}`}
+        canRun={can(permissions, "draft:import")}
+        onDone={() => {
+          drafts.reload();
+          decision.reload();
+          onChanged();
+        }}
+        token={token}
+      />
+
       {!latest && (
         <section className="ws-card">
-          <p>No draft has been prepared yet. Ask for the case to be analysed.</p>
+          <p>No draft has been prepared yet. Run the analysis above once the research has finished.</p>
         </section>
       )}
 
