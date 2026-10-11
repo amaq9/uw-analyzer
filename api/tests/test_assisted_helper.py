@@ -49,4 +49,5 @@ def test_read_and_submit_through_the_helper(
 
 def test_helper_has_no_command_that_records_a_decision() -> None:
     source = Path(assisted.__file__).read_text(encoding="utf-8")
-    assert "/decision" not in source
+    for forbidden in ("/decision", "/resolution", "POST /reports", '/reports"', "/reopen"):
+        assert forbidden not in source

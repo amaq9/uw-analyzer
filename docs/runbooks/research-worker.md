@@ -26,3 +26,17 @@ searched and nothing is shown as accessed.
 
 ## How to tell it worked
 The run is `COMPLETED`, steps are in a finished state, and `connector-calls` lists one row per attempt.
+
+## Real connectors (SEC EDGAR and GLEIF)
+1. Register them once: `cd api; uv run python scripts/seed_sources.py` (an administrator can also use
+   `POST /api/v1/sources`).
+2. Set a contact address the registries can reach you at, then start the worker:
+   `CONNECTOR_CONTACT=you@example.org uv run python scripts/worker.py` (needs the Docker storage up).
+   Without `CONNECTOR_CONTACT` no connector is enabled and steps are skipped, as above.
+3. Plan and start a run (UI, or `scripts/assisted.py plan <case> US` then `start <case> <run>`).
+4. Read what came back: `scripts/assisted.py run <case> <run>` lists steps and the call log;
+   `scripts/assisted.py snapshot <case> <provenance_ref> <file>` saves the exact material.
+
+What each connector does and does not do: SEC EDGAR covers U.S. SEC filers only (Nike yes; a private or
+non-U.S. company is not found and the step ends with `permanent:no_unique_match`). GLEIF covers any entity
+that has a Legal Entity Identifier. Neither covers adverse news, courts, sanctions or sector outlook.

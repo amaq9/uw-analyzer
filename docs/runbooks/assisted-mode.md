@@ -14,9 +14,12 @@ same checked API as everything else. **It never records the decision.** You do t
 5. Record your own decision: adopt, change or reject (`POST .../draft-recommendations/<draft id>/decision`).
    A reason is required to change or reject. Your choices feed the agreement view (`GET /api/v1/agreement`).
 
-## What Claude Code does
+## What Claude Code does (the skills are the main analyzer, ADR 0015)
 1. `uv run python scripts/assisted.py case <id>` reads the case, candidates, documents and earlier drafts.
-2. `uv run python scripts/assisted.py fetch <id> <document id> <file>` saves each document to read it.
+2. `uv run python scripts/assisted.py fetch <id> <document id> <file>` saves each uploaded document to read it.
+   `plan`, `start`, `run` and `snapshot` plan and run the connectors (SEC EDGAR, GLEIF; see
+   [research-worker.md](research-worker.md)) and save the exact material they fetched. `evidence`,
+   `claim` and `link` record what it found; the server computes the verification status.
 3. Applies the five areas of the financial statement method (balance sheet, liquidity, gearing,
    receivables aging, cash flow) with the deterministic ratio script. If no aging schedule is disclosed
    it says so rather than inferring one.

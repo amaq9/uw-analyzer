@@ -122,6 +122,7 @@ class Executor:
         case = self._cases.get(run.case_id)
         request = ConnectorRequest(
             case_id=run.case_id,
+            tenant_id=run.tenant_id,
             category=Category(step.category),
             source_key=key,
             jurisdictions=run.jurisdictions,
@@ -164,7 +165,7 @@ class Executor:
             if outcome == "SUCCESS":
                 self._queue.mark_step(step.id, "SUCCEEDED", attempts=attempt, finished=True)
                 return connector.key, connector.version
-            if error_class == "permanent":
+            if error_class and error_class.startswith("permanent"):
                 break
             if attempt < step.max_attempts:
                 self._sleep(min(self._backoff * 2 ** (attempt - 1), self._max_backoff))
@@ -185,8 +186,8 @@ class Executor:
             return "TIMEOUT", "timeout", None
         except RetryableConnectorError:
             return "ERROR", "retryable", None
-        except PermanentConnectorError:
-            return "ERROR", "permanent", None
+        except PermanentConnectorError as exc:
+            return "ERROR", f"permanent:{exc.code}" if exc.code else "permanent", None
         except Exception:
             logger.exception("research.connector_crashed source=%s", request.source_key)
             return "ERROR", "permanent", None

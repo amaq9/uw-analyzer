@@ -1,6 +1,6 @@
 # ADR 0006: Claude as the AI provider, with versioned method artifacts
 
-- **Status:** Accepted, 2026-10-07 (Product Owner decision: use Claude, guided by the project's skills)
+- **Status:** Accepted, 2026-10-07; amended by ADR 0015 (no API adapter: the skills run through Claude Code sessions)
 - **Date:** 2026-10-07 (America/Toronto)
 - **Decider:** Product Owner. Author: Claude Code.
 

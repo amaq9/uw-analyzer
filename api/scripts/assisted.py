@@ -6,14 +6,23 @@ database, so no token needs to be pasted. It signs in with throwaway stub tokens
 when APP_ENV=local, using the least privilege each step needs:
 
     reads   -> research_analyst (case:read)
-    submit  -> service (draft:import)
+    writes  -> service (research:run: plan, start, evidence, claims; draft:import: drafts)
 
-It can never record the underwriter's decision: that stays with a named person.
+It can never record the underwriter's decision, resolve a review item or complete the report:
+those stay with named people.
 
     cd api
     uv run python scripts/assisted.py cases
     uv run python scripts/assisted.py case <case_id>
     uv run python scripts/assisted.py fetch <case_id> <document_id> <output_file>
+    uv run python scripts/assisted.py plan <case_id> <CA,US,...>
+    uv run python scripts/assisted.py start <case_id> <run_id>
+    uv run python scripts/assisted.py run <case_id> <run_id>
+    uv run python scripts/assisted.py snapshot <case_id> <provenance_ref> <output_file>
+    uv run python scripts/assisted.py evidence <case_id> <evidence.json>
+    uv run python scripts/assisted.py claim <case_id> <claim.json>
+    uv run python scripts/assisted.py link <case_id> <claim_id> <link.json>
+    uv run python scripts/assisted.py report <case_id>
     uv run python scripts/assisted.py submit <case_id> <draft.json>
 
 Set ASSISTED_TENANT to use a tenant other than demo-tenant.
@@ -73,6 +82,7 @@ def main(argv: list[str]) -> int:
         return 2
     client, idp = _client()
     read = _headers(idp, "research_analyst")
+    write = _headers(idp, "service")
     command, args = argv[0], argv[1:]
 
     if command == "cases" and not args:
@@ -96,13 +106,66 @@ def main(argv: list[str]) -> int:
             return 1
         Path(out).write_bytes(r.content)
         print(f"Saved {len(r.content)} bytes to {out}")
+    elif command == "plan" and len(args) == 2:
+        cid, countries = args
+        r = client.post(
+            f"/api/v1/cases/{cid}/research-runs",
+            json={"jurisdictions": countries.split(",")},
+            headers=write,
+        )
+        _show("research plan", r.status_code, r.json())
+        return 0 if r.status_code in (200, 201) else 1
+    elif command == "start" and len(args) == 2:
+        cid, run_id = args
+        r = client.post(f"/api/v1/cases/{cid}/research-runs/{run_id}/start", headers=write)
+        _show("start", r.status_code, r.json())
+        return 0 if r.status_code == 200 else 1
+    elif command == "run" and len(args) == 2:
+        cid, run_id = args
+        for label, path in (
+            ("run", f"/api/v1/cases/{cid}/research-runs/{run_id}"),
+            ("connector calls", f"/api/v1/cases/{cid}/research-runs/{run_id}/connector-calls"),
+        ):
+            r = client.get(path, headers=read)
+            _show(label, r.status_code, r.json())
+    elif command == "snapshot" and len(args) == 3:
+        cid, ref, out = args
+        r = client.get(f"/api/v1/cases/{cid}/snapshots", params={"ref": ref}, headers=read)
+        if r.status_code != 200:
+            _show("snapshot", r.status_code, r.json())
+            return 1
+        Path(out).write_bytes(r.content)
+        print(f"Saved {len(r.content)} bytes (hash verified) to {out}")
+    elif command in ("evidence", "claim") and len(args) == 2:
+        cid, path = args
+        body = json.loads(Path(path).read_text(encoding="utf-8"))
+        r = client.post(
+            f"/api/v1/cases/{cid}/{'evidence' if command == 'evidence' else 'claims'}",
+            json=body,
+            headers=write,
+        )
+        _show(command, r.status_code, r.json())
+        return 0 if r.status_code == 201 else 1
+    elif command == "link" and len(args) == 3:
+        cid, claim_id, path = args
+        body = json.loads(Path(path).read_text(encoding="utf-8"))
+        r = client.post(
+            f"/api/v1/cases/{cid}/claims/{claim_id}/evidence-links", json=body, headers=write
+        )
+        _show("link", r.status_code, r.json())
+        return 0 if r.status_code == 201 else 1
+    elif command == "report" and len(args) == 1:
+        r = client.get(f"/api/v1/cases/{args[0]}/report-preview", headers=read)
+        _show(
+            "report preview (nothing saved; a person completes the report)", r.status_code, r.json()
+        )
     elif command == "submit" and len(args) == 2:
         cid, path = args
         body = json.loads(Path(path).read_text(encoding="utf-8"))
         r = client.post(
             f"/api/v1/cases/{cid}/draft-recommendations",
             json=body,
-            headers=_headers(idp, "service"),
+            headers=write,
         )
         _show("submit draft", r.status_code, r.json())
         return 0 if r.status_code == 201 else 1
