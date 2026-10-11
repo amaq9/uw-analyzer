@@ -18,6 +18,7 @@ from app.reports.schemas import (
     ConfidenceLevel,
     Counts,
     EscalationRow,
+    FinancialsRow,
     Gate,
     ReportContent,
     SourceRow,
@@ -121,6 +122,21 @@ def build(
     # Evidence-based counts (documents and web material recorded by people or sessions).
     evidence_store = request.app.state.evidence_store
     evidence = evidence_store.list_evidence(case_id, case.tenant_id)
+    financials = [
+        FinancialsRow(
+            evidence_id=e.id,
+            title=e.title,
+            origin=e.origin,
+            period_end=e.event_on,
+            published_on=e.published_on,
+            accessed_at=e.accessed_at,
+            kind=e.kind,
+            source_class=e.source_class,
+            source_class_basis=e.class_basis,
+        )
+        for e in sorted(evidence, key=lambda x: x.created_at)
+        if e.evidence_type == "FINANCIAL"
+    ]
     documents = {e.document_id for e in evidence if e.kind == "DOCUMENT"}
     web = {e.origin for e in evidence if e.kind == "WEB"}
 
@@ -223,12 +239,14 @@ def build(
     content = ReportContent(
         case_id=case_id,
         as_of=now,
+        financials_reviewed=financials,
         verification_log=log,
         material_findings=[_claim_row(c) for c in material],
         unverified_claims=[_claim_row(c) for c in unverified],
         conflicts=[r for r in esc_rows if r.kind == "CONFLICT"],
         information_gaps=gaps,
-        limitations=[PAYMENT_LIMITATION],
+        limitations=[PAYMENT_LIMITATION]
+        + ([] if financials else ["No financial statements were reviewed."]),
         adverse_search_statement=adverse_statement,
         evidence_confidence=confidence,
         counts=counts,

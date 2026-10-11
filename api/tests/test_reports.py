@@ -64,7 +64,8 @@ def test_preview_content_is_honest_about_what_was_not_done(ctx: Ctx) -> None:
     assert c["adverse_search_statement"].startswith("An adverse search was not performed")
     assert c["evidence_confidence"]["level"] == "LOW"
     assert c["limitations"] == [
-        "Payment behaviour was not assessed (data not used in this product)."
+        "Payment behaviour was not assessed (data not used in this product).",
+        "No financial statements were reviewed.",
     ]
     assert c["counts"]["connector_sources_accessed"] == 0
     assert any("Registration number" in g for g in c["information_gaps"])
@@ -284,3 +285,25 @@ def test_report_contract_has_no_score_rating_or_decision_fields() -> None:
     from tests.p09 import offending_names
 
     assert offending_names(build_spec()) == []
+
+
+def test_report_states_the_financial_period_reviewed(ctx: Ctx) -> None:
+    empty = preview(ctx)["content"]
+    assert empty["financials_reviewed"] == []
+    assert "No financial statements were reviewed." in empty["limitations"]
+
+    ev = ctx.evidence(
+        evidence_type="FINANCIAL",
+        title="FY2026 annual report",
+        published_on="2026-07-15",
+        event_on="2026-05-31",
+    )
+    ctx.claim(text="Current ratio was 1.96x.", evidence=[link(ev)])
+    content = preview(ctx)["content"]
+    row = content["financials_reviewed"][0]
+    assert row["period_end"] == "2026-05-31" and row["published_on"] == "2026-07-15"
+    assert row["title"] == "FY2026 annual report" and row["evidence_id"] == ev["id"]
+    assert row["source_class_basis"] == "author_declared" and row["accessed_at"]
+    assert "No financial statements were reviewed." not in content["limitations"]
+    stored = complete(ctx).json()["content"]
+    assert stored["financials_reviewed"][0]["period_end"] == "2026-05-31"

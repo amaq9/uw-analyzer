@@ -2938,6 +2938,80 @@
         "title": "FieldError",
         "type": "object"
       },
+      "FinancialsRow": {
+        "description": "A set of financial statements the analysis rests on, with the period they cover.",
+        "properties": {
+          "accessed_at": {
+            "format": "date-time",
+            "title": "Accessed At",
+            "type": "string"
+          },
+          "evidence_id": {
+            "format": "uuid",
+            "title": "Evidence Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "origin": {
+            "title": "Origin",
+            "type": "string"
+          },
+          "period_end": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The period or date the figures are for",
+            "title": "Period End"
+          },
+          "published_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "When the filing or document was published",
+            "title": "Published On"
+          },
+          "source_class": {
+            "title": "Source Class",
+            "type": "string"
+          },
+          "source_class_basis": {
+            "title": "Source Class Basis",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "evidence_id",
+          "title",
+          "origin",
+          "period_end",
+          "published_on",
+          "accessed_at",
+          "kind",
+          "source_class",
+          "source_class_basis"
+        ],
+        "title": "FinancialsRow",
+        "type": "object"
+      },
       "Freshness": {
         "enum": [
           "CURRENT",
@@ -3250,6 +3324,13 @@
             "title": "Final Statement",
             "type": "string"
           },
+          "financials_reviewed": {
+            "items": {
+              "$ref": "#/components/schemas/FinancialsRow"
+            },
+            "title": "Financials Reviewed",
+            "type": "array"
+          },
           "information_gaps": {
             "items": {
               "type": "string"
@@ -3299,6 +3380,7 @@
         "required": [
           "case_id",
           "as_of",
+          "financials_reviewed",
           "verification_log",
           "material_findings",
           "unverified_claims",

@@ -1692,6 +1692,42 @@ export interface components {
             message: string;
         };
         /**
+         * FinancialsRow
+         * @description A set of financial statements the analysis rests on, with the period they cover.
+         */
+        FinancialsRow: {
+            /**
+             * Accessed At
+             * Format: date-time
+             */
+            accessed_at: string;
+            /**
+             * Evidence Id
+             * Format: uuid
+             */
+            evidence_id: string;
+            /** Kind */
+            kind: string;
+            /** Origin */
+            origin: string;
+            /**
+             * Period End
+             * @description The period or date the figures are for
+             */
+            period_end: string | null;
+            /**
+             * Published On
+             * @description When the filing or document was published
+             */
+            published_on: string | null;
+            /** Source Class */
+            source_class: string;
+            /** Source Class Basis */
+            source_class_basis: string;
+            /** Title */
+            title: string;
+        };
+        /**
          * Freshness
          * @enum {string}
          */
@@ -1817,6 +1853,8 @@ export interface components {
             evidence_confidence: components["schemas"]["Confidence"];
             /** Final Statement */
             final_statement: string;
+            /** Financials Reviewed */
+            financials_reviewed: components["schemas"]["FinancialsRow"][];
             /** Information Gaps */
             information_gaps: string[];
             /** Limitations */
