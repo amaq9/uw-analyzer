@@ -175,7 +175,6 @@ export function ResearchTab({ caseId, onChanged, permissions, token }: TabProps)
                     <td>{readable(step.category)}</td>
                     <td>
                       {String((step.source as Record<string, unknown>).name ?? "No source registered")}
-                      {step.discovery_only && <small className="ws-muted"> (leads only)</small>}
                     </td>
                     <td>{readable(step.state)}</td>
                     <td>{step.accessed ? "Yes" : "No"}</td>

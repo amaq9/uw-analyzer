@@ -27,9 +27,19 @@ export function money(value: string | number | null | undefined, currency?: stri
   const code = currency || "USD";
   const abs = Math.abs(amount);
   const sign = amount < 0 ? "-" : "";
-  if (abs >= 1_000_000_000) return `${sign}${code} ${(abs / 1_000_000_000).toFixed(2)}bn`;
-  if (abs >= 1_000_000) return `${sign}${code} ${(abs / 1_000_000).toFixed(2)}m`;
+  if (abs >= 1_000_000_000) return `${sign}${code} ${(Math.round(abs / 10_000_000) / 100).toFixed(2)}bn`;
+  if (abs >= 1_000_000) return `${sign}${code} ${(Math.round(abs / 10_000) / 100).toFixed(2)}m`;
   return `${sign}${code} ${abs.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+}
+
+/** Rewrite "24,603m" in analyst text as "USD 24.60bn", using the case currency. */
+export function shorten(text: string, currency?: string | null) {
+  const code = currency || "USD";
+  return text.replace(/(\d{1,3}(?:,\d{3})*(?:\.\d+)?)m(?![A-Za-z])/g, (_match, digits: string) => {
+    const millions = Number(digits.replaceAll(",", ""));
+    if (!Number.isFinite(millions)) return _match;
+    return millions >= 1000 ? `${code} ${(Math.round(millions / 10) / 100).toFixed(2)}bn` : `${code} ${millions.toLocaleString()}m`;
+  });
 }
 
 export function bytes(size: number) {

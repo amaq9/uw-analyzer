@@ -143,7 +143,7 @@ export function CaseWorkspace({ caseId }: Readonly<{ caseId: string }>) {
             <ResearchTab caseId={caseId} onChanged={record.reload} permissions={session.user.permissions} token={session.token} />
           )}
           {tab === "evidence" && (
-            <EvidenceTab caseId={caseId} onChanged={record.reload} permissions={session.user.permissions} token={session.token} />
+            <EvidenceTab caseId={caseId} currency={data.exposure_currency} onChanged={record.reload} permissions={session.user.permissions} token={session.token} />
           )}
           {tab === "review" && (
             <ReviewTab caseId={caseId} onChanged={record.reload} permissions={session.user.permissions} token={session.token} />
@@ -157,7 +157,7 @@ export function CaseWorkspace({ caseId }: Readonly<{ caseId: string }>) {
             />
           )}
           {tab === "report" && (
-            <ReportTab caseId={caseId} onChanged={record.reload} permissions={session.user.permissions} token={session.token} />
+            <ReportTab caseId={caseId} currency={data.exposure_currency} onChanged={record.reload} permissions={session.user.permissions} token={session.token} />
           )}
         </section>
       )}

@@ -4,9 +4,9 @@ import { SnapshotViewer } from "@/components/case/research-tab";
 import { type ClaimRecord, type TabProps } from "@/components/case/types";
 import { useLoad } from "@/components/use-api";
 import { api } from "@/lib/api/client";
-import { dateOnly, dateTime, readable } from "@/lib/format";
+import { dateOnly, dateTime, readable, shorten } from "@/lib/format";
 
-export function EvidenceTab({ caseId, token }: TabProps) {
+export function EvidenceTab({ caseId, currency, token }: TabProps) {
   const base = `/api/v1/cases/${encodeURIComponent(caseId)}/claims`;
   const claims = useLoad((t, signal) => api<ClaimRecord[]>(t, "GET", base, undefined, signal), [caseId]);
   const list = claims.data ?? [];
@@ -37,7 +37,7 @@ export function EvidenceTab({ caseId, token }: TabProps) {
             {claim.adverse && <span className="ws-pill">Adverse</span>}
             {claim.category && <span className="ws-pill">{readable(claim.category)}</span>}
           </p>
-          <p className="ws-claim-text">{claim.text}</p>
+          <p className="ws-claim-text">{shorten(claim.text, currency)}</p>
           <div className="ws-split">
             <div>
               <h4>Verification</h4>

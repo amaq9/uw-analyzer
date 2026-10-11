@@ -24,6 +24,7 @@ export type TabProps = {
   token: string;
   permissions: string[];
   onChanged: () => void;
+  currency?: string | null;
 };
 
 export function can(permissions: string[], permission: string) {

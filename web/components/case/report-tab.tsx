@@ -11,11 +11,13 @@ import {
 } from "@/components/case/types";
 import { ActionError, useAction, useLoad } from "@/components/use-api";
 import { api } from "@/lib/api/client";
-import { dateOnly, dateTime, readable } from "@/lib/format";
+import { dateOnly, dateTime, readable, shorten } from "@/lib/format";
 
 type Content = ReportPreview["content"];
 
-function ReportBody({ content }: Readonly<{ content: Content }>) {
+function ReportBody({ content: raw, currency }: Readonly<{ content: Content; currency?: string | null }>) {
+  // An older API may omit newer lists; show them as empty instead of failing.
+  const content = { ...raw, financials_reviewed: raw.financials_reviewed ?? [], conflicts: raw.conflicts ?? [], unverified_claims: raw.unverified_claims ?? [], material_findings: raw.material_findings ?? [], information_gaps: raw.information_gaps ?? [], limitations: raw.limitations ?? [], verification_log: raw.verification_log ?? [] };
   const counts = content.counts;
   return (
     <div className="ws-stack">
@@ -91,7 +93,7 @@ function ReportBody({ content }: Readonly<{ content: Content }>) {
         <ul className="ws-list">
           {content.material_findings.map((claim) => (
             <li key={claim.claim_id}>
-              {claim.text}
+              {shorten(claim.text, currency)}
               <p className="ws-muted">
                 Verification: {readable(claim.verification_status)}
                 {claim.freshness ? ` · ${readable(claim.freshness)} evidence` : ""}
@@ -158,7 +160,7 @@ function ReportBody({ content }: Readonly<{ content: Content }>) {
   );
 }
 
-export function ReportTab({ caseId, onChanged, permissions, token }: TabProps) {
+export function ReportTab({ caseId, currency, onChanged, permissions, token }: TabProps) {
   const base = `/api/v1/cases/${encodeURIComponent(caseId)}`;
   const preview = useLoad((t, signal) => api<ReportPreview>(t, "GET", `${base}/report-preview`, undefined, signal), [caseId]);
   const history = useLoad((t, signal) => api<ReportSummary[]>(t, "GET", `${base}/reports`, undefined, signal), [caseId]);
@@ -248,13 +250,13 @@ export function ReportTab({ caseId, onChanged, permissions, token }: TabProps) {
             Showing stored version {stored.data.version}, completed {dateTime(stored.data.created_at)}. Integrity check:{" "}
             {stored.data.integrity_verified ? "the stored text matches its recorded hash" : "MISMATCH, do not rely on this version"}.
           </p>
-          <ReportBody content={stored.data.content} />
+          <ReportBody content={stored.data.content} currency={currency} />
         </>
       ) : (
         p && (
           <>
             <p className="ws-note">Live preview as of {dateTime(p.content.as_of)}. Nothing here is saved until you complete the report.</p>
-            <ReportBody content={p.content} />
+            <ReportBody content={p.content} currency={currency} />
           </>
         )
       )}
