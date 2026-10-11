@@ -1,6 +1,6 @@
 # ADR 0014: Research reports, completion gates and immutable versions (Phase 5)
 
-- **Status:** Accepted, 2026-10-11, **wording of "evidence confidence" provisional** (Product Owner to confirm).
+- **Status:** Accepted, 2026-10-11. Wording "evidence confidence" (High, Moderate, Low) confirmed by the Product Owner on 2026-10-11.
 - **Date:** 2026-10-11 (America/Toronto)
 - **Decider:** Product Owner. Author: Claude Code.
 
