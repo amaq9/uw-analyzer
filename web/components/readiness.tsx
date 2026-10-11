@@ -1,21 +1,36 @@
+import Link from "next/link";
+
 import { CheckIcon } from "@/components/icons";
 
 const items = [
   {
-    title: "Workspace foundation",
-    detail: "Responsive shell, navigation, and accessible visual language",
+    title: "Cases and entity resolution",
+    detail: "Intake, candidate entities, the ambiguity stop, uploads and the audit trail",
+    status: "Ready",
+    ready: true,
+  },
+  {
+    title: "Research from public sources",
+    detail: "SEC EDGAR, the Global LEI register, OFAC sanctions list and World Bank data; news is leads only",
+    status: "Ready",
+    ready: true,
+  },
+  {
+    title: "Analysis and draft recommendation",
+    detail: "Five-area financial review of SEC data or your own confirmed statements, then a draft for you",
+    status: "Ready",
+    ready: true,
+  },
+  {
+    title: "Review, report and your decision",
+    detail: "Human review items, an immutable versioned report, and your recorded decision",
     status: "Ready",
     ready: true,
   },
   {
     title: "Enterprise identity",
-    detail: "Backend authentication skeleton available; UI integration follows the API contract",
-    status: "In progress",
-  },
-  {
-    title: "Case workflows",
-    detail: "Intake and entity resolution begin in Phase 1",
-    status: "Planned",
+    detail: "Local test sign-in only in this test product",
+    status: "Test only",
   },
 ];
 
@@ -49,8 +64,10 @@ export function Readiness() {
           <span />
         </span>
         <div>
-          <strong>No case activity yet</strong>
-          <p>Live activity will appear after the first case workflow is connected.</p>
+          <strong>Start with a case</strong>
+          <p>
+            Open <Link href="/cases">Cases</Link>, create one, choose the legal entity, then research and analyse it.
+          </p>
         </div>
       </div>
     </section>

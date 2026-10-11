@@ -22,11 +22,11 @@ export default function Home() {
               </p>
             </div>
             <aside className="hero-note" aria-label="Current project phase">
-              <span className="hero-note-number">00</span>
+              <span className="hero-note-number">✓</span>
               <div>
-                <small>Current project phase</small>
-                <strong>Foundation &amp; governance</strong>
-                <p>The workspace is ready for its first API-backed workflow.</p>
+                <small>Current status</small>
+                <strong>Ready for your test run</strong>
+                <p>Create a case, research it, analyse it, then record your own decision on the draft.</p>
               </div>
             </aside>
           </section>
