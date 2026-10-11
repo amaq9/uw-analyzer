@@ -16,12 +16,20 @@ companies only (SEC filings).
 2. **Open the case, Entity tab.** Add the candidate entity (same legal name; put the SEC CIK in the registration number if you know it). Press **Choose this entity**. Expected: status "Entity resolved" and "Research may start".
    - *Stop test:* add two candidates first. Expected: status "Entity ambiguous", research blocked until you choose.
 3. **Research tab.** Countries `US` (add `CA` etc. if relevant). **Create research plan**, then **Start research**. Expected: steps turn to Succeeded for SEC, GLEIF, OFAC and World Bank; the news steps may Fail (rate limit) and say so. "Accessed: Yes" only where a call succeeded. Press **Show source material** to see the exact copy fetched.
-4. **Ask Claude Code in the chat: "analyse case <the case id>"** (the id is in the browser address bar after `/cases/`). It records evidence, findings and a draft.
+4. **Draft recommendation tab, press "Analyse the research and prepare a draft".** The built-in analyzer reads the
+   exact copies fetched from the public sources, assesses the five financial areas (Strong, Satisfactory, Needs
+   attention or Weak, in words, with reasons and a trend), adds the sanctions, entity and country findings, proposes an
+   amount, and prepares the **draft recommendation** (approve an amount, or decline). Nothing is decided. It can be run
+   again; it adds a new draft version and no duplicate findings.
+   - A possible sanctions-list match makes **no draft**: a review item is raised for a person instead.
+   - A company with no SEC data (private or non-U.S.) gets a plain message about what is missing.
+   - Optional: ask Claude Code in the chat "analyse case <id>" to add judgement on top (it records the same way).
 5. **Evidence and claims tab.** Each finding shows its verification status, how fresh the evidence is, and (separately) which source was accessed and when. Nobody can type a status in.
 6. **Review items tab.** Normally empty. If two reliable sources disagree, an item appears; sign in with the **REVIEWER** code to resolve it in writing.
 7. **Draft recommendation tab.** Read the draft ("Not a decision"), open the full draft for reasons and sources, then record **your own decision**: adopt, change (outcome and amount, with a reason) or reject (with a reason). It cannot be edited afterwards.
 8. **Report tab.** All checks should pass. **Complete the report.** Then change something (ask Claude Code to add a finding) and complete again: a new version appears; version 1 is unchanged and shows "matches its recorded hash".
-9. **Draft against decision** (sidebar): your decision appears next to the draft.
+9. **Audit trail** (sidebar, sign in with the AUDITOR code): every action above is listed, with no case content.
+10. **Draft against decision** (sidebar): your decision appears next to the draft.
 
 ## Test 2: things that must refuse
 - Research before the entity is chosen: blocked with a plain reason.
