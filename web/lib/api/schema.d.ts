@@ -213,6 +213,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cases/{case_id}/documents/{document_id}/figures-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Preview Figures
+         * @description Suggest figures found in the document. Nothing is saved or used.
+         */
+        get: operations["preview_figures_api_v1_cases__case_id__documents__document_id__figures_preview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/cases/{case_id}/draft-recommendations": {
         parameters: {
             query?: never;
@@ -642,6 +662,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cases/{case_id}/statements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Statements
+         * @description The confirmed figures in use, newest period first.
+         */
+        get: operations["list_statements_api_v1_cases__case_id__statements_get"];
+        put?: never;
+        /**
+         * Confirm Statements
+         * @description A named person confirms the figures for one or more periods of an uploaded document.
+         */
+        post: operations["confirm_statements_api_v1_cases__case_id__statements_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/me": {
         parameters: {
             query?: never;
@@ -811,6 +855,12 @@ export interface components {
         };
         /** AnalysisIn */
         AnalysisIn: {
+            /**
+             * Financials
+             * @default auto
+             * @enum {string}
+             */
+            financials: "auto" | "uploaded" | "sec";
             /** Run Id */
             run_id?: string | null;
         };
@@ -880,6 +930,11 @@ export interface components {
             /** Resource Type */
             resource_type: string | null;
         };
+        /**
+         * AuditStatus
+         * @enum {string}
+         */
+        AuditStatus: "AUDITED" | "REVIEWED" | "UNAUDITED";
         /**
          * AuthState
          * @enum {string}
@@ -1736,6 +1791,34 @@ export interface components {
          * @enum {string}
          */
         EvidenceType: "REGISTRY" | "FINANCIAL" | "LEGAL_REGULATORY" | "NEWS" | "MACRO_INDUSTRY" | "OTHER";
+        /** ExtractionOut */
+        ExtractionOut: {
+            /** Currency Guess */
+            currency_guess: string | null;
+            /**
+             * Document Id
+             * Format: uuid
+             */
+            document_id: string;
+            /** Filename */
+            filename: string;
+            /** Metrics */
+            metrics: components["schemas"]["MetricInfo"][];
+            /** Notes */
+            notes: string[];
+            /**
+             * Notice
+             * @default These are suggestions read from the file. Check every figure against the document, correct it if needed, and confirm. Nothing is used until you confirm.
+             */
+            notice: string;
+            /** Period End Guesses */
+            period_end_guesses: (string | null)[];
+            /** Periods */
+            periods: string[];
+            /** Rows */
+            rows: components["schemas"]["RowOut"][];
+            unit_guess: components["schemas"]["Unit"] | null;
+        };
         /**
          * Factor
          * @description Something that lowered the proposed amount, and how.
@@ -1864,11 +1947,30 @@ export interface components {
             /** Tenant Id */
             tenant_id: string;
         };
+        /** MetricInfo */
+        MetricInfo: {
+            /** Label */
+            label: string;
+            /** Metric */
+            metric: string;
+        };
         /**
          * Outcome
          * @enum {string}
          */
         Outcome: "APPROVE" | "DECLINE";
+        /** PeriodIn */
+        PeriodIn: {
+            /** Figures */
+            figures: {
+                [key: string]: number | null;
+            };
+            /**
+             * Period End
+             * Format: date
+             */
+            period_end: string;
+        };
         /** Preview */
         Preview: {
             /** Can Complete */
@@ -2053,6 +2155,18 @@ export interface components {
             candidate_id: string;
             /** Note */
             note?: string | null;
+        };
+        /** RowOut */
+        RowOut: {
+            /**
+             * Label
+             * @description The line label exactly as found in the document
+             */
+            label: string;
+            /** Metric */
+            metric: string;
+            /** Values */
+            values: (number | null)[];
         };
         /** RunCreate */
         RunCreate: {
@@ -2260,6 +2374,57 @@ export interface components {
             /** Terms Notes */
             terms_notes?: string | null;
         };
+        /** StatementCreate */
+        StatementCreate: {
+            audit_status: components["schemas"]["AuditStatus"];
+            /** Currency */
+            currency: string;
+            /**
+             * Document Id
+             * Format: uuid
+             */
+            document_id: string;
+            /** Notes */
+            notes?: string | null;
+            /** Periods */
+            periods: components["schemas"]["PeriodIn"][];
+            unit: components["schemas"]["Unit"];
+        };
+        /** StatementOut */
+        StatementOut: {
+            audit_status: components["schemas"]["AuditStatus"];
+            /**
+             * Confirmed At
+             * Format: date-time
+             */
+            confirmed_at: string;
+            /** Confirmed By */
+            confirmed_by: string;
+            /** Currency */
+            currency: string;
+            /**
+             * Document Id
+             * Format: uuid
+             */
+            document_id: string;
+            /** Figures */
+            figures: {
+                [key: string]: number | null;
+            };
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Notes */
+            notes: string | null;
+            /**
+             * Period End
+             * Format: date
+             */
+            period_end: string;
+            unit: components["schemas"]["Unit"];
+        };
         /** StepOut */
         StepOut: {
             /**
@@ -2311,6 +2476,11 @@ export interface components {
             /** Reason */
             reason: string;
         };
+        /**
+         * Unit
+         * @enum {string}
+         */
+        Unit: "units" | "thousands" | "millions";
         /** Verification */
         Verification: {
             /** Conflict */
@@ -3147,6 +3317,65 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Not signed in, or the token is invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in but not permitted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found (or belongs to another tenant). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request was malformed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    preview_figures_api_v1_cases__case_id__documents__document_id__figures_preview_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+                document_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExtractionOut"];
                 };
             };
             /** @description Not signed in, or the token is invalid. */
@@ -4828,6 +5057,126 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Not signed in, or the token is invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in but not permitted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found (or belongs to another tenant). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request was malformed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_statements_api_v1_cases__case_id__statements_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatementOut"][];
+                };
+            };
+            /** @description Not signed in, or the token is invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in but not permitted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found (or belongs to another tenant). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request was malformed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    confirm_statements_api_v1_cases__case_id__statements_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StatementCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StatementOut"][];
                 };
             };
             /** @description Not signed in, or the token is invalid. */

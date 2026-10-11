@@ -215,6 +215,16 @@
       "AnalysisIn": {
         "additionalProperties": false,
         "properties": {
+          "financials": {
+            "default": "auto",
+            "enum": [
+              "auto",
+              "uploaded",
+              "sec"
+            ],
+            "title": "Financials",
+            "type": "string"
+          },
           "run_id": {
             "anyOf": [
               {
@@ -461,6 +471,15 @@
         ],
         "title": "AuditEventOut",
         "type": "object"
+      },
+      "AuditStatus": {
+        "enum": [
+          "AUDITED",
+          "REVIEWED",
+          "UNAUDITED"
+        ],
+        "title": "AuditStatus",
+        "type": "string"
       },
       "AuthState": {
         "enum": [
@@ -3064,6 +3083,100 @@
         "title": "EvidenceType",
         "type": "string"
       },
+      "ExtractionOut": {
+        "properties": {
+          "currency_guess": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency Guess"
+          },
+          "document_id": {
+            "format": "uuid",
+            "title": "Document Id",
+            "type": "string"
+          },
+          "filename": {
+            "title": "Filename",
+            "type": "string"
+          },
+          "metrics": {
+            "items": {
+              "$ref": "#/components/schemas/MetricInfo"
+            },
+            "title": "Metrics",
+            "type": "array"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "notice": {
+            "default": "These are suggestions read from the file. Check every figure against the document, correct it if needed, and confirm. Nothing is used until you confirm.",
+            "title": "Notice",
+            "type": "string"
+          },
+          "period_end_guesses": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Period End Guesses",
+            "type": "array"
+          },
+          "periods": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Periods",
+            "type": "array"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/RowOut"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "unit_guess": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Unit"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "document_id",
+          "filename",
+          "periods",
+          "period_end_guesses",
+          "unit_guess",
+          "currency_guess",
+          "rows",
+          "notes",
+          "metrics"
+        ],
+        "title": "ExtractionOut",
+        "type": "object"
+      },
       "Factor": {
         "additionalProperties": false,
         "description": "Something that lowered the proposed amount, and how.",
@@ -3372,6 +3485,24 @@
         "title": "Me",
         "type": "object"
       },
+      "MetricInfo": {
+        "properties": {
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "metric": {
+            "title": "Metric",
+            "type": "string"
+          }
+        },
+        "required": [
+          "metric",
+          "label"
+        ],
+        "title": "MetricInfo",
+        "type": "object"
+      },
       "Outcome": {
         "enum": [
           "APPROVE",
@@ -3379,6 +3510,36 @@
         ],
         "title": "Outcome",
         "type": "string"
+      },
+      "PeriodIn": {
+        "additionalProperties": false,
+        "properties": {
+          "figures": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Figures",
+            "type": "object"
+          },
+          "period_end": {
+            "format": "date",
+            "title": "Period End",
+            "type": "string"
+          }
+        },
+        "required": [
+          "period_end",
+          "figures"
+        ],
+        "title": "PeriodIn",
+        "type": "object"
       },
       "Preview": {
         "properties": {
@@ -3815,6 +3976,40 @@
           "candidate_id"
         ],
         "title": "ResolveRequest",
+        "type": "object"
+      },
+      "RowOut": {
+        "properties": {
+          "label": {
+            "description": "The line label exactly as found in the document",
+            "title": "Label",
+            "type": "string"
+          },
+          "metric": {
+            "title": "Metric",
+            "type": "string"
+          },
+          "values": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Values",
+            "type": "array"
+          }
+        },
+        "required": [
+          "metric",
+          "label",
+          "values"
+        ],
+        "title": "RowOut",
         "type": "object"
       },
       "RunCreate": {
@@ -4429,6 +4624,134 @@
         "title": "SourceUpdate",
         "type": "object"
       },
+      "StatementCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "audit_status": {
+            "$ref": "#/components/schemas/AuditStatus"
+          },
+          "currency": {
+            "pattern": "^[A-Z]{3}$",
+            "title": "Currency",
+            "type": "string"
+          },
+          "document_id": {
+            "format": "uuid",
+            "title": "Document Id",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "periods": {
+            "items": {
+              "$ref": "#/components/schemas/PeriodIn"
+            },
+            "maxItems": 4,
+            "minItems": 1,
+            "title": "Periods",
+            "type": "array"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          }
+        },
+        "required": [
+          "document_id",
+          "currency",
+          "unit",
+          "audit_status",
+          "periods"
+        ],
+        "title": "StatementCreate",
+        "type": "object"
+      },
+      "StatementOut": {
+        "properties": {
+          "audit_status": {
+            "$ref": "#/components/schemas/AuditStatus"
+          },
+          "confirmed_at": {
+            "format": "date-time",
+            "title": "Confirmed At",
+            "type": "string"
+          },
+          "confirmed_by": {
+            "title": "Confirmed By",
+            "type": "string"
+          },
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "document_id": {
+            "format": "uuid",
+            "title": "Document Id",
+            "type": "string"
+          },
+          "figures": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Figures",
+            "type": "object"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "period_end": {
+            "format": "date",
+            "title": "Period End",
+            "type": "string"
+          },
+          "unit": {
+            "$ref": "#/components/schemas/Unit"
+          }
+        },
+        "required": [
+          "id",
+          "document_id",
+          "period_end",
+          "currency",
+          "unit",
+          "audit_status",
+          "figures",
+          "notes",
+          "confirmed_by",
+          "confirmed_at"
+        ],
+        "title": "StatementOut",
+        "type": "object"
+      },
       "StepOut": {
         "properties": {
           "accessed": {
@@ -4574,6 +4897,15 @@
         ],
         "title": "UnconfirmedRequest",
         "type": "object"
+      },
+      "Unit": {
+        "enum": [
+          "units",
+          "thousands",
+          "millions"
+        ],
+        "title": "Unit",
+        "type": "string"
       },
       "Verification": {
         "properties": {
@@ -5867,6 +6199,95 @@
         "summary": "Download Document",
         "tags": [
           "documents"
+        ]
+      }
+    },
+    "/api/v1/cases/{case_id}/documents/{document_id}/figures-preview": {
+      "get": {
+        "description": "Suggest figures found in the document. Nothing is saved or used.",
+        "operationId": "preview_figures_api_v1_cases__case_id__documents__document_id__figures_preview_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "document_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Document Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExtractionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the token is invalid."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Signed in but not permitted."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found (or belongs to another tenant)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request was malformed."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Preview Figures",
+        "tags": [
+          "statements"
         ]
       }
     },
@@ -8299,6 +8720,180 @@
         "summary": "Read Snapshot",
         "tags": [
           "research"
+        ]
+      }
+    },
+    "/api/v1/cases/{case_id}/statements": {
+      "get": {
+        "description": "The confirmed figures in use, newest period first.",
+        "operationId": "list_statements_api_v1_cases__case_id__statements_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/StatementOut"
+                  },
+                  "title": "Response List Statements Api V1 Cases  Case Id  Statements Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the token is invalid."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Signed in but not permitted."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found (or belongs to another tenant)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request was malformed."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Statements",
+        "tags": [
+          "statements"
+        ]
+      },
+      "post": {
+        "description": "A named person confirms the figures for one or more periods of an uploaded document.",
+        "operationId": "confirm_statements_api_v1_cases__case_id__statements_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StatementCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/StatementOut"
+                  },
+                  "title": "Response Confirm Statements Api V1 Cases  Case Id  Statements Post",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the token is invalid."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Signed in but not permitted."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found (or belongs to another tenant)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request was malformed."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Confirm Statements",
+        "tags": [
+          "statements"
         ]
       }
     },
