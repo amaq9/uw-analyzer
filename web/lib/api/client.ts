@@ -2,6 +2,7 @@ import { ApiConfigurationError, getApiBaseUrl } from "@/lib/api/config";
 import type { components } from "@/lib/api/schema";
 
 export type CurrentUser = components["schemas"]["Me"];
+export type DraftRecommendation = components["schemas"]["DraftOut"];
 type ErrorResponse = components["schemas"]["ErrorResponse"];
 
 export class ApiRequestError extends Error {
@@ -50,11 +51,11 @@ function isErrorResponse(value: unknown): value is ErrorResponse {
   );
 }
 
-export async function getCurrentUser(token: string, signal?: AbortSignal): Promise<CurrentUser> {
+async function requestJson<T>(path: string, token: string, signal?: AbortSignal): Promise<T> {
   let response: Response;
 
   try {
-    response = await fetch(`${getApiBaseUrl()}/api/v1/me`, {
+    response = await fetch(`${getApiBaseUrl()}${path}`, {
       headers: {
         Accept: "application/json",
         Authorization: `Bearer ${token}`,
@@ -103,5 +104,22 @@ export async function getCurrentUser(token: string, signal?: AbortSignal): Promi
     });
   }
 
-  return (await response.json()) as CurrentUser;
+  return (await response.json()) as T;
+}
+
+export function getCurrentUser(token: string, signal?: AbortSignal) {
+  return requestJson<CurrentUser>("/api/v1/me", token, signal);
+}
+
+export function getDraftRecommendation(
+  token: string,
+  caseId: string,
+  draftId: string,
+  signal?: AbortSignal,
+) {
+  return requestJson<DraftRecommendation>(
+    `/api/v1/cases/${encodeURIComponent(caseId)}/draft-recommendations/${encodeURIComponent(draftId)}`,
+    token,
+    signal,
+  );
 }

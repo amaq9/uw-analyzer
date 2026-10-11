@@ -17,8 +17,11 @@ type SessionContextValue = {
 
 const SessionContext = createContext<SessionContextValue | undefined>(undefined);
 
-export function SessionProvider({ children }: Readonly<{ children: ReactNode }>) {
-  const [session, setSession] = useState<UserSession>();
+export function SessionProvider({
+  children,
+  initialSession,
+}: Readonly<{ children: ReactNode; initialSession?: UserSession }>) {
+  const [session, setSession] = useState<UserSession | undefined>(initialSession);
 
   const value = useMemo<SessionContextValue>(
     () => ({
