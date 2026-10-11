@@ -278,6 +278,52 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Sources
+         * @description The tenant's registry. `jurisdiction` also returns GLOBAL sources.
+         */
+        get: operations["list_sources_api_v1_sources_get"];
+        put?: never;
+        /**
+         * Create Source
+         * @description Register a source. Health starts as UNKNOWN until something checks it.
+         */
+        post: operations["create_source_api_v1_sources_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sources/{source_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Source */
+        get: operations["get_source_api_v1_sources__source_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Source
+         * @description Change some fields (also how health is recorded for now). Send `expected_version`; a stale
+         *     one returns 409 and saves nothing. The key never changes.
+         */
+        patch: operations["update_source_api_v1_sources__source_id__patch"];
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -302,6 +348,11 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AccessCategory
+         * @enum {string}
+         */
+        AccessCategory: "ACTUALLY_ACCESSIBLE" | "RESTRICTED_LICENSED" | "DISCOVERY_ONLY" | "TECHNICALLY_UNAVAILABLE";
         /** AuditEventOut */
         AuditEventOut: {
             /** Action */
@@ -328,6 +379,11 @@ export interface components {
             /** Resource Type */
             resource_type: string | null;
         };
+        /**
+         * AuthState
+         * @enum {string}
+         */
+        AuthState: "NOT_REQUIRED" | "CONFIGURED" | "MISSING";
         /**
          * Band
          * @enum {string}
@@ -744,13 +800,11 @@ export interface components {
             /** Message */
             message: string;
         };
-        /** Health */
-        Health: {
-            /** Status */
-            status: string;
-            /** Version */
-            version: string;
-        };
+        /**
+         * Health
+         * @enum {string}
+         */
+        "Health-Input": "UNKNOWN" | "HEALTHY" | "DEGRADED" | "DOWN";
         /** InformationGap */
         InformationGap: {
             /** Description */
@@ -811,6 +865,38 @@ export interface components {
             note?: string | null;
         };
         /**
+         * SourceClass
+         * @enum {string}
+         */
+        SourceClass: "OFFICIAL" | "COMMERCIAL" | "SECONDARY" | "WEAK";
+        /** SourceCreate */
+        SourceCreate: {
+            access_category: components["schemas"]["AccessCategory"];
+            auth_state: components["schemas"]["AuthState"];
+            /**
+             * Jurisdictions
+             * @description ISO 3166-1 alpha-2 codes, or GLOBAL
+             */
+            jurisdictions: string[];
+            /**
+             * Key
+             * @description Stable lowercase identifier, unique per tenant
+             */
+            key: string;
+            /** Name */
+            name: string;
+            /** Rate Limit Per Minute */
+            rate_limit_per_minute?: number | null;
+            source_class: components["schemas"]["SourceClass"];
+            /**
+             * Source Type
+             * @description e.g. company_registry, court_records, news
+             */
+            source_type: string;
+            /** Terms Notes */
+            terms_notes?: string | null;
+        };
+        /**
          * SourceInfo
          * @description Who produced the draft and with what, so the run can be reproduced (P-10).
          */
@@ -827,6 +913,71 @@ export interface components {
             /** Skill Version */
             skill_version: string;
         };
+        /** SourceOut */
+        SourceOut: {
+            access_category: components["schemas"]["AccessCategory"];
+            auth_state: components["schemas"]["AuthState"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            health: components["schemas"]["app__sources__schemas__Health"];
+            /** Health Checked At */
+            health_checked_at: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Jurisdictions */
+            jurisdictions: string[];
+            /** Key */
+            key: string;
+            /** Name */
+            name: string;
+            /**
+             * Notice
+             * @default Registry entry: what the product can reach. It is not proof that a source was accessed.
+             */
+            notice: string;
+            /** Rate Limit Per Minute */
+            rate_limit_per_minute: number | null;
+            source_class: components["schemas"]["SourceClass"];
+            /** Source Type */
+            source_type: string;
+            /** Terms Notes */
+            terms_notes: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Version */
+            version: number;
+        };
+        /**
+         * SourceUpdate
+         * @description Any subset of the fields, plus the version the caller last saw.
+         */
+        SourceUpdate: {
+            access_category?: components["schemas"]["AccessCategory"] | null;
+            auth_state?: components["schemas"]["AuthState"] | null;
+            /** Expected Version */
+            expected_version: number;
+            health?: components["schemas"]["Health-Input"] | null;
+            /** Jurisdictions */
+            jurisdictions?: string[] | null;
+            /** Name */
+            name?: string | null;
+            /** Rate Limit Per Minute */
+            rate_limit_per_minute?: number | null;
+            source_class?: components["schemas"]["SourceClass"] | null;
+            /** Source Type */
+            source_type?: string | null;
+            /** Terms Notes */
+            terms_notes?: string | null;
+        };
         /**
          * UnconfirmedRequest
          * @description A person records that the legal entity could not be confirmed or found (reason required).
@@ -835,6 +986,18 @@ export interface components {
             /** Reason */
             reason: string;
         };
+        /** Health */
+        app__main__Health: {
+            /** Status */
+            status: string;
+            /** Version */
+            version: string;
+        };
+        /**
+         * Health
+         * @enum {string}
+         */
+        app__sources__schemas__Health: "UNKNOWN" | "HEALTHY" | "DEGRADED" | "DOWN";
     };
     responses: never;
     parameters: never;
@@ -1919,6 +2082,245 @@ export interface operations {
             };
         };
     };
+    list_sources_api_v1_sources_get: {
+        parameters: {
+            query?: {
+                jurisdiction?: string | null;
+                access_category?: components["schemas"]["AccessCategory"] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceOut"][];
+                };
+            };
+            /** @description Not signed in, or the token is invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in but not permitted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found (or belongs to another tenant). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request was malformed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    create_source_api_v1_sources_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SourceCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceOut"];
+                };
+            };
+            /** @description Not signed in, or the token is invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in but not permitted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found (or belongs to another tenant). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request was malformed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_source_api_v1_sources__source_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceOut"];
+                };
+            };
+            /** @description Not signed in, or the token is invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in but not permitted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found (or belongs to another tenant). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request was malformed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    update_source_api_v1_sources__source_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SourceUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceOut"];
+                };
+            };
+            /** @description Not signed in, or the token is invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in but not permitted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found (or belongs to another tenant). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request was malformed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     health_health_get: {
         parameters: {
             query?: never;
@@ -1934,7 +2336,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Health"];
+                    "application/json": components["schemas"]["app__main__Health"];
                 };
             };
         };
