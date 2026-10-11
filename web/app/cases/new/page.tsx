@@ -8,7 +8,7 @@ export default function NewCasePage() {
       <Sidebar activePage="cases" />
       <div className="workspace">
         <Topbar />
-        <main className="cases-page">
+        <main className="cases-page" id="main-content">
           <CaseForm mode="create" />
         </main>
       </div>

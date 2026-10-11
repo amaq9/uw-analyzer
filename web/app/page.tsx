@@ -11,7 +11,7 @@ export default function Home() {
       <Sidebar />
       <div className="workspace">
         <Topbar />
-        <main className="dashboard">
+        <main className="dashboard" id="main-content">
           <section className="hero">
             <div className="hero-copy">
               <p className="eyebrow hero-eyebrow">Research workspace</p>

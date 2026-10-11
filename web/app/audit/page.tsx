@@ -8,7 +8,7 @@ export default function AuditPage() {
       <Sidebar activePage="audit" />
       <div className="workspace">
         <Topbar />
-        <main className="cases-page">
+        <main className="cases-page" id="main-content">
           <AuditTrail />
         </main>
       </div>

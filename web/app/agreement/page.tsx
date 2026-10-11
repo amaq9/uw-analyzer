@@ -8,7 +8,7 @@ export default function AgreementPage() {
       <Sidebar activePage="agreement" />
       <div className="workspace">
         <Topbar />
-        <main className="cases-page">
+        <main className="cases-page" id="main-content">
           <AgreementView />
         </main>
       </div>

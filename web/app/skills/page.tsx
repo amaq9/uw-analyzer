@@ -10,7 +10,7 @@ export default function SkillsPage() {
       <Sidebar activePage="skills" />
       <div className="workspace">
         <Topbar />
-        <main className="dashboard skills-dashboard">
+        <main className="dashboard skills-dashboard" id="main-content">
           <section className="skills-hero">
             <div className="skills-hero-icon"><DocumentChartIcon /></div>
             <div className="skills-hero-copy">

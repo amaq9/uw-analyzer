@@ -33,6 +33,23 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+.skip-link {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 1000;
+  padding: 10px 14px;
+  color: var(--white);
+  border-radius: 6px;
+  background: var(--navy-deep);
+  font-weight: 700;
+  transform: translateY(-180%);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
 .test-product-label {
   position: fixed;
   right: 16px;
@@ -330,6 +347,19 @@ textarea {
   gap: 10px;
   padding-left: 22px;
   border-left: 1px solid var(--line);
+}
+
+.topbar-sign-out {
+  min-height: 38px;
+  padding: 0 13px;
+  color: var(--teal);
+  border: 1px solid rgba(14, 119, 111, 0.32);
+  border-radius: 6px;
+  background: var(--paper);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 750;
+  cursor: pointer;
 }
 
 .avatar {
@@ -1902,7 +1932,19 @@ textarea {
 
 .preview-link:focus-visible,
 .brand:focus-visible,
-.user-chip:focus-visible {
+.user-chip:focus-visible,
+.nav-item:focus-visible,
+.inline-action:focus-visible,
+.primary-action:focus-visible,
+.secondary-action:focus-visible,
+.topbar-sign-out:focus-visible,
+.case-pagination button:focus-visible,
+.ws-button:focus-visible,
+.ws-link:focus-visible,
+.ws-tab:focus-visible,
+.ws-field input:focus-visible,
+.ws-field select:focus-visible,
+.ws-field textarea:focus-visible {
   outline: 3px solid rgba(43, 166, 155, 0.45);
   outline-offset: 3px;
 }
@@ -2280,25 +2322,25 @@ textarea {
   }
 
   .sidebar-note,
-  .governance-nav,
   .sidebar .nav-label {
     display: none;
   }
 
   .sidebar nav {
-    display: block;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
     margin-top: 18px;
   }
 
-  .workspace-nav {
+  .workspace-nav,
+  .governance-nav {
     flex-direction: row;
+    flex-wrap: wrap;
   }
 
-  .workspace-nav li:has(.unavailable) {
-    display: none;
-  }
-
-  .workspace-nav .nav-item {
+  .workspace-nav .nav-item,
+  .governance-nav .nav-item {
     min-height: 38px;
   }
 
@@ -2310,6 +2352,12 @@ textarea {
   .environment-pill,
   .discipline-status {
     display: none;
+  }
+
+  .topbar-actions {
+    width: 100%;
+    justify-content: flex-end;
+    gap: 12px;
   }
 
   .dashboard {

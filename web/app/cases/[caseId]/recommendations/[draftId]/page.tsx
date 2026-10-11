@@ -14,7 +14,7 @@ export default async function DraftRecommendationPage({ params }: DraftRecommend
       <Sidebar />
       <div className="workspace">
         <Topbar />
-        <main className="draft-page">
+        <main className="draft-page" id="main-content">
           <DraftRecommendationView caseId={caseId} draftId={draftId} />
         </main>
       </div>
