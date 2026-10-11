@@ -23,6 +23,7 @@ from app.documents.storage import S3Storage
 from app.documents.store import PostgresDocumentStore
 from app.errors import ERROR_RESPONSES, register_error_handlers
 from app.middleware import correlation_id_middleware, make_upload_size_guard
+from app.recommendation.agreement import router as agreement_router
 from app.recommendation.decision_store import PostgresDecisionStore
 from app.recommendation.router import router as draft_router
 from app.recommendation.store import PostgresDraftStore
@@ -175,5 +176,6 @@ def create_app(
     v1.include_router(documents_router)
     v1.include_router(draft_router)
     v1.include_router(sources_router)
+    v1.include_router(agreement_router)
     app.include_router(v1)
     return app

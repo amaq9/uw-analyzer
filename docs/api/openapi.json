@@ -11,6 +11,207 @@
         "title": "AccessCategory",
         "type": "string"
       },
+      "AgreementReport": {
+        "properties": {
+          "notice": {
+            "default": "Counts of how the underwriter's recorded outcomes compare with the system's drafts. A test-run measure only; it is not a score of the system or of any person.",
+            "title": "Notice",
+            "type": "string"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/AgreementRow"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "test_product": {
+            "default": true,
+            "title": "Test Product",
+            "type": "boolean"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/AgreementTotals"
+          }
+        },
+        "required": [
+          "totals",
+          "rows"
+        ],
+        "title": "AgreementReport",
+        "type": "object"
+      },
+      "AgreementRow": {
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/DecisionAction"
+          },
+          "agrees": {
+            "title": "Agrees",
+            "type": "boolean"
+          },
+          "ai_proposed_amount": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ai Proposed Amount"
+          },
+          "case_id": {
+            "format": "uuid",
+            "title": "Case Id",
+            "type": "string"
+          },
+          "currency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency"
+          },
+          "decided_at": {
+            "format": "date-time",
+            "title": "Decided At",
+            "type": "string"
+          },
+          "decided_by": {
+            "title": "Decided By",
+            "type": "string"
+          },
+          "draft_amount": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Amount"
+          },
+          "draft_id": {
+            "format": "uuid",
+            "title": "Draft Id",
+            "type": "string"
+          },
+          "draft_outcome": {
+            "$ref": "#/components/schemas/Outcome"
+          },
+          "draft_version": {
+            "title": "Draft Version",
+            "type": "integer"
+          },
+          "final_amount": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Final Amount"
+          },
+          "final_outcome": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Outcome"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "same_outcome": {
+            "title": "Same Outcome",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "case_id",
+          "draft_id",
+          "draft_version",
+          "currency",
+          "draft_outcome",
+          "draft_amount",
+          "ai_proposed_amount",
+          "action",
+          "final_outcome",
+          "final_amount",
+          "agrees",
+          "same_outcome",
+          "reason",
+          "decided_by",
+          "decided_at"
+        ],
+        "title": "AgreementRow",
+        "type": "object"
+      },
+      "AgreementTotals": {
+        "properties": {
+          "adopted": {
+            "title": "Adopted",
+            "type": "integer"
+          },
+          "amount_differs_same_outcome": {
+            "title": "Amount Differs Same Outcome",
+            "type": "integer"
+          },
+          "changed": {
+            "title": "Changed",
+            "type": "integer"
+          },
+          "decided": {
+            "title": "Decided",
+            "type": "integer"
+          },
+          "different_outcome": {
+            "title": "Different Outcome",
+            "type": "integer"
+          },
+          "rejected": {
+            "title": "Rejected",
+            "type": "integer"
+          },
+          "same_outcome": {
+            "title": "Same Outcome",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "decided",
+          "adopted",
+          "changed",
+          "rejected",
+          "same_outcome",
+          "different_outcome",
+          "amount_differs_same_outcome"
+        ],
+        "title": "AgreementTotals",
+        "type": "object"
+      },
       "AuditEventOut": {
         "properties": {
           "action": {
@@ -2268,6 +2469,87 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/agreement": {
+      "get": {
+        "description": "Totals over all of this tenant's recorded decisions, and the newest `limit` rows.",
+        "operationId": "agreement_report_api_v1_agreement_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgreementReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the token is invalid."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Signed in but not permitted."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found (or belongs to another tenant)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request was malformed."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Agreement Report",
+        "tags": [
+          "agreement"
+        ]
+      }
+    },
     "/api/v1/audit-events": {
       "get": {
         "description": "The caller's own tenant's audit events, newest first. Reading is itself audited.",

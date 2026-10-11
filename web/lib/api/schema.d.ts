@@ -4,6 +4,26 @@
  */
 
 export interface paths {
+    "/api/v1/agreement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Agreement Report
+         * @description Totals over all of this tenant's recorded decisions, and the newest `limit` rows.
+         */
+        get: operations["agreement_report_api_v1_agreement_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/audit-events": {
         parameters: {
             query?: never;
@@ -375,6 +395,78 @@ export interface components {
          * @enum {string}
          */
         AccessCategory: "ACTUALLY_ACCESSIBLE" | "RESTRICTED_LICENSED" | "DISCOVERY_ONLY" | "TECHNICALLY_UNAVAILABLE";
+        /** AgreementReport */
+        AgreementReport: {
+            /**
+             * Notice
+             * @default Counts of how the underwriter's recorded outcomes compare with the system's drafts. A test-run measure only; it is not a score of the system or of any person.
+             */
+            notice: string;
+            /** Rows */
+            rows: components["schemas"]["AgreementRow"][];
+            /**
+             * Test Product
+             * @default true
+             */
+            test_product: boolean;
+            totals: components["schemas"]["AgreementTotals"];
+        };
+        /** AgreementRow */
+        AgreementRow: {
+            action: components["schemas"]["DecisionAction"];
+            /** Agrees */
+            agrees: boolean;
+            /** Ai Proposed Amount */
+            ai_proposed_amount: string | null;
+            /**
+             * Case Id
+             * Format: uuid
+             */
+            case_id: string;
+            /** Currency */
+            currency: string | null;
+            /**
+             * Decided At
+             * Format: date-time
+             */
+            decided_at: string;
+            /** Decided By */
+            decided_by: string;
+            /** Draft Amount */
+            draft_amount: string | null;
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            draft_outcome: components["schemas"]["Outcome"];
+            /** Draft Version */
+            draft_version: number;
+            /** Final Amount */
+            final_amount: string | null;
+            final_outcome: components["schemas"]["Outcome"] | null;
+            /** Reason */
+            reason: string | null;
+            /** Same Outcome */
+            same_outcome: boolean;
+        };
+        /** AgreementTotals */
+        AgreementTotals: {
+            /** Adopted */
+            adopted: number;
+            /** Amount Differs Same Outcome */
+            amount_differs_same_outcome: number;
+            /** Changed */
+            changed: number;
+            /** Decided */
+            decided: number;
+            /** Different Outcome */
+            different_outcome: number;
+            /** Rejected */
+            rejected: number;
+            /** Same Outcome */
+            same_outcome: number;
+        };
         /** AuditEventOut */
         AuditEventOut: {
             /** Action */
@@ -1092,6 +1184,64 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    agreement_report_api_v1_agreement_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgreementReport"];
+                };
+            };
+            /** @description Not signed in, or the token is invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in but not permitted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found (or belongs to another tenant). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request was malformed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     list_audit_events_api_v1_audit_events_get: {
         parameters: {
             query?: {
