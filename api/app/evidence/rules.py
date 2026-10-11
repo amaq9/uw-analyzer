@@ -106,6 +106,8 @@ class ClaimFacts:
     source_unavailable: bool  # an attempted source was recorded as unavailable
     supporting: tuple[EvidenceFacts, ...] = ()
     contradicting: tuple[EvidenceFacts, ...] = ()
+    # A person's recorded resolution of a conflict: SUPPORTING_PREVAILS or CONTRADICTING_PREVAILS.
+    conflict_resolution: str | None = None
 
 
 @dataclass(frozen=True)
@@ -127,7 +129,15 @@ def verify(claim: ClaimFacts) -> Verdict:
     weak = [e for e in claim.supporting if not e.reliable]
     origins = {e.origin for e in reliable}
     reliable_against = [e for e in claim.contradicting if e.reliable]
-    conflict = bool(reliable_against)
+    resolution = claim.conflict_resolution if reliable_against else None
+    conflict = bool(reliable_against) and resolution is None
+    if resolution == "CONTRADICTING_PREVAILS":
+        return Verdict(
+            VerificationStatus.UNVERIFIED,
+            ["A person resolved the conflict in favour of the contradicting evidence."],
+            [],
+            False,
+        )
     reasons: list[str] = []
     needs: list[str] = []
 
@@ -172,5 +182,8 @@ def verify(claim: ClaimFacts) -> Verdict:
         enough = False
 
     if enough and not conflict:
-        return Verdict(VerificationStatus.VERIFIED, ["Supported by reliable evidence."], [], False)
+        done = ["Supported by reliable evidence."]
+        if resolution == "SUPPORTING_PREVAILS":
+            done.append("A person resolved the conflict in favour of the supporting evidence.")
+        return Verdict(VerificationStatus.VERIFIED, done, [], False)
     return Verdict(VerificationStatus.PARTIALLY_VERIFIED, reasons, needs, conflict)

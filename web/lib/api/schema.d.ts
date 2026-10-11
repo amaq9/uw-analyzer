@@ -339,6 +339,68 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cases/{case_id}/escalations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Escalations
+         * @description All escalations of the case, with how many are still open.
+         */
+        get: operations["list_escalations_api_v1_cases__case_id__escalations_get"];
+        put?: never;
+        /**
+         * Raise Escalation
+         * @description A person flags something that needs review (for example a material ambiguity).
+         */
+        post: operations["raise_escalation_api_v1_cases__case_id__escalations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cases/{case_id}/escalations/{escalation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Escalation */
+        get: operations["get_escalation_api_v1_cases__case_id__escalations__escalation_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cases/{case_id}/escalations/{escalation_id}/resolution": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resolve Escalation
+         * @description A named reviewer resolves the escalation in writing. For a conflict they choose which side
+         *     prevails and name the evidence preferred; a claim's verification then follows that choice.
+         */
+        post: operations["resolve_escalation_api_v1_cases__case_id__escalations__escalation_id__resolution_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/cases/{case_id}/evidence": {
         parameters: {
             query?: never;
@@ -1242,6 +1304,73 @@ export interface components {
             error: components["schemas"]["ErrorBody"];
         };
         /**
+         * EscalationCreate
+         * @description A person raising something for review. Conflicts are raised by the system, not here.
+         */
+        EscalationCreate: {
+            /** Claim Id */
+            claim_id?: string | null;
+            /** Description */
+            description: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "MATERIAL_AMBIGUITY" | "OTHER";
+        };
+        /** EscalationList */
+        EscalationList: {
+            /** Items */
+            items: components["schemas"]["EscalationOut"][];
+            /** Open Count */
+            open_count: number;
+        };
+        /** EscalationOut */
+        EscalationOut: {
+            /**
+             * Case Id
+             * Format: uuid
+             */
+            case_id: string;
+            /** Claim Id */
+            claim_id: string | null;
+            /**
+             * Comparison
+             * @description Conflicts only: each side of the dispute compared on authority, date, specificity, independence and data quality
+             */
+            comparison?: {
+                [key: string]: unknown;
+            }[];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By */
+            created_by: string;
+            /** Description */
+            description: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            kind: components["schemas"]["Kind"];
+            /**
+             * Label
+             * @default HUMAN_REVIEW_REQUIRED
+             */
+            label: string;
+            /** Raised By System */
+            raised_by_system: boolean;
+            resolution: components["schemas"]["Resolution"] | null;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "OPEN" | "RESOLVED";
+        };
+        /**
          * EvidenceCreate
          * @description What a person or session may submit. For connector evidence the server derives the source,
          *     class, provenance and discovery flag from the logged call; the author cannot set them.
@@ -1411,6 +1540,11 @@ export interface components {
             /** Field */
             field: string;
         };
+        /**
+         * Kind
+         * @enum {string}
+         */
+        Kind: "CONFLICT" | "MATERIAL_AMBIGUITY" | "OTHER";
         /** LinkIn */
         LinkIn: {
             /**
@@ -1477,6 +1611,37 @@ export interface components {
         ReopenRequest: {
             /** Reason */
             reason: string;
+        };
+        /** Resolution */
+        Resolution: {
+            /** Explanation */
+            explanation: string;
+            outcome: components["schemas"]["ResolutionOutcome"];
+            /** Preferred Evidence Id */
+            preferred_evidence_id: string | null;
+            /**
+             * Resolved At
+             * Format: date-time
+             */
+            resolved_at: string;
+            /** Resolved By */
+            resolved_by: string;
+        };
+        /**
+         * ResolutionOutcome
+         * @enum {string}
+         */
+        ResolutionOutcome: "SUPPORTING_PREVAILS" | "CONTRADICTING_PREVAILS" | "NO_CLAIM_CHANGE";
+        /** ResolveIn */
+        ResolveIn: {
+            /**
+             * Explanation
+             * @description Why this evidence or decision was preferred
+             */
+            explanation: string;
+            outcome: components["schemas"]["ResolutionOutcome"];
+            /** Preferred Evidence Id */
+            preferred_evidence_id?: string | null;
         };
         /**
          * ResolveRequest
@@ -3094,6 +3259,248 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CaseOut"];
+                };
+            };
+            /** @description Not signed in, or the token is invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in but not permitted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found (or belongs to another tenant). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request was malformed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_escalations_api_v1_cases__case_id__escalations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EscalationList"];
+                };
+            };
+            /** @description Not signed in, or the token is invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in but not permitted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found (or belongs to another tenant). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request was malformed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    raise_escalation_api_v1_cases__case_id__escalations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EscalationCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EscalationOut"];
+                };
+            };
+            /** @description Not signed in, or the token is invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in but not permitted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found (or belongs to another tenant). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request was malformed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_escalation_api_v1_cases__case_id__escalations__escalation_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+                escalation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EscalationOut"];
+                };
+            };
+            /** @description Not signed in, or the token is invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in but not permitted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found (or belongs to another tenant). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request was malformed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    resolve_escalation_api_v1_cases__case_id__escalations__escalation_id__resolution_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+                escalation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolveIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EscalationOut"];
                 };
             };
             /** @description Not signed in, or the token is invalid. */

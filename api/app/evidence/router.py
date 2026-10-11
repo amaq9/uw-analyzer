@@ -11,6 +11,7 @@ Rules enforced here, on the server:
 
 import uuid
 from datetime import UTC, date, datetime, timedelta
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 
@@ -20,6 +21,7 @@ from app.auth.deps import require_permission
 from app.auth.models import Permission, Principal
 from app.cases.access import load_case_for
 from app.documents.store import PostgresDocumentStore
+from app.escalations.store import PostgresEscalationStore
 from app.evidence.rules import (
     RULES_VERSION,
     ClaimFacts,
@@ -38,6 +40,7 @@ from app.evidence.schemas import (
     EvidenceRecord,
     LinkIn,
     LinkOut,
+    LinkRecord,
     Verification,
     evidence_out,
 )
@@ -96,6 +99,93 @@ def _load_evidence(
     return record
 
 
+def _active_resolution(
+    request: Request, claim_id: uuid.UUID, pairs: list[tuple[LinkRecord, EvidenceRecord]]
+) -> str | None:
+    """A person's resolution counts only if it came after the newest reliable contradicting link,
+    so fresh contradicting evidence reopens the question."""
+    escalations: PostgresEscalationStore = request.app.state.escalation_store
+    resolution = escalations.latest_conflict_resolution(claim_id)
+    if resolution is None or resolution["outcome"] == "NO_CLAIM_CHANGE":
+        return None
+    newest = max(
+        (
+            link.created_at
+            for link, e in pairs
+            if link.relation is Relation.CONTRADICTS and _facts(e).reliable
+        ),
+        default=None,
+    )
+    if newest is not None and resolution["resolved_at"] < newest:
+        return None
+    return str(resolution["outcome"])
+
+
+def conflict_comparison(request: Request, claim_id: uuid.UUID) -> list[dict[str, Any]]:
+    """Each linked source side by side on authority, date, specificity, independence and quality."""
+    store = _store(request)
+    rows: list[dict[str, Any]] = []
+    for link in store.links_of(claim_id):
+        e = store.get_evidence(link.evidence_id)
+        if e is None:
+            continue
+        rows.append(
+            {
+                "side": link.relation.value,
+                "evidence_id": str(e.id),
+                "title": e.title,
+                "origin": e.origin,
+                "authority": e.source_class,
+                "date": _evidence_date(e).isoformat(),
+                "freshness": _fresh(e).value,
+                "specificity": "primary record" if e.is_primary else "secondary report",
+                "data_quality": ("discovery only; " if e.discovery_only else "")
+                + (
+                    "class declared by author"
+                    if e.class_basis == "author_declared"
+                    else "class from registry"
+                ),
+            }
+        )
+    origins = {
+        side: {r["origin"] for r in rows if r["side"] == side}
+        for side in ("SUPPORTS", "CONTRADICTS")
+    }
+    independent = not (origins["SUPPORTS"] & origins["CONTRADICTS"])
+    for r in rows:
+        r["independent_of_other_side"] = independent
+    return rows
+
+
+def _raise_conflict_if_needed(
+    request: Request, principal: Principal, claim: ClaimRecord, out: ClaimOut
+) -> None:
+    """A material claim with an unresolved reliable contradiction needs a person (P-07)."""
+    if not (claim.material and out.verification.conflict):
+        return
+    escalations: PostgresEscalationStore = request.app.state.escalation_store
+    row = escalations.add_conflict_if_none_open(
+        {
+            "tenant_id": principal.tenant_id,
+            "case_id": claim.case_id,
+            "kind": "CONFLICT",
+            "claim_id": claim.id,
+            "description": "Reliable sources disagree about a material claim. A person must "
+            "decide which evidence prevails.",
+            "raised_by_system": True,
+            "created_by": "system",
+        }
+    )
+    if row is not None:
+        _audit(
+            request,
+            principal,
+            Action.ESCALATION_RAISED,
+            claim.case_id,
+            {"escalation_id": str(row["id"])},
+        )
+
+
 def _claim_out(request: Request, claim: ClaimRecord) -> ClaimOut:
     store = _store(request)
     links = store.links_of(claim.id)
@@ -114,6 +204,7 @@ def _claim_out(request: Request, claim: ClaimRecord) -> ClaimOut:
             source_unavailable=claim.unavailable_step_id is not None,
             supporting=supporting,
             contradicting=contradicting,
+            conflict_resolution=_active_resolution(request, claim.id, pairs),
         )
     )
     reliable_fresh = [
@@ -320,7 +411,9 @@ def add_claim(
         [(link.evidence_id, link.relation, link.notes) for link in body.evidence],
     )
     _audit(request, principal, Action.CLAIM_ADDED, case_id, {"claim_id": str(claim.id)})
-    return _claim_out(request, claim)
+    out = _claim_out(request, claim)
+    _raise_conflict_if_needed(request, principal, claim, out)
+    return out
 
 
 def _load_claim(
@@ -367,7 +460,9 @@ def link_evidence(
             "relation": body.relation.value,
         },
     )
-    return _claim_out(request, claim)
+    out = _claim_out(request, claim)
+    _raise_conflict_if_needed(request, principal, claim, out)
+    return out
 
 
 @router.get("/{case_id}/claims", response_model=list[ClaimOut])

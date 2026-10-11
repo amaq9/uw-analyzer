@@ -207,3 +207,16 @@ column**: the status is computed from the links on every read (ADR 0012).
 | claim `unavailable_step_id` | A real unavailable, failed or skipped research step (for `SOURCE_UNAVAILABLE`) |
 | claim_basis | The facts an interpretation or inference rests on |
 | claim_evidence `relation`, `notes` | `SUPPORTS` or `CONTRADICTS`; reviewer notes |
+
+## `escalations`, `escalation_resolutions` (Phase 4; migration 0012)
+
+Append-only. Items that need a person. Restricted case content.
+
+| Field | Meaning |
+|---|---|
+| escalation `kind` | `CONFLICT` (raised by the system, needs a claim), `MATERIAL_AMBIGUITY`, `OTHER` |
+| escalation `raised_by_system`, `created_by` | System-raised conflicts show `system` |
+| escalation `claim_id`, `description` | The claim at issue and a plain-language description |
+| resolution `outcome` | `SUPPORTING_PREVAILS`, `CONTRADICTING_PREVAILS` (conflicts) or `NO_CLAIM_CHANGE` (others) |
+| resolution `preferred_evidence_id`, `explanation` | The evidence preferred and the written reason (required) |
+| resolution `resolved_by`, `resolved_at` | The named reviewer and when; one per escalation |
