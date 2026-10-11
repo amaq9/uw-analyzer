@@ -51,6 +51,7 @@ class Action(StrEnum):
     REPORT_BLOCKED = "report.blocked"
     SNAPSHOT_READ = "snapshot.read"
     ANALYSIS_RUN = "analysis.run"
+    STATEMENT_CONFIRMED = "statement.confirmed"
     SOURCE_UPDATED = "source.updated"
 
 

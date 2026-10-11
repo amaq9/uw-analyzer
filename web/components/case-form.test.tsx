@@ -107,7 +107,7 @@ describe("case form", () => {
       exposure_currency: "CAD",
       legal_name: "Northstar Components Ltd.",
     });
-    expect(pushMock).toHaveBeenCalledWith("/cases");
+    expect(pushMock).toHaveBeenCalledWith(`/cases/${record(1).id}`);
   });
 
   it("places server field errors next to their fields", async () => {

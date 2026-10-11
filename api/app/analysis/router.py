@@ -25,6 +25,7 @@ class AnalysisIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     run_id: uuid.UUID | None = None
+    financials: Literal["auto", "uploaded", "sec"] = "auto"
 
 
 class SectionOut(BaseModel):
@@ -73,7 +74,7 @@ def run_analysis(
     """Analyse the case's latest finished research run and prepare a draft recommendation."""
     case = load_case_for(request, principal, case_id)
     try:
-        out = analyse(request, principal, case, body.run_id)
+        out = analyse(request, principal, case, body.run_id, body.financials)
     except AnalysisUnavailable as exc:
         raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from None
     record_event(

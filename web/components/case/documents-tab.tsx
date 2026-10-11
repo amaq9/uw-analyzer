@@ -1,11 +1,15 @@
 "use client";
 
-import { type FormEvent } from "react";
+import { type FormEvent, useState } from "react";
 
+import { StatementReview } from "@/components/case/statement-review";
 import { type DocumentRecord, type TabProps, can } from "@/components/case/types";
 import { ActionError, useAction, useLoad } from "@/components/use-api";
 import { api, fetchBlob, uploadDocument } from "@/lib/api/client";
-import { bytes, dateTime, readable } from "@/lib/format";
+import type { components } from "@/lib/api/schema";
+import { bytes, dateOnly, dateTime, readable } from "@/lib/format";
+
+type Statement = components["schemas"]["StatementOut"];
 
 export function DocumentsTab({ caseId, onChanged, permissions, token }: TabProps) {
   const base = `/api/v1/cases/${encodeURIComponent(caseId)}/documents`;
@@ -13,6 +17,14 @@ export function DocumentsTab({ caseId, onChanged, permissions, token }: TabProps
   const upload = useAction();
   const download = useAction();
   const canWrite = can(permissions, "case:write");
+  const statements = useLoad((t, signal) => api<Statement[]>(t, "GET", `/api/v1/cases/${encodeURIComponent(caseId)}/statements`, undefined, signal), [caseId]);
+  const read = useAction();
+  const [reading, setReading] = useState<{ documentId: string; extraction: components["schemas"]["ExtractionOut"] }>();
+
+  async function readFigures(record: DocumentRecord) {
+    const extraction = await read.run(() => api<components["schemas"]["ExtractionOut"]>(token, "GET", `${base}/${record.id}/figures-preview`));
+    if (extraction) setReading({ documentId: record.id, extraction });
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -77,6 +89,11 @@ export function DocumentsTab({ caseId, onChanged, permissions, token }: TabProps
                       <button className="ws-button" onClick={() => open(record)} type="button">
                         Download
                       </button>
+                      {canWrite && record.category === "financial_statement" && (
+                        <button className="ws-button" disabled={read.busy} onClick={() => readFigures(record)} type="button">
+                          Read figures
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -85,6 +102,58 @@ export function DocumentsTab({ caseId, onChanged, permissions, token }: TabProps
           </div>
         )}
         <ActionError error={download.error} />
+        <ActionError error={read.error} />
+      </section>
+
+      {reading && (
+        <section className="ws-card">
+          <StatementReview
+            base={`/api/v1/cases/${encodeURIComponent(caseId)}`}
+            documentId={reading.documentId}
+            extraction={reading.extraction}
+            onConfirmed={() => {
+              statements.reload();
+              onChanged();
+            }}
+            token={token}
+          />
+        </section>
+      )}
+
+      <section className="ws-card">
+        <h3>Confirmed figures in use for the analysis</h3>
+        {(statements.data ?? []).length === 0 ? (
+          <p>None yet. Upload a financial statement, press Read figures, check them and confirm.</p>
+        ) : (
+          <div className="ws-table-wrap">
+            <table className="ws-table">
+              <thead>
+                <tr>
+                  <th>Period ending</th>
+                  <th>Currency and unit</th>
+                  <th>Statements</th>
+                  <th>Figures</th>
+                  <th>Confirmed</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(statements.data ?? []).map((statement) => (
+                  <tr key={statement.id}>
+                    <td>{dateOnly(statement.period_end)}</td>
+                    <td>
+                      {statement.currency}, {statement.unit}
+                    </td>
+                    <td>{readable(statement.audit_status)}</td>
+                    <td>{Object.keys(statement.figures).length} figures</td>
+                    <td>
+                      {statement.confirmed_by}, {dateTime(statement.confirmed_at)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
 
       {canWrite && (

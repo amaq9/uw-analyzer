@@ -2915,3 +2915,21 @@ textarea {
     grid-template-columns: 1fr;
   }
 }
+
+.ws-wide {
+  max-width: none;
+}
+
+.ws-table input[type="date"] {
+  display: block;
+  margin-top: 4px;
+}
+
+.ws-table td input {
+  width: 110px;
+  padding: 4px 6px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font: inherit;
+  text-align: right;
+}

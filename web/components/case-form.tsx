@@ -213,12 +213,15 @@ export function CaseForm({ mode, caseId }: CaseFormProps) {
     setIsSaving(true);
 
     try {
+      let destination = "/cases";
       if (mode === "create") {
-        await createCase(session.token, createPayload(values));
+        const created = await createCase(session.token, createPayload(values));
+        destination = `/cases/${created.id}`; // go straight to the case to choose the entity
       } else if (record) {
         await updateCase(session.token, caseId, updatePayload(values, record));
+        destination = `/cases/${caseId}`;
       }
-      router.push("/cases");
+      router.push(destination);
     } catch (caughtError: unknown) {
       const apiError =
         caughtError instanceof ApiRequestError

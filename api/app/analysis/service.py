@@ -21,7 +21,7 @@ from fastapi import Request
 
 from app.analysis import assess as rules
 from app.analysis.assess import Level, Section, money, pct, times
-from app.analysis.facts import YearFigures, extract, to_figures
+from app.analysis.facts import METRICS, YearFigures, extract, to_figures
 from app.analysis.ratios import compute
 from app.auth.models import Principal
 from app.cases.schemas import CaseRecord
@@ -41,6 +41,8 @@ from app.research.schemas import CallRecord, RunRecord
 from app.research.snapshots import SnapshotStore
 from app.research.store import PostgresResearchStore
 from app.sources.store import PostgresSourceStore
+from app.statements.schemas import UNIT_TO_MILLIONS, StatementRecord
+from app.statements.store import PostgresStatementStore
 
 _REF = re.compile(r"^snapshot://(snapshots/[^#]+)#sha256=([0-9a-f]{64})$")
 SEC_URL = "https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json"
@@ -242,8 +244,175 @@ def _fact_text(key: str, sec: dict[str, Any], f: dict[str, float | None], fy: st
     )
 
 
+@dataclass
+class _Financials:
+    years: list[YearFigures]
+    figures: list[dict[str, float | None]]
+    evidence: Any
+    created: int
+    label: str
+    reference: Any  # (quote) -> EvidenceRef
+    gaps: list[str]
+
+
+def _from_sec(
+    storage: Any,
+    by_source: dict[str, CallRecord],
+    case: CaseRecord,
+    principal: Principal,
+    evidence_store: PostgresEvidenceStore,
+    sources: PostgresSourceStore,
+) -> _Financials:
+    if "sec-edgar" not in by_source:
+        raise AnalysisUnavailable(
+            "No financial statements were retrieved from a connected source (SEC EDGAR covers U.S. SEC filers). "
+            "Upload the company's financial statements, check the figures and confirm them, then run the analysis again."
+        )
+    sec_call = by_source["sec-edgar"]
+    manifest = json.loads(_read(storage, sec_call.provenance_ref or ""))
+    facts_file = next((f for f in manifest["files"] if f["label"] == "companyfacts"), None)
+    if facts_file is None:
+        raise AnalysisUnavailable("The SEC retrieval did not include reported financial data.")
+    company_facts = json.loads(_read(storage, facts_file["ref"]))
+    years: list[YearFigures] = extract(company_facts, 3)
+    if not years:
+        raise AnalysisUnavailable("No annual (10-K) financial figures were found for this company.")
+    figures = [
+        to_figures(y, years[i + 1] if i + 1 < len(years) else None) for i, y in enumerate(years)
+    ]
+    latest, fy = years[0], years[0].period_end.isoformat()
+    ev, made = _evidence(
+        evidence_store,
+        sources,
+        case,
+        principal,
+        sec_call,
+        evidence_type="FINANCIAL",
+        title=f"{case.legal_name} annual report data for the year ended {fy} (SEC 10-K {latest.accession}, XBRL company facts)",
+        excerpt=(
+            f"Year ended {fy} (USD m unless stated): total assets {figures[0]['total_assets']}; equity {figures[0]['total_equity']}; "
+            f"current assets {figures[0]['current_assets']}; current liabilities {figures[0]['current_liabilities']}; "
+            f"cash and short-term investments {figures[0]['cash']}; financial debt {figures[0]['financial_debt']}; "
+            f"receivables {figures[0]['receivables']}; revenue {figures[0]['revenue']}; operating cash flow {figures[0]['ocf']}; "
+            f"net income {figures[0]['net_income']}; dividends {figures[0]['dividends']}; buybacks {figures[0]['buybacks']}."
+        ),
+        published_on=latest.filed,
+        event_on=latest.period_end,
+    )
+    url = SEC_URL.format(cik=manifest["cik"])
+
+    def reference(quote: str) -> EvidenceRef:
+        return EvidenceRef(kind="web", url=url, retrieved_at=sec_call.ended_at, quote=quote)
+
+    gaps = ["The printed 10-K text, notes and auditor's report were not read"]
+    gaps += [f"Figure derived: {key} is {text}" for key, text in latest.derived.items()]
+    return _Financials(years, figures, ev, int(made), "SEC XBRL company facts", reference, gaps)
+
+
+def _from_uploaded(
+    request: Request,
+    principal: Principal,
+    case: CaseRecord,
+    uploaded: list[StatementRecord],
+    evidence_store: PostgresEvidenceStore,
+    currency: str,
+) -> _Financials:
+    if any(s.currency != currency for s in uploaded):
+        raise AnalysisUnavailable(
+            f"The confirmed statements are in {uploaded[0].currency} but the exposure is requested in {currency}. "
+            "Use the same currency for both."
+        )
+    uploaded = sorted(uploaded, key=lambda s: s.period_end, reverse=True)[:3]
+    years: list[YearFigures] = []
+    for s in uploaded:
+        factor = UNIT_TO_MILLIONS[s.unit.value]
+        years.append(
+            YearFigures(
+                period_end=s.period_end,
+                values={
+                    m: (float(s.figures[m]) * factor if s.figures.get(m) is not None else None)
+                    for m in METRICS
+                },
+            )
+        )
+    figures = [
+        to_figures(y, years[i + 1] if i + 1 < len(years) else None) for i, y in enumerate(years)
+    ]
+    latest_stmt, latest = uploaded[0], years[0]
+    fy = latest.period_end.isoformat()
+    document = request.app.state.document_store.get(latest_stmt.document_id)
+    filename = document.filename if document else "uploaded statement"
+    declared_class = "COMMERCIAL" if latest_stmt.audit_status.value == "AUDITED" else "SECONDARY"
+    title = f"{filename}: statements for the year ended {fy} ({latest_stmt.audit_status.value.lower()}, supplied by the company)"
+    existing = next(
+        (
+            e
+            for e in evidence_store.list_evidence(case.id, case.tenant_id)
+            if e.document_id == latest_stmt.document_id and e.title == title
+        ),
+        None,
+    )
+    created = 0
+    if existing is None:
+        f = figures[0]
+        existing = evidence_store.add_evidence(
+            {
+                "tenant_id": case.tenant_id,
+                "case_id": case.id,
+                "kind": "DOCUMENT",
+                "evidence_type": "FINANCIAL",
+                "source_class": declared_class,
+                "class_basis": "author_declared",
+                "source_id": None,
+                "connector_call_id": None,
+                "document_id": latest_stmt.document_id,
+                "title": title,
+                "origin": rules_name(case.legal_name) or "the company",
+                "url": None,
+                "published_on": None,
+                "event_on": latest.period_end,
+                "accessed_at": latest_stmt.confirmed_at,
+                "excerpt": (
+                    f"Year ended {fy}, figures confirmed by {latest_stmt.confirmed_by} from the uploaded document "
+                    f"(USD m unless stated): total assets {f['total_assets']}; equity {f['total_equity']}; "
+                    f"current assets {f['current_assets']}; current liabilities {f['current_liabilities']}; "
+                    f"receivables {f['receivables']}; revenue {f['revenue']}; operating cash flow {f['ocf']}; net income {f['net_income']}."
+                )[:1000],
+                "provenance_ref": f"document:{latest_stmt.document_id}",
+                "content_hash": document.sha256 if document else None,
+                "is_primary": True,
+                "discovery_only": False,
+                "created_by": principal.subject,
+            }
+        )
+        created = 1
+
+    def reference(quote: str) -> EvidenceRef:
+        return EvidenceRef(kind="document", document_id=latest_stmt.document_id, quote=quote)
+
+    gaps = [
+        f"The figures were read from an uploaded document and confirmed by {latest_stmt.confirmed_by}; the rest of the document was not analysed",
+        "Statements are "
+        + (
+            "audited"
+            if latest_stmt.audit_status.value == "AUDITED"
+            else "NOT audited ("
+            + latest_stmt.audit_status.value.lower()
+            + ") and were supplied by the company, so they count as weaker evidence"
+        ),
+    ]
+    gaps += [f"Figure derived: {key} is {text}" for key, text in latest.derived.items()]
+    return _Financials(
+        years, figures, existing, created, f"uploaded statement {filename}", reference, gaps
+    )
+
+
 def analyse(
-    request: Request, principal: Principal, case: CaseRecord, run_id: uuid.UUID | None
+    request: Request,
+    principal: Principal,
+    case: CaseRecord,
+    run_id: uuid.UUID | None,
+    financials: str = "auto",
 ) -> Outcome:
     from app.recommendation.router import import_draft
 
@@ -263,9 +432,21 @@ def analyse(
             "The case has no requested exposure. Add it on the case, then run the analysis again."
         )
 
-    run, calls = _latest_run(research, queue, case, run_id)
+    statements: PostgresStatementStore = state.statement_store
+    uploaded = statements.latest_per_period(case.id, case.tenant_id)
+    if financials == "uploaded" and not uploaded:
+        raise AnalysisUnavailable(
+            "No confirmed uploaded financial statements were found. Upload a statement, check the figures and confirm them first."
+        )
+    use_uploaded = bool(uploaded) and financials != "sec"
+    try:
+        run, calls = _latest_run(research, queue, case, run_id)
+    except AnalysisUnavailable:
+        if not use_uploaded:
+            raise
+        run, calls = None, []  # figures were uploaded, so a finished research run is not required
     by_source = _by_source(calls)
-    steps = research.steps_for_run(run.id)
+    steps = research.steps_for_run(run.id) if run else []
     currency = case.exposure_currency or "USD"
     out = Outcome(status="", message="", requested=case.exposure_amount, currency=currency)
     claims = _Claims(evidence_store, case, principal)
@@ -340,51 +521,19 @@ def analyse(
         )
 
     # --- financial statements -------------------------------------------------------------------
-    if "sec-edgar" not in by_source:
-        raise AnalysisUnavailable(
-            "No financial statements were retrieved from a connected source (SEC EDGAR covers U.S. SEC filers). "
-            "Add the statements another way before a draft can be made."
-        )
-    sec_call = by_source["sec-edgar"]
-    manifest = json.loads(_read(storage, sec_call.provenance_ref or ""))
-    facts_file = next((f for f in manifest["files"] if f["label"] == "companyfacts"), None)
-    if facts_file is None:
-        raise AnalysisUnavailable("The SEC retrieval did not include reported financial data.")
-    company_facts = json.loads(_read(storage, facts_file["ref"]))
-    years: list[YearFigures] = extract(company_facts, 3)
-    if not years:
-        raise AnalysisUnavailable("No annual (10-K) financial figures were found for this company.")
-    figures = [
-        to_figures(y, years[i + 1] if i + 1 < len(years) else None) for i, y in enumerate(years)
-    ]
+    if use_uploaded:
+        fin = _from_uploaded(request, principal, case, uploaded, evidence_store, currency)
+    else:
+        fin = _from_sec(storage, by_source, case, principal, evidence_store, sources)
+    years, figures, fin_ev, latest = fin.years, fin.figures, fin.evidence, fin.years[0]
+    out.evidence_created += fin.created
     contexts = [rules.YearContext(ratios=compute(f), figures=f) for f in figures]
     sections = rules.assess(contexts, currency)
     level, why = rules.consolidated(sections)
-    latest = years[0]
     fy = latest.period_end.isoformat()
     out.periods = [y.period_end.isoformat() for y in years]
     out.sections = [sections[k] for k in rules.SECTIONS]
     out.consolidated = (level, why)
-
-    fin_ev, made = _evidence(
-        evidence_store,
-        sources,
-        case,
-        principal,
-        sec_call,
-        evidence_type="FINANCIAL",
-        title=f"{case.legal_name} annual report data for the year ended {fy} (SEC 10-K {latest.accession}, XBRL company facts)",
-        excerpt=(
-            f"Year ended {fy} (USD m unless stated): total assets {figures[0]['total_assets']}; equity {figures[0]['total_equity']}; "
-            f"current assets {figures[0]['current_assets']}; current liabilities {figures[0]['current_liabilities']}; "
-            f"cash and short-term investments {figures[0]['cash']}; financial debt {figures[0]['financial_debt']}; "
-            f"receivables {figures[0]['receivables']}; revenue {figures[0]['revenue']}; operating cash flow {figures[0]['ocf']}; "
-            f"net income {figures[0]['net_income']}; dividends {figures[0]['dividends']}; buybacks {figures[0]['buybacks']}."
-        ),
-        published_on=latest.filed,
-        event_on=latest.period_end,
-    )
-    out.evidence_created += int(made)
 
     ratios0 = contexts[0].ratios
     fact_claims: dict[str, Any] = {}
@@ -509,10 +658,8 @@ def analyse(
         "Sector-level outlook was not assessed (only country-level economic data is connected)"
     )
     gaps.append("Court records and regulators other than the OFAC sanctions list were not searched")
-    gaps.append("Receivables aging and allowance for credit losses are not in the structured data")
-    gaps.append("The printed 10-K text, notes and auditor's report were not read")
-    for key, text in latest.derived.items():
-        gaps.append(f"Figure derived: {key} is {text}")
+    gaps.append("Receivables aging and allowance for credit losses were not available as figures")
+    gaps.extend(fin.gaps)
     for section in sections.values():
         if section.level is Level.NOT_ASSESSED:
             gaps.append(f"{section.title} could not be assessed: {section.why}")
@@ -525,30 +672,35 @@ def analyse(
     out.proposed, out.factors, out.gaps = proposed, factors, gaps
     out.claims_created = claims.created
 
-    retrieved = sec_call.ended_at
-    url = SEC_URL.format(cik=manifest["cik"])
-
     def ref(quote: str) -> EvidenceRef:
-        return EvidenceRef(kind="web", url=url, retrieved_at=retrieved, quote=quote[:300])
+        made: EvidenceRef = fin.reference(quote[:300])
+        return made
 
     reasons = [
         Reason(
             text=f"{sec.title}: {sec.level.value.replace('_', ' ').lower()}. {sec.why}"[:500],
-            evidence=[ref(f"{sec.title} for the year ended {fy} (SEC XBRL company facts)")],
+            evidence=[ref(f"{sec.title} for the year ended {fy} ({fin.label})")],
         )
         for sec in out.sections
         if sec.level is not Level.NOT_ASSESSED
     ] or [
         Reason(
             text="No section could be assessed from the data.",
-            evidence=[ref("SEC XBRL company facts")],
+            evidence=[ref(fin.label)],
         )
     ]
     if ofac_note:
         reasons.append(
             Reason(
                 text="No match on the OFAC sanctions list (name search only).",
-                evidence=[ref("OFAC SDN name search, 0 exact and 0 possible matches")],
+                evidence=[
+                    EvidenceRef(
+                        kind="web",
+                        url="https://sanctionslistservice.ofac.treas.gov/api/publicationpreview/exports/sdn.csv",
+                        retrieved_at=by_source["ofac-sdn"].ended_at,
+                        quote="OFAC SDN name search, 0 exact and 0 possible matches",
+                    )
+                ],
             )
         )
     summary = (
