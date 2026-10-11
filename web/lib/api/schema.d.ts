@@ -92,6 +92,26 @@ export interface paths {
         patch: operations["update_case_api_v1_cases__case_id__patch"];
         trace?: never;
     };
+    "/api/v1/cases/{case_id}/analysis": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run Analysis
+         * @description Analyse the case's latest finished research run and prepare a draft recommendation.
+         */
+        post: operations["run_analysis_api_v1_cases__case_id__analysis_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/cases/{case_id}/claims": {
         parameters: {
             query?: never;
@@ -788,6 +808,51 @@ export interface components {
             rejected: number;
             /** Same Outcome */
             same_outcome: number;
+        };
+        /** AnalysisIn */
+        AnalysisIn: {
+            /** Run Id */
+            run_id?: string | null;
+        };
+        /** AnalysisOut */
+        AnalysisOut: {
+            /** Claims Created */
+            claims_created: number;
+            /** Consolidated Assessment */
+            consolidated_assessment: string | null;
+            /** Consolidated Why */
+            consolidated_why: string | null;
+            /** Currency */
+            currency: string | null;
+            draft: components["schemas"]["DraftOut"] | null;
+            /** Evidence Created */
+            evidence_created: number;
+            /** Factors */
+            factors: components["schemas"]["FactorOut"][];
+            /** Information Gaps */
+            information_gaps: string[];
+            /** Message */
+            message: string;
+            /**
+             * Notice
+             * @default The analyzer applies written rules to the retrieved figures. Its draft is a recommendation for the underwriter, not a decision.
+             */
+            notice: string;
+            /** Periods Reviewed */
+            periods_reviewed: string[];
+            /** Proposed Amount */
+            proposed_amount: string | null;
+            /** Requested Amount */
+            requested_amount: string | null;
+            /** Review Item Id */
+            review_item_id: string | null;
+            /** Sections */
+            sections: components["schemas"]["SectionOut"][];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "DRAFT_PREPARED" | "NEEDS_REVIEW";
         };
         /** AuditEventOut */
         AuditEventOut: {
@@ -1684,6 +1749,13 @@ export interface components {
             /** Explanation */
             explanation: string;
         };
+        /** FactorOut */
+        FactorOut: {
+            /** Code */
+            code: string;
+            /** Explanation */
+            explanation: string;
+        };
         /** FieldError */
         FieldError: {
             /** Field */
@@ -2039,6 +2111,21 @@ export interface components {
          * @enum {string}
          */
         RunStatus: "PLANNED" | "QUEUED" | "RUNNING" | "COMPLETED" | "FAILED" | "CANCELLED";
+        /** SectionOut */
+        SectionOut: {
+            /** Assessment */
+            assessment: string;
+            /** Flags */
+            flags: string[];
+            /** Key */
+            key: string;
+            /** Title */
+            title: string;
+            /** Trend */
+            trend: string;
+            /** Why */
+            why: string;
+        };
         /**
          * SourceClass
          * @enum {string}
@@ -2078,9 +2165,9 @@ export interface components {
         SourceInfo: {
             /**
              * Kind
-             * @constant
+             * @enum {string}
              */
-            kind: "claude_code_session";
+            kind: "claude_code_session" | "analyzer_v1";
             /** Model */
             model: string;
             /** Policy Version */
@@ -2577,6 +2664,68 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CaseOut"];
+                };
+            };
+            /** @description Not signed in, or the token is invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in but not permitted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found (or belongs to another tenant). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request was malformed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    run_analysis_api_v1_cases__case_id__analysis_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnalysisIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnalysisOut"];
                 };
             };
             /** @description Not signed in, or the token is invalid. */

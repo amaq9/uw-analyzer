@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from sqlalchemy import create_engine
 
 from app import __version__
+from app.analysis.router import router as analysis_router
 from app.audit.events import Action, AuditSink, Outcome, PostgresAuditSink
 from app.audit.recorder import record_event
 from app.auth.deps import get_principal, require_permission
@@ -196,6 +197,7 @@ def create_app(
     v1.include_router(evidence_router)
     v1.include_router(escalations_router)
     v1.include_router(reports_router)
+    v1.include_router(analysis_router)
     v1.include_router(agreement_router)
     app.include_router(v1)
     return app
