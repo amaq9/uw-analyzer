@@ -24,7 +24,13 @@ class Fetched:
 
 
 class Fetcher(Protocol):
-    def get(self, url: str, *, allowed_hosts: frozenset[str]) -> Fetched: ...
+    def get(
+        self,
+        url: str,
+        *,
+        allowed_hosts: frozenset[str],
+        redirect_hosts: frozenset[str] = frozenset(),
+    ) -> Fetched: ...
 
 
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -39,7 +45,25 @@ class HttpsFetcher:
         self._max_bytes = max_bytes
         self._opener = urllib.request.build_opener(_NoRedirect)
 
-    def get(self, url: str, *, allowed_hosts: frozenset[str]) -> Fetched:
+    def get(
+        self,
+        url: str,
+        *,
+        allowed_hosts: frozenset[str],
+        redirect_hosts: frozenset[str] = frozenset(),
+    ) -> Fetched:
+        """Fetch one https address. At most ONE redirect is followed, and only to a host the
+        connector named in `redirect_hosts` (for example a registry's file store)."""
+        return self._get(url, allowed_hosts, redirect_hosts, may_redirect=True)
+
+    def _get(
+        self,
+        url: str,
+        allowed_hosts: frozenset[str],
+        redirect_hosts: frozenset[str],
+        *,
+        may_redirect: bool,
+    ) -> Fetched:
         parts = urlsplit(url)
         if parts.scheme != "https" or parts.hostname not in allowed_hosts:
             raise PermanentConnectorError("host_not_allowed", "Address is not on the allow-list.")
@@ -52,6 +76,9 @@ class HttpsFetcher:
                 status = int(response.status)
                 content_type = str(response.headers.get("Content-Type", "application/octet-stream"))
         except urllib.error.HTTPError as exc:
+            if exc.code in (301, 302, 303, 307, 308) and may_redirect and redirect_hosts:
+                location = exc.headers.get("Location", "")
+                return self._get(location, redirect_hosts, frozenset(), may_redirect=False)
             if exc.code == 429 or exc.code >= 500:
                 raise RetryableConnectorError(f"http_{exc.code}") from None
             raise PermanentConnectorError(f"http_{exc.code}") from None

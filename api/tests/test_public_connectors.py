@@ -49,7 +49,13 @@ class FakeFetcher:
         self.routes = routes
         self.urls: list[str] = []
 
-    def get(self, url: str, *, allowed_hosts: frozenset[str]) -> Fetched:
+    def get(
+        self,
+        url: str,
+        *,
+        allowed_hosts: frozenset[str],
+        redirect_hosts: frozenset[str] = frozenset(),
+    ) -> Fetched:
         self.urls.append(url)
         for prefix, result in self.routes.items():
             if url.startswith(prefix):

@@ -154,7 +154,8 @@ def build(
     confidence = _confidence(material, open_escalations, accessed_anything)
 
     # Negative-search wording: never say "nothing found" unless a source was really searched.
-    adverse_claims = [c for c in claims if c.adverse]
+    # Only findings from the adverse search count here, not financial warning signs.
+    adverse_claims = [c for c in claims if c.adverse and c.category == "ADVERSE_SEARCH"]
     searched = sorted(
         {
             r.source_name or r.source_key or ""

@@ -31,3 +31,15 @@
 7. **Not yet covered** (no free keyless official source chosen): adverse media and court records, sector
    outlook, sanctions lists, non-U.S. financial filings. These categories stay `NOT_AVAILABLE` in the plan
    and the report says so. Candidates: OFAC SDN list, World Bank and FRED macro data, GDELT news, CourtListener.
+
+## Addendum, 2026-10-11: second set of connectors
+Added `ofac-sdn` (OFAC sanctions list: name and alias screening, exact and possible matches kept apart,
+both raw lists snapshotted), `world-bank` (GDP growth, inflation, unemployment per named country; country
+level, not a sector outlook) and `gdelt-news` (news leads, discovery-only, so it can never verify a claim
+by itself). The fetcher may follow one redirect, only to a host the connector names in advance (OFAC
+publishes through a signed file store). Live check on Nike: OFAC and World Bank succeeded; the GDELT index
+refused requests (rate limit) on all three attempts, so those steps ended `FAILED` and the report says the
+adverse-news search was not completed; nothing was invented. A failed run resumes with `start`.
+Still uncovered: court records, regulator actions beyond sanctions, other sanctions lists, sector-level
+outlook, non-U.S. financial filings. The adverse-search statement in the report now counts only findings
+tagged to the adverse search, not financial warning signs.

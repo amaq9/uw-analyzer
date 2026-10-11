@@ -128,6 +128,7 @@ class Executor:
             jurisdictions=run.jurisdictions,
             legal_name=case.legal_name if case else None,
             registration_number=case.registration_number if case else None,
+            industry=case.industry if case else None,
         )
         return self._attempts(run, step, connector, request, source.access_category.value)
 

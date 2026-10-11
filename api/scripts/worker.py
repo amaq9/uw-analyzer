@@ -4,9 +4,10 @@
     uv run python scripts/worker.py          # keep working until stopped (Ctrl+C)
     uv run python scripts/worker.py --once   # work through what is queued, then exit
 
-Connectors for the free public registries (SEC EDGAR, GLEIF) are enabled when CONNECTOR_CONTACT
-(your contact address, sent to the registries as required) and the document storage settings are
-set. Otherwise planned steps are recorded as SKIPPED ("No connector is implemented").
+Connectors for the free public sources (SEC EDGAR, GLEIF, OFAC, World Bank, GDELT news) are
+enabled when CONNECTOR_CONTACT (your contact address, sent to the registries as required) and
+the document storage settings are set. Otherwise planned steps are recorded as SKIPPED
+("No connector is implemented").
 """
 
 import logging
@@ -22,11 +23,16 @@ from sqlalchemy import create_engine  # noqa: E402
 from app.cases.store import PostgresCaseStore  # noqa: E402
 from app.config import Settings  # noqa: E402
 from app.documents.storage import S3Storage  # noqa: E402
-from app.research.connectors import ConnectorSet  # noqa: E402
+from app.research.connectors import Connector, ConnectorSet  # noqa: E402
 from app.research.executor import Executor  # noqa: E402
 from app.research.fetch import HttpsFetcher  # noqa: E402
 from app.research.public_connectors import GleifConnector, SecEdgarConnector  # noqa: E402
 from app.research.run_store import PostgresRunQueue  # noqa: E402
+from app.research.screening_connectors import (  # noqa: E402
+    GdeltNewsConnector,
+    OfacSdnConnector,
+    WorldBankConnector,
+)
 from app.research.snapshots import SnapshotStore  # noqa: E402
 from app.research.store import PostgresResearchStore  # noqa: E402
 from app.sources.store import PostgresSourceStore  # noqa: E402
@@ -67,7 +73,13 @@ def build_connectors(settings: Settings) -> ConnectorSet:
     snapshots = SnapshotStore(storage)
     sec = SecEdgarConnector(fetcher, snapshots)
     gleif = GleifConnector(fetcher, snapshots)
-    return ConnectorSet({sec.key: sec, gleif.key: gleif})
+    others: list[Connector] = [
+        OfacSdnConnector(fetcher, snapshots),
+        WorldBankConnector(fetcher, snapshots),
+        GdeltNewsConnector(fetcher, snapshots),
+    ]
+    everything: list[Connector] = [sec, gleif, *others]
+    return ConnectorSet({c.key: c for c in everything})
 
 
 def build_executor(settings: Settings, connectors: ConnectorSet | None = None) -> Executor:
