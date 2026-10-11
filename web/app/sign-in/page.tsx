@@ -6,7 +6,7 @@ import { LockIcon, ShieldIcon } from "@/components/icons";
 
 export default function SignInPage() {
   return (
-    <main className="access-page">
+    <main className="access-page" id="main-content">
       <section className="access-story">
         <Brand />
         <div className="access-story-copy">

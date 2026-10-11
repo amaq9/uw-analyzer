@@ -14,7 +14,7 @@ export default async function CasePage({ params }: CasePageProps) {
       <Sidebar activePage="cases" />
       <div className="workspace">
         <Topbar />
-        <main className="cases-page">
+        <main className="cases-page" id="main-content">
           <CaseWorkspace caseId={caseId} />
         </main>
       </div>

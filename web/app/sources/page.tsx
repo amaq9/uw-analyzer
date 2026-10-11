@@ -8,7 +8,7 @@ export default function SourcesPage() {
       <Sidebar activePage="sources" />
       <div className="workspace">
         <Topbar />
-        <main className="cases-page">
+        <main className="cases-page" id="main-content">
           <SourcesAdmin />
         </main>
       </div>

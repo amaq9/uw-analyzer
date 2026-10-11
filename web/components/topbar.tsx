@@ -2,19 +2,20 @@
 
 import Link from "next/link";
 
-import { MenuIcon, ShieldIcon } from "@/components/icons";
+import { ShieldIcon } from "@/components/icons";
 import { useSession } from "@/components/session-provider";
 
 export function Topbar() {
-  const { session } = useSession();
+  const { session, signOut } = useSession();
   const subject = session?.user.subject ?? "Authorized user";
   const initials = subject.slice(0, 2).toUpperCase();
 
+  function handleSignOut() {
+    signOut();
+  }
+
   return (
     <header className="topbar">
-      <button aria-label="Open navigation" className="menu-button" disabled type="button">
-        <MenuIcon />
-      </button>
       <div className="environment-pill">
         <span className="environment-dot" />
         Development preview
@@ -34,6 +35,11 @@ export function Topbar() {
             <small>{session ? "Local session" : "Workspace preview"}</small>
           </span>
         </Link>
+        {session && (
+          <button className="topbar-sign-out" onClick={handleSignOut} type="button">
+            Sign out
+          </button>
+        )}
       </div>
     </header>
   );

@@ -13,7 +13,7 @@ export default async function EditCasePage({ params }: EditCasePageProps) {
       <Sidebar activePage="cases" />
       <div className="workspace">
         <Topbar />
-        <main className="cases-page">
+        <main className="cases-page" id="main-content">
           <CaseForm caseId={caseId} mode="edit" />
         </main>
       </div>

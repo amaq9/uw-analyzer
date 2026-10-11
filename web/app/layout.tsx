@@ -16,6 +16,9 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
     <html lang="en">
       <body>
         <SessionProvider>
+          <a className="skip-link" href="#main-content">
+            Skip to main content
+          </a>
           <TestProductLabel />
           {children}
         </SessionProvider>
