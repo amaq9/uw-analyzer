@@ -60,6 +60,30 @@ def require_permission(permission: Permission) -> Callable[[Request, Principal],
     return dependency
 
 
+def require_any_permission(
+    *permissions: Permission,
+) -> Callable[[Request, Principal], Principal]:
+    """Allow the caller if they hold at least one of the permissions."""
+
+    def dependency(
+        request: Request,
+        principal: Principal = Depends(get_principal),  # noqa: B008
+    ) -> Principal:
+        if not any(principal.has(p) for p in permissions):
+            record_event(
+                request,
+                Action.AUTHZ_DENIED,
+                Outcome.DENIED,
+                tenant_id=principal.tenant_id,
+                actor=principal.subject,
+                details={"permission": "|".join(sorted(p.value for p in permissions))},
+            )
+            raise HTTPException(status.HTTP_403_FORBIDDEN, "Not permitted.")
+        return principal
+
+    return dependency
+
+
 def assert_same_tenant(
     request: Request,
     principal: Principal,

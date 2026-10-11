@@ -39,3 +39,4 @@ Legend: **Built** means implemented and tested. **Planned** names the phase that
 | P-08 / P-10 Immutable, versioned, reproducible drafts | version per case, source and policy version stored | append-only triggers | `test_new_drafts_get_new_versions_and_old_ones_are_kept`, `test_drafts_cannot_be_edited_or_deleted_in_the_database` | Built |
 | P-09 Decision wording only in the designated places | exact allow-list | none | `tests/p09.py` used by `test_decision_wording_exists_only_in_the_designated_places` and the contract test | Built |
 | Human adoption, change or rejection; agreement view (ADR 0005 decisions 7 and 8) | none yet | none yet | none yet | Next |
+| FR-2.1 / FR-2.2 Source registry; access category never implies access (P-01) | `sources` table, no credential column, accessible-needs-credential rule | CHECK constraints | `tests/test_sources_api.py` | Built (slice 1; call log FR-2.6 and plan FR-2.3 still to build) |
