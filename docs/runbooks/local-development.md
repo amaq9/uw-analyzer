@@ -13,7 +13,7 @@ For the Product Owner and developers. Nothing here touches the cloud or real dat
 cd api
 uv run python scripts/dev_server.py
 ```
-It prepares the local database, prints a **test token for each role**, and starts the API.
+It prepares the local database, prints a **test token for each role**, saves the same tokens to `MY-LOGIN-TOKENS.txt` in the project folder (git-ignored; open it with Notepad to copy), and starts the API.
 
 ## Try it
 1. Open http://127.0.0.1:8000/docs in your browser.

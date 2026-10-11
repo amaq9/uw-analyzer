@@ -55,3 +55,6 @@ BRD + PRD/
 /rulebook.md
 /compliance-and-documentation.md
 /security-handoff.md
+
+# Local test login codes written by api/scripts/dev_server.py
+/MY-LOGIN-TOKENS.txt
