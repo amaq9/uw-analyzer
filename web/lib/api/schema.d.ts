@@ -439,6 +439,67 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cases/{case_id}/report-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Preview Report
+         * @description The report as it would be written now, and which completion gates pass. Nothing is saved.
+         */
+        get: operations["preview_report_api_v1_cases__case_id__report_preview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cases/{case_id}/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Reports
+         * @description Version history, newest first.
+         */
+        get: operations["list_reports_api_v1_cases__case_id__reports_get"];
+        put?: never;
+        /**
+         * Complete Report
+         * @description Complete the report: check every gate on the server, then store an immutable new version.
+         */
+        post: operations["complete_report_api_v1_cases__case_id__reports_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cases/{case_id}/reports/{version}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Report */
+        get: operations["get_report_api_v1_cases__case_id__reports__version__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/cases/{case_id}/research-readiness": {
         parameters: {
             query?: never;
@@ -1084,11 +1145,80 @@ export interface components {
             unavailable_step_id: string | null;
             verification: components["schemas"]["Verification"];
         };
+        /** ClaimRow */
+        ClaimRow: {
+            /** Adverse */
+            adverse: boolean;
+            /**
+             * Claim Id
+             * Format: uuid
+             */
+            claim_id: string;
+            /** Classification */
+            classification: string;
+            /** Conflict */
+            conflict: boolean;
+            /**
+             * Evidence Ids
+             * @description Show-evidence links
+             */
+            evidence_ids: string[];
+            /** Freshness */
+            freshness: string | null;
+            /** Material */
+            material: boolean;
+            /** Text */
+            text: string;
+            /** Verification Status */
+            verification_status: string;
+        };
         /**
          * Classification
          * @enum {string}
          */
         Classification: "FACT" | "INTERPRETATION" | "INFERENCE" | "UNVERIFIED";
+        /** CompleteIn */
+        CompleteIn: {
+            /** Note */
+            note?: string | null;
+        };
+        /** Confidence */
+        Confidence: {
+            /** Explanations */
+            explanations: string[];
+            level: components["schemas"]["ConfidenceLevel"];
+            /**
+             * Rules Version
+             * @default 1
+             */
+            rules_version: string;
+        };
+        /**
+         * ConfidenceLevel
+         * @enum {string}
+         */
+        ConfidenceLevel: "HIGH" | "MODERATE" | "LOW";
+        /** Counts */
+        Counts: {
+            /** Connector Sources Accessed */
+            connector_sources_accessed: number;
+            /** Documents Reviewed */
+            documents_reviewed: number;
+            /** Information Gaps */
+            information_gaps: number;
+            /** Material Claims */
+            material_claims: number;
+            /** Open Escalations */
+            open_escalations: number;
+            /** Unavailable Sources */
+            unavailable_sources: number;
+            /** Unverified Claims */
+            unverified_claims: number;
+            /** Verified Material Findings */
+            verified_material_findings: number;
+            /** Web Sources Recorded */
+            web_sources_recorded: number;
+        };
         /**
          * DecisionAction
          * @enum {string}
@@ -1370,6 +1500,24 @@ export interface components {
              */
             state: "OPEN" | "RESOLVED";
         };
+        /** EscalationRow */
+        EscalationRow: {
+            /** Claim Id */
+            claim_id: string | null;
+            /** Description */
+            description: string;
+            /**
+             * Escalation Id
+             * Format: uuid
+             */
+            escalation_id: string;
+            /** Kind */
+            kind: string;
+            /** Resolution Outcome */
+            resolution_outcome: string | null;
+            /** State */
+            state: string;
+        };
         /**
          * EvidenceCreate
          * @description What a person or session may submit. For connector evidence the server derives the source,
@@ -1528,6 +1676,15 @@ export interface components {
          * @enum {string}
          */
         Freshness: "CURRENT" | "RECENT" | "STALE" | "HISTORICAL";
+        /** Gate */
+        Gate: {
+            /** Code */
+            code: string;
+            /** Message */
+            message: string;
+            /** Passed */
+            passed: boolean;
+        };
         /**
          * Health
          * @enum {string}
@@ -1584,6 +1741,14 @@ export interface components {
          * @enum {string}
          */
         Outcome: "APPROVE" | "DECLINE";
+        /** Preview */
+        Preview: {
+            /** Can Complete */
+            can_complete: boolean;
+            content: components["schemas"]["ReportContent"];
+            /** Gates */
+            gates: components["schemas"]["Gate"][];
+        };
         /** Readiness */
         Readiness: {
             /** Allowed */
@@ -1611,6 +1776,109 @@ export interface components {
         ReopenRequest: {
             /** Reason */
             reason: string;
+        };
+        /** ReportContent */
+        ReportContent: {
+            /** Adverse Search Statement */
+            adverse_search_statement: string;
+            /**
+             * As Of
+             * Format: date-time
+             */
+            as_of: string;
+            /**
+             * Case Id
+             * Format: uuid
+             */
+            case_id: string;
+            /** Conflicts */
+            conflicts: components["schemas"]["EscalationRow"][];
+            counts: components["schemas"]["Counts"];
+            evidence_confidence: components["schemas"]["Confidence"];
+            /** Final Statement */
+            final_statement: string;
+            /** Information Gaps */
+            information_gaps: string[];
+            /** Limitations */
+            limitations: string[];
+            /** Material Findings */
+            material_findings: components["schemas"]["ClaimRow"][];
+            /**
+             * Notice
+             * @default Research report for the underwriter. It reports what was found and how well it is supported. It is not an underwriting decision.
+             */
+            notice: string;
+            /**
+             * Test Product
+             * @default true
+             */
+            test_product: boolean;
+            /** Unverified Claims */
+            unverified_claims: components["schemas"]["ClaimRow"][];
+            /** Verification Log */
+            verification_log: components["schemas"]["SourceRow"][];
+        };
+        /** ReportOut */
+        ReportOut: {
+            /**
+             * Case Id
+             * Format: uuid
+             */
+            case_id: string;
+            content: components["schemas"]["ReportContent"];
+            /** Content Hash */
+            content_hash: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By */
+            created_by: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Immutable
+             * @default true
+             */
+            immutable: boolean;
+            /**
+             * Integrity Verified
+             * @description The stored hash matches the stored content
+             */
+            integrity_verified: boolean;
+            /** Note */
+            note: string | null;
+            /** Version */
+            version: number;
+            /** Versions */
+            versions: {
+                [key: string]: unknown;
+            };
+        };
+        /** ReportSummary */
+        ReportSummary: {
+            /** Content Hash */
+            content_hash: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By */
+            created_by: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Note */
+            note: string | null;
+            /** Version */
+            version: number;
         };
         /** Resolution */
         Resolution: {
@@ -1804,6 +2072,26 @@ export interface components {
             updated_at: string;
             /** Version */
             version: number;
+        };
+        /** SourceRow */
+        SourceRow: {
+            /**
+             * Accessed
+             * @description True only if an executed connector call succeeded
+             */
+            accessed: boolean;
+            /** Attempts */
+            attempts: number;
+            /** Category */
+            category: string;
+            /** Reason */
+            reason: string | null;
+            /** Source Key */
+            source_key: string | null;
+            /** Source Name */
+            source_name: string | null;
+            /** State */
+            state: string;
         };
         /**
          * SourceUpdate
@@ -3680,6 +3968,243 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EvidenceOut"];
+                };
+            };
+            /** @description Not signed in, or the token is invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in but not permitted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found (or belongs to another tenant). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request was malformed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    preview_report_api_v1_cases__case_id__report_preview_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Preview"];
+                };
+            };
+            /** @description Not signed in, or the token is invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in but not permitted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found (or belongs to another tenant). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request was malformed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_reports_api_v1_cases__case_id__reports_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportSummary"][];
+                };
+            };
+            /** @description Not signed in, or the token is invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in but not permitted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found (or belongs to another tenant). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request was malformed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    complete_report_api_v1_cases__case_id__reports_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompleteIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportOut"];
+                };
+            };
+            /** @description Not signed in, or the token is invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in but not permitted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found (or belongs to another tenant). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request was malformed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_report_api_v1_cases__case_id__reports__version__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+                version: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportOut"];
                 };
             };
             /** @description Not signed in, or the token is invalid. */

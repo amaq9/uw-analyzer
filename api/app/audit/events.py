@@ -47,6 +47,8 @@ class Action(StrEnum):
     CLAIM_LINKED = "claim.linked"
     ESCALATION_RAISED = "escalation.raised"
     ESCALATION_RESOLVED = "escalation.resolved"
+    REPORT_COMPLETED = "report.completed"
+    REPORT_BLOCKED = "report.blocked"
     SOURCE_UPDATED = "source.updated"
 
 

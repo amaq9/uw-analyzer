@@ -31,6 +31,8 @@ from app.recommendation.agreement import router as agreement_router
 from app.recommendation.decision_store import PostgresDecisionStore
 from app.recommendation.router import router as draft_router
 from app.recommendation.store import PostgresDraftStore
+from app.reports.router import router as reports_router
+from app.reports.store import PostgresReportStore
 from app.research.router import router as research_router
 from app.research.run_store import PostgresRunQueue
 from app.research.store import PostgresResearchStore
@@ -101,6 +103,7 @@ def create_app(
     app.state.research_store = PostgresResearchStore(engine)
     app.state.run_queue = PostgresRunQueue(engine)
     app.state.evidence_store = PostgresEvidenceStore(engine)
+    app.state.report_store = PostgresReportStore(engine)
     app.state.escalation_store = PostgresEscalationStore(engine)
     if document_service is None and settings.documents_configured:
         assert settings.s3_access_key and settings.s3_secret_key  # noqa: S101
@@ -190,6 +193,7 @@ def create_app(
     v1.include_router(research_router)
     v1.include_router(evidence_router)
     v1.include_router(escalations_router)
+    v1.include_router(reports_router)
     v1.include_router(agreement_router)
     app.include_router(v1)
     return app

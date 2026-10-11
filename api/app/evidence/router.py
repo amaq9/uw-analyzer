@@ -485,3 +485,7 @@ def get_claim(
     principal: Principal = Depends(require_permission(Permission.CASE_READ)),  # noqa: B008
 ) -> ClaimOut:
     return _claim_out(request, _load_claim(request, principal, case_id, claim_id))
+
+
+# Public name for other modules (reports) that need a claim with its computed verification.
+claim_out = _claim_out

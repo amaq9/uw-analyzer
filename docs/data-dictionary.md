@@ -220,3 +220,18 @@ Append-only. Items that need a person. Restricted case content.
 | resolution `outcome` | `SUPPORTING_PREVAILS`, `CONTRADICTING_PREVAILS` (conflicts) or `NO_CLAIM_CHANGE` (others) |
 | resolution `preferred_evidence_id`, `explanation` | The evidence preferred and the written reason (required) |
 | resolution `resolved_by`, `resolved_at` | The named reviewer and when; one per escalation |
+
+## `report_versions` (Phase 5; migration 0013)
+
+Append-only (database triggers): a completed report is never changed; amendments are new versions (P-08).
+Restricted case content.
+
+| Field | Meaning |
+|---|---|
+| `seq`, `id`, `case_id`, `tenant_id` | Order number, ID, case, tenant |
+| `version` | 1, 2, ... per case (unique) |
+| `note` | Optional note from the person who completed it |
+| `content` | The report snapshot: verification log, findings, unverified claims, conflicts, gaps, limitations, adverse-search statement, evidence confidence, counts, final statement, as-of time |
+| `content_hash` | SHA-256 of the canonical content; recomputed on read |
+| `versions` | App, evidence rules, confidence rules, connector versions and run ids used (P-10) |
+| `created_by`, `created_at` | Who completed it and when |
