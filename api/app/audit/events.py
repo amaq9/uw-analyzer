@@ -39,6 +39,8 @@ class Action(StrEnum):
     DOCUMENT_REJECTED = "document.rejected"
     DOCUMENT_DOWNLOADED = "document.downloaded"
     SOURCE_CREATED = "source.created"
+    RESEARCH_PLANNED = "research.planned"
+    RESEARCH_BLOCKED = "research.blocked"
     SOURCE_UPDATED = "source.updated"
 
 

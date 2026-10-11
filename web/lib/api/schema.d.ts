@@ -300,6 +300,45 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cases/{case_id}/research-runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Runs */
+        get: operations["list_runs_api_v1_cases__case_id__research_runs_get"];
+        put?: never;
+        /**
+         * Create Run
+         * @description Plan research for the case. Blocked until the entity is resolved. Sending the same
+         *     `idempotency_key` again returns the run already made (200) instead of making another.
+         */
+        post: operations["create_run_api_v1_cases__case_id__research_runs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cases/{case_id}/research-runs/{run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Run */
+        get: operations["get_run_api_v1_cases__case_id__research_runs__run_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/me": {
         parameters: {
             query?: never;
@@ -722,6 +761,11 @@ export interface components {
             website?: string | null;
         };
         /**
+         * Category
+         * @enum {string}
+         */
+        Category: "ENTITY_REGISTRY" | "FINANCIALS" | "ADVERSE_SEARCH" | "COUNTRY_INDUSTRY";
+        /**
          * DecisionAction
          * @enum {string}
          */
@@ -1041,6 +1085,63 @@ export interface components {
             /** Note */
             note?: string | null;
         };
+        /** RunCreate */
+        RunCreate: {
+            /** Idempotency Key */
+            idempotency_key?: string | null;
+            /**
+             * Jurisdictions
+             * @description Countries to cover: the entity's, its parent's and where it operates (ISO 3166-1 alpha-2)
+             */
+            jurisdictions: string[];
+        };
+        /** RunOut */
+        RunOut: {
+            /**
+             * Case Id
+             * Format: uuid
+             */
+            case_id: string;
+            /** Completed At */
+            completed_at: string | null;
+            /** Correlation Id */
+            correlation_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By */
+            created_by: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Jurisdictions */
+            jurisdictions: string[];
+            /**
+             * Notice
+             * @default A plan says what would be searched and what cannot be. Nothing here shows that a source was accessed or that a claim is verified.
+             */
+            notice: string;
+            /** Started At */
+            started_at: string | null;
+            status: components["schemas"]["RunStatus"];
+            /** Steps */
+            steps: components["schemas"]["StepOut"][];
+            /** Trigger */
+            trigger: string;
+            /** Versions */
+            versions: {
+                [key: string]: unknown;
+            };
+        };
+        /**
+         * RunStatus
+         * @enum {string}
+         */
+        RunStatus: "PLANNED" | "QUEUED" | "RUNNING" | "COMPLETED" | "FAILED" | "CANCELLED";
         /**
          * SourceClass
          * @enum {string}
@@ -1155,6 +1256,43 @@ export interface components {
             /** Terms Notes */
             terms_notes?: string | null;
         };
+        /** StepOut */
+        StepOut: {
+            /** Attempts */
+            attempts: number;
+            category: components["schemas"]["Category"];
+            /** Discovery Only */
+            discovery_only: boolean;
+            /** Error Class */
+            error_class: string | null;
+            /** Finished At */
+            finished_at: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Max Attempts */
+            max_attempts: number;
+            /** Ordinal */
+            ordinal: number;
+            /** Reason */
+            reason: string | null;
+            /** Source */
+            source: {
+                [key: string]: unknown;
+            };
+            /** Source Id */
+            source_id: string | null;
+            /** Started At */
+            started_at: string | null;
+            state: components["schemas"]["StepState"];
+        };
+        /**
+         * StepState
+         * @enum {string}
+         */
+        StepState: "PLANNED" | "RUNNING" | "SUCCEEDED" | "FAILED" | "NOT_AVAILABLE" | "SKIPPED";
         /**
          * UnconfirmedRequest
          * @description A person records that the legal entity could not be confirmed or found (reason required).
@@ -2343,6 +2481,185 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Readiness"];
+                };
+            };
+            /** @description Not signed in, or the token is invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in but not permitted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found (or belongs to another tenant). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request was malformed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_runs_api_v1_cases__case_id__research_runs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunOut"][];
+                };
+            };
+            /** @description Not signed in, or the token is invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in but not permitted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found (or belongs to another tenant). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request was malformed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    create_run_api_v1_cases__case_id__research_runs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RunCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunOut"];
+                };
+            };
+            /** @description Not signed in, or the token is invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in but not permitted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found (or belongs to another tenant). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request was malformed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_run_api_v1_cases__case_id__research_runs__run_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunOut"];
                 };
             };
             /** @description Not signed in, or the token is invalid. */

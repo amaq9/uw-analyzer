@@ -152,3 +152,22 @@ reasons and amounts never go into audit events or logs.
 | `reason` | Written reason, required for change and reject |
 | `agrees` | True only for adopt; feeds the agreement view |
 | `decided_by`, `decided_at` | Who and when |
+
+## `research_runs` and `research_steps` (research plan, FR-2.3 / FR-2.5; migration 0009)
+
+A run is the plan and, later, the record of one research pass for a case. Steps are never created by a
+model. A plan says what would be searched; it never says a source was accessed (FR-2.7). Case-linked,
+Restricted.
+
+| Field | Meaning |
+|---|---|
+| run `status` | `PLANNED`, `QUEUED`, `RUNNING`, `COMPLETED`, `FAILED`, `CANCELLED` (only `PLANNED` exists until the executor ships) |
+| run `jurisdictions` | Countries the person named (entity, parent, operating) |
+| run `versions` | App, plan rules, policy, registry versions now; prompt, model and connector versions are empty until a step uses them (P-10) |
+| run `idempotency_key` | Same key on the same case returns the same run |
+| step `category` | `ENTITY_REGISTRY`, `FINANCIALS`, `ADVERSE_SEARCH`, `COUNTRY_INDUSTRY` |
+| step `state` | `PLANNED`, `RUNNING`, `SUCCEEDED`, `FAILED`, `NOT_AVAILABLE`, `SKIPPED` |
+| step `source_snapshot` | The registry entry as it was when planned (later registry edits do not rewrite history) |
+| step `discovery_only` | Can find leads but cannot verify a material claim alone (P-06) |
+| step `reason` | Why a step is not available (no source, licence not held, unavailable, down) |
+| step `attempts`, `max_attempts`, `error_class` | Bounded retries (FR-2.5) |
