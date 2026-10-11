@@ -169,7 +169,10 @@ def test_negative_search_wording_needs_a_real_search(ctx: Ctx) -> None:
     assert stmt.startswith("No adverse information was found in the sources searched: news.example")
     assert stmt.endswith("This does not mean that none exists.")
     ctx.claim(
-        text="A lawsuit exists.", adverse=True, evidence=[link(ctx.evidence(origin="c.example"))]
+        text="A lawsuit exists.",
+        adverse=True,
+        category="ADVERSE_SEARCH",
+        evidence=[link(ctx.evidence(origin="c.example"))],
     )
     assert "1 adverse claim(s) were recorded" in preview(ctx)["content"]["adverse_search_statement"]
 

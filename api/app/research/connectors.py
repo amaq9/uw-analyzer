@@ -35,6 +35,7 @@ class ConnectorRequest:
     jurisdictions: list[str]
     legal_name: str | None
     registration_number: str | None
+    industry: str | None = None
 
 
 @dataclass(frozen=True)
