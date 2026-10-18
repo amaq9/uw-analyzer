@@ -1,6 +1,9 @@
+import type { Metadata } from "next";
 import { Sidebar } from "@/components/sidebar";
 import { SourcesAdmin } from "@/components/sources-admin";
 import { Topbar } from "@/components/topbar";
+
+export const metadata: Metadata = { title: "Source access" };
 
 export default function SourcesPage() {
   return (

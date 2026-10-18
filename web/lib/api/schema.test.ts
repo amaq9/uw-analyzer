@@ -5,6 +5,9 @@ import { join, resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+// Line endings are not part of the contract: git on Windows checks files out with CRLF.
+const lf = (text: string) => text.replaceAll("\r\n", "\n");
+
 describe("generated API types", () => {
   it("match the current OpenAPI contract", () => {
     const temporaryDirectory = mkdtempSync(join(tmpdir(), "uw-analyzer-api-types-"));
@@ -22,8 +25,8 @@ describe("generated API types", () => {
         { stdio: "pipe" },
       );
 
-      expect(readFileSync(resolve("lib/api/schema.d.ts"), "utf8")).toBe(
-        readFileSync(temporarySchema, "utf8"),
+      expect(lf(readFileSync(resolve("lib/api/schema.d.ts"), "utf8"))).toBe(
+        lf(readFileSync(temporarySchema, "utf8")),
       );
     } finally {
       rmSync(temporaryDirectory, { force: true, recursive: true });

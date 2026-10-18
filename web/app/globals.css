@@ -2615,6 +2615,7 @@ textarea {
 /* Case workspace screens (research, evidence, review, recommendation, report). */
 .ws {
   display: grid;
+  grid-template-columns: minmax(0, 1fr); /* lets wide tables scroll inside their card, not widen the page */
   gap: 18px;
   max-width: 1180px;
 }
@@ -2634,6 +2635,7 @@ textarea {
 
 .ws-stack {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
 }
 
@@ -3894,4 +3896,36 @@ a.ar-tile:hover {
   border-left: 3px solid var(--navy);
   background: var(--cream);
   line-height: 1.5;
+}
+
+/* Step navigation stays in view while reading a long Step 1. */
+.rec-steps {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  padding: 10px 0;
+  background: var(--cream);
+  border-bottom: 1px solid var(--line);
+}
+
+.ar-more {
+  margin-top: 12px;
+}
+
+.ar-more summary {
+  color: var(--teal);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ar-flag-none {
+  margin: 10px 0;
+  font-weight: 600;
+}
+
+.rec-missing {
+  display: block;
+  margin-top: 4px;
+  color: var(--ink-soft);
+  font-size: 13px;
 }

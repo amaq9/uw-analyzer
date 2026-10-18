@@ -604,9 +604,9 @@ def reconcile(core: list[AreaReport], ratings: list[PublishedRatingOut]) -> str:
 def _concerns(areas: list[AreaReport], checks: list[FlagCheck], gaps: list[str]) -> list[str]:
     """Most important first: distressed areas, then flags to look at, then weak areas, then missing information."""
     out: list[str] = []
-    out += [f"{a.title}: distressed. {a.why}" for a in areas if a.status == "DISTRESSED"]
+    out += [f"{a.title}: {a.finding.lower()}. {a.why}" for a in areas if a.status == "DISTRESSED"]
     out += [f"{c.text}: {c.detail}" for c in checks if c.state == "TRIGGERED"]
-    out += [f"{a.title}: weak. {a.why}" for a in areas if a.status == "WEAK"]
+    out += [f"{a.title}: {a.finding.lower()}. {a.why}" for a in areas if a.status == "WEAK"]
     out += [f"Not known: {g}" for g in gaps[:3]]
     return list(dict.fromkeys(out))
 
@@ -644,6 +644,28 @@ def _executive_summary(
     if bad:
         text += " Needs most attention: " + ", ".join(bad).lower() + "."
     return text[:600]
+
+
+def _headline_status(level: Level, core: list[AreaReport]) -> Status:
+    """The consolidated colour. The policy treats the findings as weak only when the core dimensions are
+    critical together (that test is unchanged), but the headline must not read OK above dimensions that
+    are not: OK only when no core dimension is Concerning or Critical."""
+    counts = _counts(core)
+    if level is Level.NOT_ASSESSED or counts["NOT_ASSESSED"] == len(core):
+        return "NOT_ASSESSED"
+    if level is Level.WEAK:
+        return "DISTRESSED"
+    if counts["WEAK"] or counts["DISTRESSED"]:
+        return "WEAK"
+    return "OK"
+
+
+def _headline_word(level: Level, status: Status) -> str:
+    return {
+        "DISTRESSED": "Critical",
+        "WEAK": "Concerning",
+        "NOT_ASSESSED": "Not assessed",
+    }.get(status, finding_word(level))
 
 
 def build_report(
@@ -701,6 +723,7 @@ def build_report(
             weaknesses.append(f"{s.title}: could not be assessed. {s.why}")
     level, _analyzer_why = consolidated
     why = _consolidated_why(core)
+    headline = _headline_status(level, core)
     unique_gaps = list(dict.fromkeys(gaps))
     ds_metrics, ds_notes = debt_service_block(ratio_sets, figure_sets, currency)
     stress, stress_note = stress_block(ratio_sets, figure_sets, currency)
@@ -716,10 +739,10 @@ def build_report(
                 "as written rules with the framework's reference ranges"
             ),
         ),
-        executive_summary=_executive_summary(core, STATUS_OF[level], why, strengths, weaknesses),
+        executive_summary=_executive_summary(core, headline, why, strengths, weaknesses),
         areas=areas,
-        consolidated_status=STATUS_OF[level],
-        consolidated_finding=finding_word(level),
+        consolidated_status=headline,
+        consolidated_finding=_headline_word(level, headline),
         consolidated_why=why,
         red_flags=checks,
         debt_service=ds_metrics,

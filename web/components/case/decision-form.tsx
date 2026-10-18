@@ -100,6 +100,12 @@ export function DecisionForm({
     if (done) onDone();
   }
 
+  const needsAmount = choice === "CHANGE" && outcome === "APPROVE";
+  const amountOk = typed > 0 && !overRequest;
+  const missing = [
+    ...(needsAmount && !amountOk ? ["an amount above zero and not above the amount requested"] : []),
+    ...(needsReason && reason.trim().length === 0 ? ["your reason"] : []),
+  ];
   const consequence =
     choice === "ADOPT"
       ? `You will record: ${draftLine(draft)}.`
@@ -107,9 +113,11 @@ export function DecisionForm({
         ? "You will record: the draft set aside, with no outcome."
         : outcome === "DECLINE"
           ? "You will record: Decline."
-          : amount && typed > 0
+          : amountOk
             ? `You will record: Approve ${money(amount, draft.requested_currency)}.`
-            : "Enter the amount you approve.";
+            : overRequest
+              ? "That amount cannot be recorded: it is above the amount requested."
+              : "Enter the amount you approve.";
 
   return (
     <section aria-labelledby="rec-decide-title" className="rec-decide">
@@ -141,7 +149,7 @@ export function DecisionForm({
           <div className="rec-change">
             <label className="ws-field">
               Your outcome
-              <select onChange={(event) => setOutcome(event.target.value as "APPROVE" | "DECLINE")} value={outcome}>
+              <select aria-label="Your outcome" onChange={(event) => setOutcome(event.target.value as "APPROVE" | "DECLINE")} value={outcome}>
                 <option value="APPROVE">Approve an amount</option>
                 <option value="DECLINE">Decline</option>
               </select>
@@ -168,7 +176,10 @@ export function DecisionForm({
         )}
 
         <div className="rec-confirm">
-          <p aria-live="polite">{consequence}</p>
+          <div aria-live="polite">
+            <p>{consequence}</p>
+            {missing.length > 0 && <small className="rec-missing">Still needed: {missing.join(" and ")}.</small>}
+          </div>
           <button className="ws-button primary" disabled={action.busy || !ready} type="submit">
             Record my decision ({readable(choice).toLowerCase()})
           </button>

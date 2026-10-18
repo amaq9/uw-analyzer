@@ -134,7 +134,7 @@ async function signInAndOpenCases(page: Page) {
   await page.getByRole("button", { name: "Continue to local workspace" }).click();
   await expect(page.getByRole("heading", { name: /signed in as local-underwriter/i })).toBeVisible();
   await page.getByRole("link", { name: "Continue to workspace" }).click();
-  await page.getByRole("link", { name: "Cases" }).click();
+  await page.getByRole("navigation", { name: "Primary navigation" }).getByRole("link", { name: "Cases" }).click();
   await expect(page).toHaveURL(/\/cases$/);
 }
 
@@ -169,9 +169,10 @@ test("creates a case with an exact amount and paired currency", async ({ page })
   await page.getByLabel("Website").fill("https://example.com");
   await page.getByRole("button", { name: "Create case" }).click();
 
-  await expect(page).toHaveURL(/\/cases$/);
-  await expect(page.getByText("Maple Distribution")).toBeVisible();
-  await expect(page.getByRole("link", { name: "Edit" })).toBeVisible();
+  // A new case opens its own workspace, where the next step (the entity) is.
+  await expect(page).toHaveURL(/\/cases\/00000000-0000-4000-8000-000000000003$/);
+  await expect(page.getByRole("heading", { name: "Maple Distribution" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Edit case details" })).toBeVisible();
 });
 
 test("edits with expected_version and sends null when a field is cleared", async ({ page }) => {
@@ -184,7 +185,7 @@ test("edits with expected_version and sends null when a field is cleared", async
   await page.getByLabel("Case context").fill("Updated by the underwriter");
   await page.getByRole("button", { name: "Save changes" }).click();
 
-  await expect(page).toHaveURL(/\/cases$/);
+  await expect(page).toHaveURL(/\/cases\/00000000-0000-4000-8000-000000000001$/);
   expect(state.lastPatch).toMatchObject({
     context: "Updated by the underwriter",
     expected_version: 1,

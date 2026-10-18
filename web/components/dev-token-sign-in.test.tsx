@@ -92,3 +92,18 @@ describe("development token sign-in", () => {
     expect(screen.queryByText("secret-test-token")).not.toBeInTheDocument();
   });
 });
+
+describe("sign-in before the page is interactive", () => {
+  it("can never put the token in the address bar: no named field, and the button is disabled", async () => {
+    const { renderToString } = await import("react-dom/server");
+    const html = renderToString(
+      <SessionProvider>
+        <DevTokenSignIn />
+      </SessionProvider>,
+    );
+    // This is the page as the browser first receives it, before any script runs. A browser submitting the
+    // form now would serialise every named field into the URL, so the token field has no name.
+    expect(html).not.toMatch(/name="development-token"/);
+    expect(html).toMatch(/<button[^>]*disabled=""[^>]*>Continue to local workspace<\/button>/);
+  });
+});

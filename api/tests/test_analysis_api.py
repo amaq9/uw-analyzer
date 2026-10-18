@@ -177,6 +177,17 @@ def test_a_strong_company_gets_a_full_draft_with_findings_and_reasons(
         liquidity["metrics"][0]
     )
     assert report["basis"]["periods"] == out["periods_reviewed"]
+    # Step 2 and Step 1 tell the same story (found on the live Nike case: they once disagreed).
+    assert draft["summary"].startswith("Consolidated financial findings: OK.")
+    assert (
+        "By dimension: liquidity strong; profitability strong; leverage strong; cash flow adequate"
+        in draft["summary"]
+    )
+    assert report["executive_summary"].startswith("Consolidated financial findings: OK.")
+    # Names a person recognises, never internal keys.
+    notes = [g for g in draft["information_gaps"] if g.startswith("Figure derived")]
+    assert notes and all("_" not in g.split(" is ")[0] for g in notes)
+    assert any(g.startswith("Figure derived: EBITDA is") for g in notes)
     assert report["strengths"] and report["watch"] and report["gaps"]
     assert {c["title"] for c in report["other_checks"]} >= {"Sector outlook", "Payment behaviour"}
     stored = client.get(
@@ -227,7 +238,7 @@ def test_a_distressed_company_gets_a_decline_draft_and_never_a_decision(
     assert report["consolidated_status"] == "DISTRESSED"
     assert any(a["status"] == "DISTRESSED" for a in report["areas"])
     assert report["weaknesses"]
-    assert report["key_concerns"][0].split(":")[1].strip().startswith("distressed")
+    assert report["key_concerns"][0].split(":")[1].strip().startswith("critical")
     assert (draft["outcome"], draft["band"], draft["recommended_amount"]) == (
         "DECLINE",
         "DECLINE",

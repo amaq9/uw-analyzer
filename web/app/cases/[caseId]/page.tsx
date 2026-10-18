@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { CaseWorkspace } from "@/components/case/workspace";
 import { Sidebar } from "@/components/sidebar";
 import { Topbar } from "@/components/topbar";
@@ -5,6 +6,8 @@ import { Topbar } from "@/components/topbar";
 type CasePageProps = {
   params: Promise<{ caseId: string }>;
 };
+
+export const metadata: Metadata = { title: "Case" };
 
 export default async function CasePage({ params }: CasePageProps) {
   const { caseId } = await params;

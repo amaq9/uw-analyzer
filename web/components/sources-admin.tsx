@@ -145,7 +145,7 @@ export function SourcesAdmin() {
               </label>
               <label className="ws-field">
                 Class
-                <select name="source_class">
+                <select aria-label="Class" name="source_class">
                   <option value="OFFICIAL">Official</option>
                   <option value="COMMERCIAL">Commercial</option>
                   <option value="SECONDARY">Secondary</option>
@@ -162,7 +162,7 @@ export function SourcesAdmin() {
               </label>
               <label className="ws-field">
                 Access
-                <select name="access_category">
+                <select aria-label="Access" name="access_category">
                   {ACCESS.map((value) => (
                     <option key={value} value={value}>
                       {readable(value)}
@@ -172,7 +172,7 @@ export function SourcesAdmin() {
               </label>
               <label className="ws-field">
                 Credential
-                <select name="auth_state">
+                <select aria-label="Credential" name="auth_state">
                   <option value="NOT_REQUIRED">Not required</option>
                   <option value="CONFIGURED">Configured</option>
                   <option value="MISSING">Missing</option>

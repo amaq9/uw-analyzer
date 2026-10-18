@@ -73,7 +73,7 @@ def test_strong_and_distressed_figures_give_the_full_report() -> None:
     weak = report_for(figures_for(DISTRESSED))
     assert weak.consolidated_status == "DISTRESSED"
     assert {a.status for a in weak.areas if a.feeds_draft} == {"DISTRESSED"}
-    assert weak.key_concerns[0].split(": ")[1].startswith("distressed")
+    assert weak.key_concerns[0].split(": ")[1].startswith("critical")  # the framework's word
     assert weak.executive_summary.startswith("Consolidated financial findings: distressed")
     assert all(
         not w.startswith("Efficiency") for w in weak.weaknesses
@@ -227,3 +227,24 @@ def test_report_carries_no_outcome_or_score_wording() -> None:
     text = report_for(figures_for(DISTRESSED)).model_dump_json().lower()
     for word in ("approve", "decline", "credit limit", "covenant:", "loan term"):
         assert word not in text
+
+
+def test_the_headline_is_never_ok_above_a_dimension_that_is_not() -> None:
+    """Found on the live Nike case: '1 OK, 3 weak' was headlined OK because the policy's decline test
+    (critical together) was not met. The policy test is unchanged; the headline now tells the truth."""
+    thin = dict(STRONG)
+    thin["NetIncomeLoss"] = [30, 35, 40]  # profitability becomes Concerning
+    mixed = report_for(figures_for(thin))
+    assert [a.status for a in mixed.areas if a.feeds_draft] == ["OK", "WEAK", "OK", "OK"]
+    assert mixed.consolidated_status == "WEAK" and mixed.consolidated_finding == "Concerning"
+    assert mixed.executive_summary.startswith("Consolidated financial findings: weak")
+    strong = report_for(figures_for(STRONG))
+    assert strong.consolidated_status == "OK" and strong.consolidated_finding == "Adequate"
+    critical = report_for(figures_for(DISTRESSED))
+    assert (
+        critical.consolidated_status == "DISTRESSED" and critical.consolidated_finding == "Critical"
+    )
+    bare = report_for([{"revenue": 100.0}])
+    assert (
+        bare.consolidated_status == "NOT_ASSESSED" and bare.consolidated_finding == "Not assessed"
+    )

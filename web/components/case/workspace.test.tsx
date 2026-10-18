@@ -83,11 +83,21 @@ describe("case workspace", () => {
       "Evidence and claims",
       "Review items",
       "Draft recommendation",
+      "Final decision",
       "Report",
     ]) {
       expect(screen.getByRole("button", { name })).toBeInTheDocument();
     }
     expect(screen.queryByRole("button", { name: /approve|decline/i })).not.toBeInTheDocument();
+  });
+
+  it("names the browser tab after the case and the part being read", async () => {
+    stubApi({ [`/cases/${CASE_ID}`]: caseRecord });
+    wrap(<CaseWorkspace caseId={CASE_ID} />);
+    await screen.findByRole("heading", { name: "NIKE, Inc." });
+    expect(document.title).toBe("NIKE, Inc. · Overview · UW Analyzer");
+    fireEvent.click(screen.getByRole("button", { name: "Final decision" }));
+    await waitFor(() => expect(document.title).toBe("NIKE, Inc. · Final decision · UW Analyzer"));
   });
 
   it("asks for sign-in when there is no session", () => {

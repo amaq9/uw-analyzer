@@ -99,6 +99,13 @@ export function CaseWorkspace({ caseId }: Readonly<{ caseId: string }>) {
   const [tab, setTab] = useState<TabId>("overview");
   const data = record.data;
 
+  // The browser tab says which case and which part, so several open tabs can be told apart.
+  useEffect(() => {
+    if (!data) return;
+    const label = TABS.find((item) => item.id === tab)?.label ?? "";
+    document.title = `${data.legal_name ?? data.trading_name ?? "Case"} · ${label} · UW Analyzer`;
+  }, [data, tab]);
+
   // A link such as /cases/<id>?tab=recommendation opens that tab straight away.
   useEffect(() => {
     const wanted = new URLSearchParams(window.location.search).get("tab");

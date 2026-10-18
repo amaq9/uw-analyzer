@@ -10,6 +10,8 @@ export default defineConfig({
   testIgnore: "playwright.config.ts",
   use: {
     ...devices["Desktop Chrome"],
+    // PW_CHANNEL=chrome runs the tests in the Chrome that is already installed (no browser download).
+    channel: process.env.PW_CHANNEL || undefined,
     baseURL: "http://127.0.0.1:3000",
     trace: "retain-on-failure",
   },

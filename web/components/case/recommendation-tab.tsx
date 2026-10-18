@@ -86,13 +86,24 @@ export function RecommendationTab({
       />
       {latest && <AnalysisFindings draft={latest} />}
 
+      {drafts.error && (
+        <p className="ws-error" role="alert">
+          The drafts could not be loaded. {drafts.error.message}
+        </p>
+      )}
+
       <StepHeading
         id="rec-step-2"
         note="The approved policy turns the findings into a draft outcome and amount. It is a recommendation only."
         number={2}
         title="Draft recommendation"
       />
-      {!latest && (
+      {drafts.loading && !drafts.data && (
+        <section aria-live="polite" className="ws-card">
+          <p className="ws-muted">Loading the drafts of this case…</p>
+        </section>
+      )}
+      {!latest && !drafts.loading && !drafts.error && (
         <section className="ws-card rec-empty">
           <h3>No draft has been prepared yet</h3>
           <p>
@@ -110,7 +121,7 @@ export function RecommendationTab({
         number={3}
         title="Your decision"
       />
-      {!latest && (
+      {!latest && !drafts.loading && !drafts.error && (
         <section className="ws-card">
           <p>Available once a draft has been prepared.</p>
         </section>

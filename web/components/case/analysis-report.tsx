@@ -44,6 +44,34 @@ function List({ items, empty }: Readonly<{ items: string[]; empty: string }>) {
   );
 }
 
+function FlagTable({ flags, t }: Readonly<{ flags: AnalysisReportData["red_flags"]; t: (text: string) => string }>) {
+  if (flags.length === 0) return null;
+  return (
+    <div className="ws-table-wrap">
+      <table className="ws-table">
+        <thead>
+          <tr>
+            <th>Check</th>
+            <th>Result</th>
+            <th>Detail</th>
+          </tr>
+        </thead>
+        <tbody>
+          {flags.map((flag) => (
+            <tr key={flag.text}>
+              <td>{flag.text}</td>
+              <td>
+                <span className={`ar-flag-state is-${flag.state.toLowerCase()}`}>{FLAG_WORD[flag.state]}</span>
+              </td>
+              <td>{t(flag.detail)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 /** Step 1 in full: scope, the five dimensions with their figures, the red-flag checklist, the closing view, other checks. */
 export function AnalysisReportView({ currency, report }: Readonly<{ currency?: string | null; report: AnalysisReportData }>) {
   const t = (text: string) => shorten(text, currency);
@@ -72,8 +100,8 @@ export function AnalysisReportView({ currency, report }: Readonly<{ currency?: s
           </div>
         </dl>
         <p className="ws-muted">
-          Method: {report.basis.method} (analyzer v{report.analyzer_version}). Benchmarks are not used. Profitability is context
-          only.
+          Method: {report.basis.method} (analyzer v{report.analyzer_version}). Reference ranges are the framework&apos;s own and
+          are indicative: no verified peer data is used.
         </p>
       </section>
 
@@ -189,28 +217,17 @@ export function AnalysisReportView({ currency, report }: Readonly<{ currency?: s
         <p className="eyebrow">Red-flag checklist</p>
         <h3>{report.red_flags.length} prompts for the underwriter&apos;s attention</h3>
         <p className="ws-muted">These are prompts, not pass or fail tests. “Look closer” means the figure crossed the usual line.</p>
-        <div className="ws-table-wrap">
-          <table className="ws-table">
-            <thead>
-              <tr>
-                <th>Check</th>
-                <th>Result</th>
-                <th>Detail</th>
-              </tr>
-            </thead>
-            <tbody>
-              {report.red_flags.map((flag) => (
-                <tr key={flag.text}>
-                  <td>{flag.text}</td>
-                  <td>
-                    <span className={`ar-flag-state is-${flag.state.toLowerCase()}`}>{FLAG_WORD[flag.state]}</span>
-                  </td>
-                  <td>{t(flag.detail)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <FlagTable flags={report.red_flags.filter((flag) => flag.state === "TRIGGERED")} t={t} />
+        {report.red_flags.every((flag) => flag.state !== "TRIGGERED") && (
+          <p className="ar-flag-none">No figure crossed the usual lines.</p>
+        )}
+        <details className="ar-more">
+          <summary>
+            Show the other {report.red_flags.filter((flag) => flag.state !== "TRIGGERED").length} prompts (clear, or not
+            assessable)
+          </summary>
+          <FlagTable flags={report.red_flags.filter((flag) => flag.state !== "TRIGGERED")} t={t} />
+        </details>
       </section>
 
       {((report.debt_service ?? []).length > 0 || (report.stress ?? []).length > 0) && (

@@ -1,6 +1,9 @@
+import type { Metadata } from "next";
 import { AgreementView } from "@/components/agreement-view";
 import { Sidebar } from "@/components/sidebar";
 import { Topbar } from "@/components/topbar";
+
+export const metadata: Metadata = { title: "Draft against decision" };
 
 export default function AgreementPage() {
   return (

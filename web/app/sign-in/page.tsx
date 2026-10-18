@@ -1,8 +1,11 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { Brand } from "@/components/brand";
 import { DevTokenSignIn } from "@/components/dev-token-sign-in";
 import { LockIcon, ShieldIcon } from "@/components/icons";
+
+export const metadata: Metadata = { title: "Sign in" };
 
 export default function SignInPage() {
   return (
