@@ -15,7 +15,7 @@ from sqlalchemy.exc import DBAPIError
 from app.recommendation.policy import Band, Outcome
 from tests.test_cases_api import CASES, audit, headers, make_case
 
-NOTICE = "Draft recommendation for the underwriter. Not a decision."
+NOTICE = "UW Analyzer recommendation for the underwriter. Not a decision."
 WEB = {
     "kind": "web",
     "url": "https://registry.example.org/filing/123",

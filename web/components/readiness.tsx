@@ -16,8 +16,8 @@ const items = [
     ready: true,
   },
   {
-    title: "Analysis and draft recommendation",
-    detail: "Five-area financial review of SEC data or your own confirmed statements, then a draft for you",
+    title: "Analysis and UW Analyzer recommendation",
+    detail: "Five-area financial review of SEC data or your own confirmed statements, then a recommendation for you",
     status: "Ready",
     ready: true,
   },

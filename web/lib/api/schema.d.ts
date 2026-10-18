@@ -948,12 +948,15 @@ export interface components {
             debt_service?: components["schemas"]["Metric"][];
             /** Debt Service Notes */
             debt_service_notes?: string[];
+            /** Definitions */
+            definitions?: string[];
             /** Executive Summary */
             executive_summary: string;
             /** Gaps */
             gaps?: string[];
             /** Key Concerns */
             key_concerns?: string[];
+            notes_review?: components["schemas"]["NotesReview"] | null;
             /** Other Checks */
             other_checks?: components["schemas"]["OtherCheck"][];
             /** Published Ratings */
@@ -1642,7 +1645,7 @@ export interface components {
             limitations: string[];
             /**
              * Notice
-             * @default Draft recommendation for the underwriter. Not a decision.
+             * @default UW Analyzer recommendation for the underwriter. Not a decision.
              */
             notice: string;
             outcome: components["schemas"]["Outcome"];
@@ -2003,6 +2006,11 @@ export interface components {
             /** Detail */
             detail: string;
             /**
+             * Result
+             * @default
+             */
+            result: string;
+            /**
              * State
              * @enum {string}
              */
@@ -2108,6 +2116,55 @@ export interface components {
             label: string;
             /** Metric */
             metric: string;
+        };
+        /**
+         * NoteFinding
+         * @description What the filing's own text says on one topic. Reported, never scored.
+         */
+        NoteFinding: {
+            /** Quotes */
+            quotes?: components["schemas"]["NoteQuote"][];
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "CONCERN" | "NO_CONCERN" | "INFO" | "NOT_FOUND";
+            /** Summary */
+            summary: string;
+            /** Title */
+            title: string;
+            /** Topic */
+            topic: string;
+        };
+        /**
+         * NoteQuote
+         * @description A sentence copied word for word from the filing.
+         */
+        NoteQuote: {
+            /** Text */
+            text: string;
+            /** Where */
+            where?: string | null;
+        };
+        /**
+         * NotesReview
+         * @description The printed 10-K (notes and auditor's report) read for what the figures cannot show.
+         */
+        NotesReview: {
+            /** Characters */
+            characters: number;
+            /** Filed */
+            filed?: string | null;
+            /** Findings */
+            findings?: components["schemas"]["NoteFinding"][];
+            /** Sha256 */
+            sha256: string;
+            /** Source */
+            source: string;
+            /** Summary */
+            summary: string;
+            /** Url */
+            url?: string | null;
         };
         /**
          * OtherCheck

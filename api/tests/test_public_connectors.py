@@ -85,7 +85,10 @@ def sec(
         "https://data.sec.gov/submissions/CIK0000320187.json": b'{"filings": {"recent": {}}}',
         "https://data.sec.gov/api/xbrl/companyfacts/CIK0000320187.json": b'{"facts": {"us-gaap": {}}}',
     }
-    routes = {**(extra or {}), **routes}  # overrides are matched first
+    routes = {
+        **(extra or {}),
+        **{k: v for k, v in routes.items() if k not in (extra or {})},
+    }  # overrides first
     storage, fetcher = MemoryStorage(), FakeFetcher(routes)
     return SecEdgarConnector(fetcher, SnapshotStore(storage)), storage, fetcher
 
@@ -198,3 +201,102 @@ def test_fetcher_refuses_anything_off_the_allow_list(url: str) -> None:
     with pytest.raises(PermanentConnectorError) as excinfo:
         fetcher.get(url, allowed_hosts=frozenset({"data.sec.gov"}))
     assert excinfo.value.code == "host_not_allowed"
+
+
+SUBMISSIONS_WITH_10K = json.dumps(
+    {
+        "filings": {
+            "recent": {
+                "form": ["8-K", "10-K", "10-K"],
+                "accessionNumber": [
+                    "0000320187-26-000090",
+                    "0000320187-25-000073",
+                    "0000320187-26-000088",
+                ],
+                "primaryDocument": ["a8k.htm", "nke-20250531.htm", "nke-20260531.htm"],
+                "filingDate": ["2026-08-01", "2025-07-18", "2026-07-17"],
+                "reportDate": ["2026-08-01", "2025-05-31", "2026-05-31"],
+            }
+        }
+    }
+).encode()
+DOC_URL = "https://www.sec.gov/Archives/edgar/data/320187/000032018726000088/nke-20260531.htm"
+
+
+def test_sec_also_keeps_the_newest_10k_text_with_its_hash() -> None:
+    connector, storage, fetcher = sec(
+        {
+            "https://data.sec.gov/submissions/CIK0000320187.json": SUBMISSIONS_WITH_10K,
+            DOC_URL: b"<html>the printed annual report</html>",
+        }
+    )
+    manifest = json.loads(
+        storage.objects[
+            connector.execute(request()).provenance_ref.split("#")[0].removeprefix("snapshot://")
+        ]
+    )
+    assert [f["label"] for f in manifest["files"]] == [
+        "submissions",
+        "companyfacts",
+        "annual_report",
+    ]
+    report = next(f for f in manifest["files"] if f["label"] == "annual_report")
+    assert report["url"] == DOC_URL
+    body = storage.objects[report["ref"].split("#")[0].removeprefix("snapshot://")]
+    assert body == b"<html>the printed annual report</html>"
+    assert hashlib.sha256(body).hexdigest() == report["sha256"]
+    assert manifest["annual_report"]["status"] == "RETRIEVED"
+    assert (
+        manifest["annual_report"]["accession"] == "0000320187-26-000088"
+    )  # the newest, not the 8-K or 2025
+    assert DOC_URL in fetcher.urls
+
+
+def test_a_missing_10k_never_fails_the_retrieval_and_is_recorded() -> None:
+    connector, storage, _ = sec()  # the filing list has no 10-K
+    manifest = json.loads(
+        storage.objects[
+            connector.execute(request()).provenance_ref.split("#")[0].removeprefix("snapshot://")
+        ]
+    )
+    assert [f["label"] for f in manifest["files"]] == ["submissions", "companyfacts"]
+    assert manifest["annual_report"]["status"] == "NOT_FOUND"
+
+
+def test_a_failed_10k_download_is_recorded_but_the_figures_are_still_kept() -> None:
+    connector, storage, _ = sec(
+        {
+            "https://data.sec.gov/submissions/CIK0000320187.json": SUBMISSIONS_WITH_10K,
+            DOC_URL: PermanentConnectorError("http_404"),
+        }
+    )
+    manifest = json.loads(
+        storage.objects[
+            connector.execute(request()).provenance_ref.split("#")[0].removeprefix("snapshot://")
+        ]
+    )
+    assert [f["label"] for f in manifest["files"]] == ["submissions", "companyfacts"]
+    assert manifest["annual_report"]["status"] == "NOT_RETRIEVED"
+    assert manifest["annual_report"]["accession"] == "0000320187-26-000088"
+
+
+def test_an_odd_document_name_in_the_filing_list_is_never_turned_into_an_address() -> None:
+    from app.research.public_connectors import latest_annual_report
+
+    odd = {
+        "filings": {
+            "recent": {
+                "form": ["10-K", "10-K", "10-K"],
+                "accessionNumber": [
+                    "0000320187-26-000088",
+                    "not-an-accession",
+                    "0000320187-26-000089",
+                ],
+                "primaryDocument": ["../../etc/passwd", "ok.htm", "evil.exe"],
+                "filingDate": ["2026-07-17", "2026-07-18", "2026-07-19"],
+                "reportDate": ["", "", ""],
+            }
+        }
+    }
+    assert latest_annual_report(odd, "0000320187") is None
+    assert latest_annual_report({}, "0000320187") is None

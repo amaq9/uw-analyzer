@@ -201,16 +201,54 @@ def test_debt_service_block_states_what_it_cannot_see() -> None:
     assert metrics[0].label.startswith("Cash from operations over debt due")
 
 
-def test_stress_is_arithmetic_with_its_assumption_stated() -> None:
+def test_stress_without_gross_profit_shows_only_the_extreme_case_and_says_so() -> None:
     figs: list[Figures] = [
         {"revenue": 100.0, "operating_income": 20.0, "interest_expense": 5.0, "ocf": 15.0}
     ]
     rows, note = stress_block([compute(figs[0])], figs, "USD")
-    assert [r.scenario for r in rows] == ["As reported", "Revenue down 10%", "Revenue down 20%"]
+    assert [r.scenario for r in rows] == [
+        "As reported",
+        "Revenue down 10%, no cost saving at all (extreme)",
+        "Revenue down 20%, no cost saving at all (extreme)",
+    ]
     assert rows[0].interest_cover == "4.00x"
     assert rows[1].earnings == "USD 10m" and rows[1].interest_cover == "2.00x"
     assert rows[2].earnings == "USD 0.00m" and rows[2].cash_from_operations == "-USD 5.00m"
-    assert note is not None and "not a forecast" in note
+    assert note is not None and "not a forecast" in note and "Gross profit is not available" in note
+    assert "Tax relief is not assumed" in note
+
+
+def test_stress_uses_the_gross_margin_and_the_tax_actually_paid() -> None:
+    # Nike's published year to 31 May 2026 (USD m), re-computed by hand in the Product Owner review.
+    figs: list[Figures] = [
+        {
+            "revenue": 46398.0,
+            "gross_profit": 19911.0,
+            "ebit": 3850.0,
+            "pretax_income": 3900.0,
+            "net_income": 3108.0,
+            "interest_expense": 323.0,
+            "ocf": 2868.0,
+        }
+    ]
+    rows, note = stress_block([compute(figs[0])], figs, "USD")
+    assert [r.scenario for r in rows] == [
+        "As reported",
+        "Revenue down 10%, cost of sales falls with sales",
+        "Revenue down 20%, cost of sales falls with sales",
+        "Revenue down 10%, no cost saving at all (extreme)",
+    ]
+    assert rows[0].earnings == "USD 3.85bn" and rows[0].cash_from_operations == "USD 2.87bn"
+    # 10% fall: gross profit lost = 4,639.8 x 42.9% = 1,991 -> EBIT 1,859; tax relief 20.3% -> cash 1,281
+    assert rows[1].earnings == "USD 1.86bn" and rows[1].interest_cover == "5.76x"
+    assert rows[1].cash_from_operations == "USD 1.28bn"
+    # 20% fall: EBIT slightly negative; tax relief only while profit stays positive
+    assert rows[2].earnings == "-USD 132m" and rows[2].cash_from_operations == "-USD 322m"
+    # extreme: the whole of the lost revenue is lost profit
+    assert rows[3].earnings == "-USD 790m" and rows[3].cash_from_operations == "-USD 980m"
+    assert note is not None
+    assert "operating profit reaches zero if revenue falls about 19.3%" in note
+    assert "only while profit stays positive" in note
 
 
 def test_stress_is_skipped_without_revenue_or_earnings() -> None:
@@ -248,3 +286,43 @@ def test_the_headline_is_never_ok_above_a_dimension_that_is_not() -> None:
     assert (
         bare.consolidated_status == "NOT_ASSESSED" and bare.consolidated_finding == "Not assessed"
     )
+
+
+def test_check_results_are_worded_by_the_kind_of_check() -> None:
+    from app.recommendation.analysis_report import flag_result
+
+    assert flag_result("Debt to equity above 2.5", "TRIGGERED") == "Above threshold"
+    assert flag_result("Debt to equity above 2.5", "CLEAR") == "Not above threshold"
+    assert (
+        flag_result("Current ratio below 1.0, or quick ratio below 0.6", "TRIGGERED")
+        == "Below threshold"
+    )
+    assert (
+        flag_result("Cash from operations below 80% of net income", "CLEAR")
+        == "Not below threshold"
+    )
+    assert (
+        flag_result("Debt due within 12 months above 20% of annual revenue", "CLEAR")
+        == "Not above threshold"
+    )
+    assert flag_result("Receivables growing faster than revenue", "TRIGGERED") == "Above threshold"
+    assert (
+        flag_result("Net margin down by more than 5 percentage points on the year before", "CLEAR")
+        == "Not above threshold"
+    )
+    assert flag_result("Negative shareholders' equity", "CLEAR") == "Condition not met"
+    assert flag_result("Rating under review by an agency", "TRIGGERED") == "Condition met"
+    assert flag_result("Debt to equity above 2.5", "NOT_ASSESSABLE") == "Not assessable"
+
+
+def test_every_check_in_the_report_carries_its_result_wording() -> None:
+    from app.recommendation.analysis_report import FlagCheck
+
+    check = FlagCheck(
+        text="Net debt to EBITDA above 3.0x", state="CLEAR", detail="Net debt to EBITDA is 0.44x."
+    )
+    assert check.result == "Not above threshold"
+    again = FlagCheck.model_validate(
+        check.model_dump()
+    )  # a stored report re-validates to the same words
+    assert again.result == "Not above threshold"

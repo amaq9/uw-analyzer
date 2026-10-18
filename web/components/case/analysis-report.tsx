@@ -1,5 +1,6 @@
 import type { components } from "@/lib/api/schema";
 import { readable, shorten } from "@/lib/format";
+import { splitGaps } from "@/lib/gaps";
 
 export type AnalysisReportData = components["schemas"]["AnalysisReport"];
 type Status = AnalysisReportData["consolidated_status"];
@@ -24,7 +25,8 @@ export function StatusChip({ status }: Readonly<{ status: Status }>) {
 
 const CHANGE = { up: "▲ Up", down: "▼ Down", flat: "● Flat", unknown: "–" } as const;
 
-const FLAG_WORD = { TRIGGERED: "Look closer", CLEAR: "Clear", NOT_ASSESSABLE: "Not assessable" } as const;
+/** The result is worded by the server ("Above threshold", "Not above threshold", ...). This is only the fallback. */
+const FLAG_FALLBACK = { TRIGGERED: "Condition met", CLEAR: "Condition not met", NOT_ASSESSABLE: "Not assessable" } as const;
 const CHECK_WORD = {
   CLEAR: "Clear",
   FOUND: "Found",
@@ -61,7 +63,7 @@ function FlagTable({ flags, t }: Readonly<{ flags: AnalysisReportData["red_flags
             <tr key={flag.text}>
               <td>{flag.text}</td>
               <td>
-                <span className={`ar-flag-state is-${flag.state.toLowerCase()}`}>{FLAG_WORD[flag.state]}</span>
+                <span className={`ar-flag-state is-${flag.state.toLowerCase()}`}>{flag.result || FLAG_FALLBACK[flag.state]}</span>
               </td>
               <td>{t(flag.detail)}</td>
             </tr>
@@ -69,6 +71,77 @@ function FlagTable({ flags, t }: Readonly<{ flags: AnalysisReportData["red_flags
         </tbody>
       </table>
     </div>
+  );
+}
+
+const NOTE_STATE = {
+  CONCERN: { word: "Concern stated", className: "is-concern" },
+  NO_CONCERN: { word: "No concern stated", className: "is-clear" },
+  INFO: { word: "For you to read", className: "is-info" },
+  NOT_FOUND: { word: "Not in the filing", className: "is-none" },
+} as const;
+
+/** What the printed 10-K's notes and auditor's report say, in the filing's own words. */
+function NotesSection({ review }: Readonly<{ review: AnalysisReportData["notes_review"] | null }>) {
+  if (!review) {
+    return (
+      <section aria-label="Notes and auditor's report" className="ws-card">
+        <p className="eyebrow">Notes and auditor&apos;s report</p>
+        <h3>The printed 10-K was not read in this run</h3>
+        <p className="ws-muted">
+          The notes and the auditor&apos;s report can show a going-concern warning, a covenant breach or an auditor&apos;s qualification
+          that the figures cannot. Run the research again so the filing text is retrieved, then analyse again.
+        </p>
+      </section>
+    );
+  }
+  return (
+    <section aria-label="Notes and auditor's report" className="ws-card">
+      <p className="eyebrow">Notes and auditor&apos;s report</p>
+      <h3>What the filing says</h3>
+      <p>{review.summary}</p>
+      <p className="ws-muted">
+        Read from {review.source}. {review.characters.toLocaleString("en-US")} characters of text.{" "}
+        {review.url && (
+          <a href={review.url} rel="noreferrer" target="_blank">
+            Open the filing
+          </a>
+        )}
+      </p>
+      <div className="ws-table-wrap">
+        <table className="ws-table">
+          <thead>
+            <tr>
+              <th>Topic</th>
+              <th>Result</th>
+              <th>What the filing says</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(review.findings ?? []).map((finding) => (
+              <tr key={finding.topic}>
+                <td>{finding.title}</td>
+                <td>
+                  <span className={`ar-note-state ${NOTE_STATE[finding.state].className}`}>{NOTE_STATE[finding.state].word}</span>
+                </td>
+                <td>
+                  {finding.summary}
+                  {(finding.quotes ?? []).map((quote) => (
+                    <blockquote className="ws-quote" key={quote.text}>
+                      “{quote.text}”{quote.where ? ` (${quote.where})` : ""}
+                    </blockquote>
+                  ))}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="ws-muted">
+        The quotes are the filing&apos;s own sentences, found by text search. Read the filing for anything the search could not
+        classify. This never changes the recommended amount.
+      </p>
+    </section>
   );
 }
 
@@ -133,7 +206,7 @@ export function AnalysisReportView({ currency, report }: Readonly<{ currency?: s
             <a className={`ar-tile${area.feeds_draft ? "" : " is-context"}`} href={`#ar-${area.key}`} key={area.key}>
               <span>{area.title}</span>
               <StatusChip status={area.status} />
-              <small>{area.feeds_draft ? area.trend : "Context only: does not change the draft amount"}</small>
+              <small>{area.feeds_draft ? area.trend : "Context only: does not change the recommended amount"}</small>
             </a>
           ))}
           <div className="ar-tile is-total">
@@ -216,19 +289,21 @@ export function AnalysisReportView({ currency, report }: Readonly<{ currency?: s
       <section className="ws-card">
         <p className="eyebrow">Red-flag checklist</p>
         <h3>{report.red_flags.length} prompts for the underwriter&apos;s attention</h3>
-        <p className="ws-muted">These are prompts, not pass or fail tests. “Look closer” means the figure crossed the usual line.</p>
+        <p className="ws-muted">These are prompts, not pass or fail tests. In red: the figure is past the usual line, so look closer. In green: it is not.</p>
         <FlagTable flags={report.red_flags.filter((flag) => flag.state === "TRIGGERED")} t={t} />
         {report.red_flags.every((flag) => flag.state !== "TRIGGERED") && (
           <p className="ar-flag-none">No figure crossed the usual lines.</p>
         )}
         <details className="ar-more">
           <summary>
-            Show the other {report.red_flags.filter((flag) => flag.state !== "TRIGGERED").length} prompts (clear, or not
-            assessable)
+            Show the other {report.red_flags.filter((flag) => flag.state !== "TRIGGERED").length} prompts (not above or below the
+            threshold, or not assessable)
           </summary>
           <FlagTable flags={report.red_flags.filter((flag) => flag.state !== "TRIGGERED")} t={t} />
         </details>
       </section>
+
+      <NotesSection review={report.notes_review ?? null} />
 
       {((report.debt_service ?? []).length > 0 || (report.stress ?? []).length > 0) && (
         <section className="ws-card">
@@ -307,8 +382,14 @@ export function AnalysisReportView({ currency, report }: Readonly<{ currency?: s
         </div>
         <div className="ws-card">
           <p className="eyebrow">Gaps</p>
-          <List empty="None recorded." items={report.gaps ?? []} />
+          <List empty="None recorded." items={splitGaps(report.gaps ?? [], report.definitions ?? []).gaps} />
         </div>
+      </section>
+
+      <section aria-label="How the figures were defined" className="ws-card">
+        <p className="eyebrow">How the figures were defined</p>
+        <p className="ws-muted">Method, not missing information.</p>
+        <List empty="None recorded." items={splitGaps(report.gaps ?? [], report.definitions ?? []).definitions} />
       </section>
 
       <section className="ws-card">

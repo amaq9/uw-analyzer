@@ -22,14 +22,14 @@ function decisionLine(decision: DecisionRecord) {
   return "No outcome recorded";
 }
 
-/** Draft and decision side by side, so the difference is plain. The decision is the only outcome. */
+/** UW Analyzer and decision side by side, so the difference is plain. The decision is the only outcome. */
 export function DecisionSummary({ decision, draft }: Readonly<{ decision: DecisionRecord; draft?: DraftRecord }>) {
   const action =
     decision.action === "ADOPT"
-      ? "Adopted the draft as written"
+      ? "Adopted the UW Analyzer recommendation as written"
       : decision.action === "CHANGE"
-        ? "Changed the draft"
-        : "Rejected the draft (set aside)";
+        ? "Changed the UW Analyzer recommendation"
+        : "Rejected the UW Analyzer recommendation (set aside)";
   return (
     <section aria-labelledby="rec-decision-title" className="rec-decided">
       <div className="rec-hero-top">
@@ -43,15 +43,15 @@ export function DecisionSummary({ decision, draft }: Readonly<{ decision: Decisi
 
       <div className="rec-compare">
         <div className="rec-compare-col">
-          <span>The draft said</span>
-          <strong>{draft ? draftLine(draft) : "See the draft above"}</strong>
+          <span>The UW Analyzer said</span>
+          <strong>{draft ? draftLine(draft) : "See the UW Analyzer recommendation above"}</strong>
         </div>
         <div className="rec-compare-col is-final">
-          <span>Your decision</span>
+          <span>Actual decision</span>
           <strong>{decisionLine(decision)}</strong>
         </div>
       </div>
-      <p className="rec-agree">{decision.agrees ? "Your decision matches the draft." : "Your decision differs from the draft."}</p>
+      <p className="rec-agree">{decision.agrees ? "Your decision matches the UW Analyzer recommendation." : "Your decision differs from the UW Analyzer recommendation."}</p>
       {decision.reason && (
         <blockquote className="rec-your-reason">
           <span>Your written reason</span>
@@ -63,7 +63,7 @@ export function DecisionSummary({ decision, draft }: Readonly<{ decision: Decisi
 }
 
 const CHOICES: { value: Choice; title: string; hint: string }[] = [
-  { value: "ADOPT", title: "Adopt the draft as written", hint: "Your decision becomes the draft's outcome and amount." },
+  { value: "ADOPT", title: "Adopt the UW Analyzer recommendation as written", hint: "Your decision becomes the recommendation's outcome and amount." },
   { value: "CHANGE", title: "Change it (different outcome or amount)", hint: "Set your own outcome. You explain why." },
   { value: "REJECT", title: "Reject it (set it aside; no outcome is recorded)", hint: "No outcome is recorded. You explain why." },
 ];
@@ -110,7 +110,7 @@ export function DecisionForm({
     choice === "ADOPT"
       ? `You will record: ${draftLine(draft)}.`
       : choice === "REJECT"
-        ? "You will record: the draft set aside, with no outcome."
+        ? "You will record: the UW Analyzer recommendation set aside, with no outcome."
         : outcome === "DECLINE"
           ? "You will record: Decline."
           : amountOk
@@ -125,15 +125,15 @@ export function DecisionForm({
         <p className="rec-label">Underwriter decision</p>
         <TestPill />
       </div>
-      <h2 id="rec-decide-title">Your decision on draft version {draft.version}</h2>
+      <h2 id="rec-decide-title">Your decision on recommendation version {draft.version}</h2>
       <p className="rec-decide-intro">
-        The draft above is a recommendation only. Nothing is decided until you record your choice. It is saved under your
+        The UW Analyzer recommendation above is a recommendation only. Nothing is decided until you record your choice. It is saved under your
         name and cannot be edited afterwards.
       </p>
 
       <form className="rec-decide-form" onSubmit={submit}>
         <fieldset className="rec-choices">
-          <legend>What do you do with the draft?</legend>
+          <legend>What do you do with the UW Analyzer recommendation?</legend>
           {CHOICES.map((item) => (
             <label className={`rec-choice${choice === item.value ? " is-selected" : ""}`} key={item.value}>
               <input checked={choice === item.value} name="choice" onChange={() => setChoice(item.value)} type="radio" />

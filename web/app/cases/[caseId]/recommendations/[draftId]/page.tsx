@@ -7,7 +7,7 @@ type DraftRecommendationPageProps = {
   params: Promise<{ caseId: string; draftId: string }>;
 };
 
-export const metadata: Metadata = { title: "Draft recommendation" };
+export const metadata: Metadata = { title: "UW Analyzer recommendation" };
 
 export default async function DraftRecommendationPage({ params }: DraftRecommendationPageProps) {
   const { caseId, draftId } = await params;

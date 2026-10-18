@@ -77,7 +77,7 @@ export function DraftRecommendationView({ caseId, draftId }: DraftRecommendation
           setError(
             new ApiRequestError({
               code: "unexpected_error",
-              message: "The draft recommendation could not be loaded. Try again.",
+              message: "The UW Analyzer recommendation could not be loaded. Try again.",
               retryable: true,
               status: 0,
             }),
@@ -95,7 +95,7 @@ export function DraftRecommendationView({ caseId, draftId }: DraftRecommendation
     return (
       <section className="api-state-card">
         <p className="eyebrow">Local access required</p>
-        <h1>Sign in to view this draft</h1>
+        <h1>Sign in to view this recommendation</h1>
         <p>The development token remains in memory only and is cleared when the page is refreshed.</p>
         <Link className="inline-action" href="/sign-in">
           Go to local sign in
@@ -108,13 +108,13 @@ export function DraftRecommendationView({ caseId, draftId }: DraftRecommendation
     return (
       <section aria-live="polite" className="api-state-card draft-loading">
         <p className="eyebrow">Loading</p>
-        <h1>Retrieving the draft recommendation</h1>
+        <h1>Retrieving the UW Analyzer recommendation</h1>
         <p>Reasons and source references are being loaded from the local API.</p>
       </section>
     );
   }
 
-  if (error) return <ApiErrorState error={error} resourceName="Draft recommendation" />;
+  if (error) return <ApiErrorState error={error} resourceName="UW Analyzer recommendation" />;
   if (!draft) return null;
 
   return (
@@ -127,7 +127,7 @@ export function DraftRecommendationView({ caseId, draftId }: DraftRecommendation
         </div>
       </header>
 
-      <section aria-label="Draft recommendation overview" className="draft-overview">
+      <section aria-label="UW Analyzer recommendation overview" className="draft-overview">
         <dl>
           <div>
             <dt>Requested amount</dt>
@@ -142,7 +142,7 @@ export function DraftRecommendationView({ caseId, draftId }: DraftRecommendation
             <dd>{draft.rule_codes.length ? draft.rule_codes.join(", ") : "Not recorded"}</dd>
           </div>
           <div>
-            <dt>Draft version</dt>
+            <dt>Recommendation version</dt>
             <dd>{draft.version}</dd>
           </div>
         </dl>

@@ -452,6 +452,16 @@
             "title": "Debt Service Notes",
             "type": "array"
           },
+          "definitions": {
+            "items": {
+              "maxLength": 600,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Definitions",
+            "type": "array"
+          },
           "executive_summary": {
             "maxLength": 600,
             "minLength": 1,
@@ -477,6 +487,16 @@
             "maxItems": 15,
             "title": "Key Concerns",
             "type": "array"
+          },
+          "notes_review": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NotesReview"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "other_checks": {
             "items": {
@@ -2626,7 +2646,7 @@
             "type": "array"
           },
           "notice": {
-            "default": "Draft recommendation for the underwriter. Not a decision.",
+            "default": "UW Analyzer recommendation for the underwriter. Not a decision.",
             "title": "Notice",
             "type": "string"
           },
@@ -3655,6 +3675,11 @@
             "title": "Detail",
             "type": "string"
           },
+          "result": {
+            "default": "",
+            "title": "Result",
+            "type": "string"
+          },
           "state": {
             "enum": [
               "TRIGGERED",
@@ -3916,6 +3941,152 @@
           "label"
         ],
         "title": "MetricInfo",
+        "type": "object"
+      },
+      "NoteFinding": {
+        "additionalProperties": false,
+        "description": "What the filing's own text says on one topic. Reported, never scored.",
+        "properties": {
+          "quotes": {
+            "items": {
+              "$ref": "#/components/schemas/NoteQuote"
+            },
+            "maxItems": 3,
+            "title": "Quotes",
+            "type": "array"
+          },
+          "state": {
+            "enum": [
+              "CONCERN",
+              "NO_CONCERN",
+              "INFO",
+              "NOT_FOUND"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "summary": {
+            "maxLength": 600,
+            "minLength": 1,
+            "title": "Summary",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 80,
+            "title": "Title",
+            "type": "string"
+          },
+          "topic": {
+            "maxLength": 40,
+            "title": "Topic",
+            "type": "string"
+          }
+        },
+        "required": [
+          "topic",
+          "title",
+          "state",
+          "summary"
+        ],
+        "title": "NoteFinding",
+        "type": "object"
+      },
+      "NoteQuote": {
+        "additionalProperties": false,
+        "description": "A sentence copied word for word from the filing.",
+        "properties": {
+          "text": {
+            "maxLength": 600,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          },
+          "where": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Where"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "NoteQuote",
+        "type": "object"
+      },
+      "NotesReview": {
+        "additionalProperties": false,
+        "description": "The printed 10-K (notes and auditor's report) read for what the figures cannot show.",
+        "properties": {
+          "characters": {
+            "minimum": 0.0,
+            "title": "Characters",
+            "type": "integer"
+          },
+          "filed": {
+            "anyOf": [
+              {
+                "maxLength": 20,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filed"
+          },
+          "findings": {
+            "items": {
+              "$ref": "#/components/schemas/NoteFinding"
+            },
+            "maxItems": 20,
+            "title": "Findings",
+            "type": "array"
+          },
+          "sha256": {
+            "maxLength": 64,
+            "minLength": 64,
+            "title": "Sha256",
+            "type": "string"
+          },
+          "source": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Source",
+            "type": "string"
+          },
+          "summary": {
+            "maxLength": 600,
+            "minLength": 1,
+            "title": "Summary",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "source",
+          "sha256",
+          "characters",
+          "summary"
+        ],
+        "title": "NotesReview",
         "type": "object"
       },
       "OtherCheck": {

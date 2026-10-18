@@ -29,7 +29,7 @@ export default function Home() {
               <div>
                 <small>Current status</small>
                 <strong>Ready for your test run</strong>
-                <p>Create a case, research it, analyse it, then record your own decision on the draft.</p>
+                <p>Create a case, research it, analyse it, then record your own decision on the UW Analyzer recommendation.</p>
               </div>
             </aside>
           </section>

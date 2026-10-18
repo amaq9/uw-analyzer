@@ -82,7 +82,7 @@ describe("case workspace", () => {
       "Research",
       "Evidence and claims",
       "Review items",
-      "Draft recommendation",
+      "UW Analyzer recommendation",
       "Final decision",
       "Report",
     ]) {
@@ -221,6 +221,72 @@ describe("evidence and claims", () => {
     expect(screen.getByText(/accessed/i, { selector: "p" })).toBeInTheDocument();
     expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+  });
+});
+
+describe("an assessment rests on facts", () => {
+  const evidence = {
+    id: "e1",
+    title: "NIKE annual report data for the year ended 2026-05-31",
+    origin: "sec.gov",
+    source_class: "OFFICIAL",
+    source_class_basis: "registry",
+    discovery_only: false,
+    accessed_at: "2026-10-11T16:29:54Z",
+    kind: "CONNECTOR",
+    event_on: "2026-05-31",
+    published_on: "2026-07-15",
+    excerpt: "total assets 38,000",
+    url: "https://www.sec.gov/Archives/edgar/data/320187/000032018726000088/",
+    provenance_ref: null,
+  };
+  const fact = {
+    id: "fact",
+    case_id: CASE_ID,
+    text: "At 2026-05-31 equity was USD 14.87bn.",
+    classification: "FACT",
+    material: true,
+    adverse: false,
+    category: "FINANCIALS",
+    freshness: "CURRENT",
+    basis_claim_ids: [],
+    verification: { status: "VERIFIED", reasons: ["Supported by reliable evidence."], needs: [], conflict: false, rules_version: "1" },
+    links: [{ id: "l1", relation: "SUPPORTS", notes: null, evidence }],
+  };
+  const assessment = {
+    ...fact,
+    id: "assessed",
+    text: "Balance sheet strength: Strong (stable).",
+    classification: "INTERPRETATION",
+    basis_claim_ids: ["fact"],
+    verification: {
+      status: "NOT_APPLICABLE",
+      reasons: ["This is an assessment worked out by the written rules from the facts it rests on, not a separate fact."],
+      needs: [],
+      conflict: false,
+      rules_version: "1",
+    },
+    links: [],
+  };
+
+  it("shows the facts and the filing behind a rule-based assessment, and never says 'No evidence is linked'", async () => {
+    stubApi({ "/claims": [assessment, fact] });
+    wrap(<EvidenceTab caseId={CASE_ID} onChanged={() => undefined} permissions={[]} token="t" />);
+    expect(await screen.findByText("Balance sheet strength: Strong (stable).")).toBeInTheDocument();
+    expect(screen.getByText("Rule-based assessment")).toBeInTheDocument();
+    expect(screen.queryByText(/judgement/i)).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Rests on these facts" })).toBeInTheDocument();
+    expect(screen.getAllByText("At 2026-05-31 equity was USD 14.87bn.").length).toBeGreaterThanOrEqual(2);
+    expect(screen.queryByText("No evidence is linked.")).not.toBeInTheDocument();
+    const links = screen.getAllByRole("link", { name: "Open the web source" });
+    expect(links.length).toBeGreaterThanOrEqual(2); // under the assessment and under the fact itself
+    expect(links[0]).toHaveAttribute("href", evidence.url);
+  });
+
+  it("still says no evidence is linked when a fact really has none", async () => {
+    stubApi({ "/claims": [{ ...fact, links: [], verification: { ...fact.verification, status: "UNVERIFIED" } }] });
+    wrap(<EvidenceTab caseId={CASE_ID} onChanged={() => undefined} permissions={[]} token="t" />);
+    expect(await screen.findByText("No evidence is linked.")).toBeInTheDocument();
   });
 });
 

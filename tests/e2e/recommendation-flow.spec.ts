@@ -54,17 +54,31 @@ const analysis = {
   consolidated_finding: "Concerning",
   consolidated_why: "The four core dimensions (liquidity, profitability, leverage, cash flow): 1 OK, 3 weak, 0 distressed.",
   red_flags: [
-    { text: "Cash from operations below net income, or negative", state: "TRIGGERED", detail: "Cash from operations USD 2.87bn against net income USD 3.11bn." },
-    { text: "Negative shareholders' equity", state: "CLEAR", detail: "Equity is USD 14.87bn." },
-    { text: "Largest customers above 50% of revenue", state: "NOT_ASSESSABLE", detail: "Customer concentration is not in the figures." },
+    { text: "Cash from operations below net income, or negative", state: "TRIGGERED", detail: "Cash from operations USD 2.87bn against net income USD 3.11bn.", result: "Below threshold" },
+    { text: "Negative shareholders' equity", state: "CLEAR", detail: "Equity is USD 14.87bn.", result: "Condition not met" },
+    { text: "Debt to equity above 2.5", state: "CLEAR", detail: "Debt to equity is 0.74x.", result: "Not above threshold" },
+    { text: "Largest customers above 50% of revenue", state: "NOT_ASSESSABLE", detail: "Customer concentration is not in the figures.", result: "Not assessable" },
   ],
   debt_service: [metric("Cash from operations over current liabilities", "0.23x", "0.35x", "0.70x", "down")],
   debt_service_notes: ["The debt maturity ladder is not in the figures."],
   stress: [
     { scenario: "As reported", earnings: "USD 3.85bn", interest_cover: "11.92x", cash_from_operations: "USD 2.87bn" },
-    { scenario: "Revenue down 10%", earnings: "-USD 790m", interest_cover: "-2.45x", cash_from_operations: "-USD 1.77bn" },
+    { scenario: "Revenue down 10%, cost of sales falls with sales", earnings: "USD 1.86bn", interest_cover: "5.76x", cash_from_operations: "USD 1.28bn" },
+    { scenario: "Revenue down 10%, no cost saving at all (extreme)", earnings: "-USD 790m", interest_cover: "-2.45x", cash_from_operations: "-USD 980m" },
   ],
-  stress_note: "Illustration only. It is not a forecast.",
+  stress_note: "Illustration only, not a forecast. Main rows: the cost of sales falls with sales. The last row is the extreme.",
+  definitions: ["Net debt is financial debt plus lease liabilities, less cash and short-term investments."],
+  notes_review: {
+    source: "NIKE 10-K for the year ended 2026-05-31: notes and auditor's report",
+    url: "https://www.sec.gov/Archives/edgar/data/320187/000032018726000088/nke.htm",
+    filed: "2026-07-15",
+    sha256: "a".repeat(64),
+    characters: 400000,
+    summary: "No going-concern warning, covenant breach, auditor qualification or material weakness was stated in the filing text that was read.",
+    findings: [
+      { topic: "COVENANTS", title: "Loan covenants", state: "NO_CONCERN", summary: "The filing states that the company complied with its covenants.", quotes: [{ text: "We were in compliance with all covenants.", where: null }] },
+    ],
+  },
   key_concerns: ["Cash from operations below net income, or negative: Cash from operations USD 2.87bn against net income USD 3.11bn."],
   published_ratings: [],
   ratings_reconciliation: "No published rating is recorded, so there is nothing to compare with the financial analysis.",
@@ -101,7 +115,7 @@ const draft = {
   analysis,
   source: { kind: "analyzer_v1", model: "rules engine (no AI model)", skill_version: "analyzer v2", policy_version: "1.1" },
   policy_version: "1.1",
-  notice: "Draft recommendation for the underwriter. Not a decision.",
+  notice: "UW Analyzer recommendation for the underwriter. Not a decision.",
   test_product: true,
   created_by: "underwriter-demo",
   created_at: "2026-10-18T19:50:36Z",
@@ -237,8 +251,8 @@ async function signIn(page: Page) {
 }
 
 async function openDraft(page: Page) {
-  await page.getByRole("navigation", { name: "Primary navigation" }).getByRole("link", { name: "Draft recommendations" }).click();
-  await page.getByRole("link", { name: "Open the draft" }).click();
+  await page.getByRole("navigation", { name: "Primary navigation" }).getByRole("link", { name: "UW Analyzer recommendations" }).click();
+  await page.getByRole("link", { name: "Open the recommendation" }).click();
   await expect(page.getByRole("heading", { name: /Step 3 · Your decision/ })).toBeVisible();
 }
 
@@ -258,14 +272,14 @@ test.describe("the recommendation journey", () => {
   test("lists the draft waiting for a decision and opens it on the right tab, named in the browser tab", async ({ page }) => {
     await mockApi(page);
     await signIn(page);
-    await page.getByRole("navigation", { name: "Primary navigation" }).getByRole("link", { name: "Draft recommendations" }).click();
-    await expect(page).toHaveTitle("Draft recommendations · UW Analyzer");
-    await expect(page.getByText("1 draft is waiting for your decision.")).toBeVisible();
+    await page.getByRole("navigation", { name: "Primary navigation" }).getByRole("link", { name: "UW Analyzer recommendations" }).click();
+    await expect(page).toHaveTitle("UW Analyzer recommendations · UW Analyzer");
+    await expect(page.getByText("1 recommendation is waiting for your decision.")).toBeVisible();
     await expect(page.getByRole("row", { name: /NIKE, Inc\./ })).toContainText("Waiting for your decision");
     await expect(page.getByRole("row", { name: /NIKE, Inc\./ })).toContainText("Approve a reduced amount: USD 3.75m");
-    await page.getByRole("link", { name: "Open the draft" }).click();
+    await page.getByRole("link", { name: "Open the recommendation" }).click();
     await expect(page).toHaveURL(/tab=recommendation/);
-    await expect(page).toHaveTitle("NIKE, Inc. · Draft recommendation · UW Analyzer");
+    await expect(page).toHaveTitle("NIKE, Inc. · UW Analyzer recommendation · UW Analyzer");
   });
 
   test("reads in order: Step 1, then Step 2, then Step 3, with a step bar that stays in view", async ({ page }) => {
@@ -273,7 +287,7 @@ test.describe("the recommendation journey", () => {
     await signIn(page);
     await openDraft(page);
     const steps = await page.getByRole("heading", { name: /^Step \d · / }).allTextContents();
-    expect(steps).toEqual(["Step 1 · Research and analysis", "Step 2 · Draft recommendation", "Step 3 · Your decision"]);
+    expect(steps).toEqual(["Step 1 · Research and analysis", "Step 2 · UW Analyzer recommendation", "Step 3 · Your decision"]);
     const bar = page.getByRole("list", { name: "Progress" });
     await page.getByRole("heading", { name: /Step 3 · Your decision/ }).scrollIntoViewIfNeeded();
     await expect(bar).toBeInViewport(); // sticky: it follows the reader
@@ -303,8 +317,45 @@ test.describe("the recommendation journey", () => {
     const section = page.locator("section.ws-card", { has: page.getByRole("heading", { name: /prompts for the underwriter/ }) });
     await expect(section.getByRole("cell", { name: /Cash from operations below net income/ })).toBeVisible();
     await expect(section.getByRole("cell", { name: "Negative shareholders' equity" })).toBeHidden();
-    await section.getByText(/Show the other 2 prompts/).click();
+    await section.getByText(/Show the other 3 prompts/).click();
     await expect(section.getByRole("cell", { name: "Negative shareholders' equity" })).toBeVisible();
+  });
+
+  test("words each check by its result and colours it: red past the line, green not", async ({ page }) => {
+    await mockApi(page);
+    await signIn(page);
+    await openDraft(page);
+    const section = page.locator("section.ws-card", { has: page.getByRole("heading", { name: /prompts for the underwriter/ }) });
+    await section.getByText(/Show the other 3 prompts/).click();
+    const red = section.getByText("Below threshold", { exact: true });
+    const green = section.getByText("Not above threshold", { exact: true });
+    await expect(red).toBeVisible();
+    await expect(green).toBeVisible();
+    const colour = (locator: typeof red) => locator.evaluate((el) => getComputedStyle(el).color);
+    expect(await colour(red)).not.toEqual(await colour(green));
+    await expect(section.getByText("Not assessable", { exact: true })).toBeVisible();
+    await expect(section.getByText("Clear", { exact: true })).toHaveCount(0); // the old wording is gone
+  });
+
+  test("shows what the filing's notes say in its own words, and the definitions apart from the gaps", async ({ page }) => {
+    await mockApi(page);
+    await signIn(page);
+    await openDraft(page);
+    const notes = page.getByLabel("Notes and auditor's report");
+    await expect(notes.getByText("We were in compliance with all covenants.", { exact: false })).toBeVisible();
+    await expect(notes.getByRole("link", { name: "Open the filing" })).toHaveAttribute("href", /sec\.gov/);
+    const defined = page.getByLabel("How the figures were defined");
+    await expect(defined.getByText(/Net debt is financial debt plus lease liabilities/)).toBeVisible();
+    await expect(page.locator(".ar-view").getByText("Sector-level outlook was not assessed.")).toBeVisible();
+  });
+
+  test("the stress table shows the realistic case and the extreme case apart, with the assumption stated", async ({ page }) => {
+    await mockApi(page);
+    await signIn(page);
+    await openDraft(page);
+    await expect(page.getByText("Revenue down 10%, cost of sales falls with sales")).toBeVisible();
+    await expect(page.getByText("Revenue down 10%, no cost saving at all (extreme)")).toBeVisible();
+    await expect(page.getByText(/The last row is the extreme/)).toBeVisible();
   });
 
   test("records a published rating with its source and shows it in words, without colour", async ({ page }) => {
@@ -352,11 +403,11 @@ test.describe("the recommendation journey", () => {
     await expect(form.getByText("You will record: Approve USD 4.00m.")).toBeVisible();
     expect(state.decisionPosts).toHaveLength(0); // nothing is decided until the button is pressed
     await record.click();
-    await expect(page.getByRole("heading", { name: "Changed the draft" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Changed the UW Analyzer recommendation" })).toBeVisible();
     expect(state.decisionPosts).toEqual([
       { action: "CHANGE", reason: "My own view of the sector.", final_outcome: "APPROVE", final_amount: "4000000" },
     ]);
-    await expect(page.getByText("Your decision differs from the draft.")).toBeVisible();
+    await expect(page.getByText("Your decision differs from the UW Analyzer recommendation.")).toBeVisible();
     await expect(page.getByRole("button", { name: /Record my decision/ })).toHaveCount(0); // cannot be recorded twice
   });
 
@@ -386,12 +437,16 @@ test.describe("the recommendation journey", () => {
     await expect(page.getByText("No decision has been recorded yet")).toBeVisible();
     await expect(page.getByRole("button", { name: /Print or save as PDF/ })).toHaveCount(0);
 
-    await page.getByRole("button", { name: "Draft recommendation" }).click();
+    await page.getByRole("button", { name: "UW Analyzer recommendation" }).click();
     await page.locator("section.rec-decide").getByRole("button", { name: /Record my decision/ }).click();
-    await expect(page.getByRole("heading", { name: "Adopted the draft as written" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Adopted the UW Analyzer recommendation as written" })).toBeVisible();
     await page.getByRole("button", { name: "Open the Final decision tab" }).click();
     const report = page.getByLabel("Final decision report");
     await expect(report).toContainText("Approve USD 3.75m");
+    const compare = report.getByLabel("UW Analyzer versus actual decision");
+    await expect(compare).toContainText("UW Analyzer recommended");
+    await expect(compare).toContainText("Actual decision");
+    await expect(compare).toContainText("The actual decision matches the UW Analyzer recommendation.");
     await expect(report).toContainText("Test product");
     await expect(report).toContainText("not communicated to any customer");
     await expect(page).toHaveTitle("NIKE, Inc. · Final decision · UW Analyzer");
@@ -428,9 +483,9 @@ test.describe("the recommendation journey", () => {
     await page.keyboard.press("Enter");
     await expect(page.getByText("No decision has been recorded yet")).toBeVisible();
     // The decision form can be completed with the keyboard too.
-    await page.getByRole("button", { name: "Draft recommendation" }).focus();
+    await page.getByRole("button", { name: "UW Analyzer recommendation" }).focus();
     await page.keyboard.press("Enter");
-    const adopt = page.getByLabel(/adopt the draft as written/i);
+    const adopt = page.getByLabel(/adopt the UW Analyzer recommendation as written/i);
     await adopt.focus();
     await expect(adopt).toBeFocused();
     await page.keyboard.press("ArrowDown");
@@ -476,7 +531,7 @@ test.describe("the recommendation journey", () => {
   test("a signed-out visitor is asked to sign in and is shown no case data", async ({ page }) => {
     await mockApi(page);
     await page.goto("/recommendations");
-    await expect(page.getByRole("heading", { name: /sign in to view draft recommendations/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /sign in to view UW Analyzer recommendations/i })).toBeVisible();
     await expect(page.getByText("NIKE, Inc.")).toHaveCount(0);
     await page.goto(`/cases/${CASE_ID}?tab=recommendation`);
     await expect(page.getByRole("heading", { name: /sign in to view case/i })).toBeVisible();

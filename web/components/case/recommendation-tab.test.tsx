@@ -35,7 +35,7 @@ function renderTab() {
   );
 }
 
-describe("the Draft recommendation tab while it loads", () => {
+describe("the UW Analyzer recommendation tab while it loads", () => {
   it("shows a loading note, never a false 'no draft yet', until the drafts have arrived", async () => {
     let release: (value: Response) => void = () => undefined;
     vi.stubGlobal(
@@ -49,13 +49,13 @@ describe("the Draft recommendation tab while it loads", () => {
       ),
     );
     renderTab();
-    expect(screen.getByText("Loading the drafts of this case…")).toBeInTheDocument();
-    expect(screen.queryByText("No draft has been prepared yet")).not.toBeInTheDocument();
-    expect(screen.queryByText("Available once a draft has been prepared.")).not.toBeInTheDocument();
+    expect(screen.getByText("Loading the recommendations of this case…")).toBeInTheDocument();
+    expect(screen.queryByText("No UW Analyzer recommendation has been prepared yet")).not.toBeInTheDocument();
+    expect(screen.queryByText("Available once the UW Analyzer has prepared a recommendation.")).not.toBeInTheDocument();
     release(new Response("[]", { status: 200 }));
-    expect(await screen.findByText("No draft has been prepared yet")).toBeInTheDocument();
-    expect(screen.getByText("Available once a draft has been prepared.")).toBeInTheDocument();
-    expect(screen.queryByText("Loading the drafts of this case…")).not.toBeInTheDocument();
+    expect(await screen.findByText("No UW Analyzer recommendation has been prepared yet")).toBeInTheDocument();
+    expect(screen.getByText("Available once the UW Analyzer has prepared a recommendation.")).toBeInTheDocument();
+    expect(screen.queryByText("Loading the recommendations of this case…")).not.toBeInTheDocument();
   });
 
   it("says plainly when the drafts could not be loaded, and does not claim there are none", async () => {
@@ -70,8 +70,8 @@ describe("the Draft recommendation tab while it loads", () => {
       ),
     );
     renderTab();
-    expect(await screen.findByText(/The drafts could not be loaded/)).toBeInTheDocument();
-    expect(screen.queryByText("No draft has been prepared yet")).not.toBeInTheDocument();
+    expect(await screen.findByText(/The recommendations could not be loaded/)).toBeInTheDocument();
+    expect(screen.queryByText("No UW Analyzer recommendation has been prepared yet")).not.toBeInTheDocument();
   });
 });
 

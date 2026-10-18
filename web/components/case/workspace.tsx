@@ -23,7 +23,7 @@ const TABS = [
   { id: "research", label: "Research" },
   { id: "evidence", label: "Evidence and claims" },
   { id: "review", label: "Review items" },
-  { id: "recommendation", label: "Draft recommendation" },
+  { id: "recommendation", label: "UW Analyzer recommendation" },
   { id: "final", label: "Final decision" },
   { id: "report", label: "Report" },
 ] as const;
@@ -79,10 +79,10 @@ function Overview({ record }: Readonly<{ record: CaseRecord }>) {
         <ol className="ws-steps">
           <li>Entity: choose the exact legal entity (research stays blocked until you do).</li>
           <li>Research: plan the countries, start it, and watch the sources being tried.</li>
-          <li>Ask for the case to be analysed: the analyst reads the sources and records findings and a draft.</li>
+          <li>Ask for the case to be analysed: the analyst reads the sources and records findings and a recommendation.</li>
           <li>Evidence and claims: check what each finding rests on and how well it is verified.</li>
           <li>Review items: a reviewer resolves any disagreement between sources.</li>
-          <li>Draft recommendation: read it, then record your own decision.</li>
+          <li>UW Analyzer recommendation: read it, then record your own decision.</li>
           <li>Report: complete it once every check passes.</li>
         </ol>
       </section>

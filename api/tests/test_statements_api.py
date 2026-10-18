@@ -295,8 +295,9 @@ def test_a_private_company_is_analysed_from_confirmed_uploaded_statements(
         for g in out["information_gaps"]
     )
     assert any("audited" in g for g in out["information_gaps"])
-    derived = [g for g in out["information_gaps"] if g.startswith("Figure derived")]
-    assert len(derived) == len(set(derived))  # each note once
+    assert not [g for g in out["information_gaps"] if " here is " in g]  # definitions are not gaps
+    definitions = out["draft"]["analysis"]["definitions"]
+    assert len(definitions) == len(set(definitions))  # each note once
     assert "0.75" not in out["draft"]["summary"] or "CAD" in out["draft"]["summary"]
     ev = client.get(f"/api/v1/cases/{case_id}/evidence", headers=h).json()[0]
     assert (

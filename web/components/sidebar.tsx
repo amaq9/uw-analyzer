@@ -19,14 +19,14 @@ const workspaceLinks = [
   { id: "cases", label: "Cases", icon: CasesIcon, href: "/cases", permissions: ["case:read"] },
   {
     id: "recommendations",
-    label: "Draft recommendations",
+    label: "UW Analyzer recommendations",
     icon: ReportsIcon,
     href: "/recommendations",
     permissions: ["case:read"],
   },
   {
     id: "agreement",
-    label: "Draft against decision",
+    label: "UW Analyzer versus actual decision",
     icon: ReportsIcon,
     href: "/agreement",
     permissions: ["case:read"],

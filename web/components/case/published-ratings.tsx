@@ -200,7 +200,7 @@ export function PublishedRatings({
       <h3 id="pr-title">Published credit ratings</h3>
       <p className="ws-muted">
         These are the agencies&apos; own opinions, recorded with their source. They are not this product&apos;s rating, and they do
-        not change the draft recommendation. Moody&apos;s Aaa to Baa3 and S&amp;P or Fitch AAA to BBB- are investment grade.
+        not change the UW Analyzer recommendation. Moody&apos;s Aaa to Baa3 and S&amp;P or Fitch AAA to BBB- are investment grade.
       </p>
       {ratings.error && (
         <p className="ws-error" role="alert">

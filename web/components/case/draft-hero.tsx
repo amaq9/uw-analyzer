@@ -1,5 +1,6 @@
 import type { DraftRecord } from "@/components/case/types";
 import { dateTime, money, readable, shorten } from "@/lib/format";
+import { splitGaps } from "@/lib/gaps";
 
 /** The only wording of an outcome on the recommendation screen. Always inside the labelled draft. */
 export function outcomeHeadline(draft: Pick<DraftRecord, "outcome" | "band">) {
@@ -34,13 +35,13 @@ export function DraftHero({ draft }: Readonly<{ draft: DraftRecord }>) {
   return (
     <section aria-labelledby="rec-hero-title" className={`rec-hero ${approve ? "is-approve" : "is-decline"}`}>
       <div className="rec-hero-top">
-        <p className="rec-label">Draft recommendation for the underwriter. Not a decision.</p>
+        <p className="rec-label">UW Analyzer recommendation for the underwriter. Not a decision.</p>
         <TestPill />
       </div>
 
       <div className="rec-hero-main">
         <div>
-          <p className="rec-kicker">Draft outcome</p>
+          <p className="rec-kicker">UW Analyzer outcome</p>
           <h2 id="rec-hero-title">{outcomeHeadline(draft)}</h2>
           {approve ? (
             <p className="rec-amount">
@@ -56,7 +57,7 @@ export function DraftHero({ draft }: Readonly<{ draft: DraftRecord }>) {
         {approve && portion !== null && (
           <figure className="rec-meter">
             <div
-              aria-label={`Draft amount is ${Math.round(portion)} percent of the amount requested`}
+              aria-label={`UW Analyzer amount is ${Math.round(portion)} percent of the amount requested`}
               className="rec-meter-track"
               role="img"
             >
@@ -70,7 +71,7 @@ export function DraftHero({ draft }: Readonly<{ draft: DraftRecord }>) {
         )}
       </div>
 
-      <ol aria-label="How the draft was reached" className="rec-path">
+      <ol aria-label="How the UW Analyzer reached it" className="rec-path">
         <li>
           <span>Requested</span>
           <strong>{money(draft.requested_amount, currency)}</strong>
@@ -84,7 +85,7 @@ export function DraftHero({ draft }: Readonly<{ draft: DraftRecord }>) {
           <strong>{draft.rule_codes.length ? draft.rule_codes.map((code) => readable(code)).join(", ") : "Rules applied"}</strong>
         </li>
         <li>
-          <span>Draft</span>
+          <span>UW Analyzer</span>
           <strong>{approve ? money(draft.recommended_amount, currency) : "Decline"}</strong>
         </li>
       </ol>
@@ -136,7 +137,7 @@ export function AnalysisFindings({ draft }: Readonly<{ draft: DraftRecord }>) {
 /** Step 2 detail: what lowered the amount, what is not known, and what was recorded with the draft. */
 export function DraftBasis({ draft }: Readonly<{ draft: DraftRecord }>) {
   const currency = draft.requested_currency;
-  const gaps = [...new Set(draft.information_gaps)];
+  const gaps = splitGaps(draft.information_gaps).gaps;
   return (
     <div className="rec-basis">
       <section className="ws-card">
@@ -169,10 +170,10 @@ export function DraftBasis({ draft }: Readonly<{ draft: DraftRecord }>) {
       </section>
 
       <section className="ws-card rec-versions">
-        <p className="eyebrow">Recorded with this draft</p>
+        <p className="eyebrow">Recorded with this recommendation</p>
         <dl>
           <div>
-            <dt>Draft version</dt>
+            <dt>Recommendation version</dt>
             <dd>{draft.version}</dd>
           </div>
           <div>

@@ -26,7 +26,7 @@ const draft = {
   id: "draft-1",
   information_gaps: ["Current receivables aging was not supplied."],
   limitations: ["This draft supports, but does not replace, human underwriting judgment."],
-  notice: "Draft recommendation for the underwriter. Not a decision.",
+  notice: "UW Analyzer recommendation for the underwriter. Not a decision.",
   outcome: "APPROVE" as const,
   policy_version: "1.1",
   reasons: [
@@ -85,7 +85,7 @@ describe("draft recommendation view", () => {
     );
 
     renderView();
-    expect(screen.getByText(/retrieving the draft recommendation/i)).toBeInTheDocument();
+    expect(screen.getByText(/retrieving the UW Analyzer recommendation/i)).toBeInTheDocument();
 
     resolveRequest(new Response(JSON.stringify(draft), { status: 200 }));
 
@@ -136,13 +136,13 @@ describe("draft recommendation view", () => {
 
     renderView(null);
 
-    expect(screen.getByRole("heading", { name: /sign in to view this draft/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /sign in to view this recommendation/i })).toBeInTheDocument();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it.each([
     [403, "forbidden", "You do not have permission to view this draft.", /you don’t have access/i],
-    [404, "not_found", "The draft was not found.", /draft recommendation not found/i],
+    [404, "not_found", "The draft was not found.", /UW Analyzer recommendation not found/i],
   ])("shows the safe %s API state", async (status, code, message, heading) => {
     process.env.NEXT_PUBLIC_API_BASE_URL = "http://127.0.0.1:8000";
     vi.stubGlobal(
@@ -170,7 +170,7 @@ describe("draft recommendation view", () => {
 
     renderView();
 
-    expect(await screen.findByRole("heading", { name: /could not load draft recommendation/i })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: /could not load UW Analyzer recommendation/i })).toBeInTheDocument();
     expect(screen.queryByText(/private stack detail/i)).not.toBeInTheDocument();
     await waitFor(() => expect(screen.queryByText(/retrieving/i)).not.toBeInTheDocument());
   });
