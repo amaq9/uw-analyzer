@@ -40,14 +40,14 @@ function Resolve({
         <>
           <label className="ws-field">
             Which side prevails?
-            <select onChange={(event) => setOutcome(event.target.value)} value={outcome}>
+            <select aria-label="Which side prevails?" onChange={(event) => setOutcome(event.target.value)} value={outcome}>
               <option value="SUPPORTING_PREVAILS">The supporting evidence prevails</option>
               <option value="CONTRADICTING_PREVAILS">The contradicting evidence prevails</option>
             </select>
           </label>
           <label className="ws-field">
             Evidence preferred
-            <select onChange={(event) => setEvidenceId(event.target.value)} value={evidenceId || String(options[0]?.evidence_id ?? "")}>
+            <select aria-label="Evidence preferred" onChange={(event) => setEvidenceId(event.target.value)} value={evidenceId || String(options[0]?.evidence_id ?? "")}>
               {options.map((row) => (
                 <option key={String(row.evidence_id)} value={String(row.evidence_id)}>
                   {String(row.title)} ({String(row.origin)})
@@ -184,7 +184,7 @@ export function ReviewTab({ caseId, onChanged, permissions, token }: TabProps) {
           <form className="ws-form" onSubmit={raiseItem}>
             <label className="ws-field">
               Kind
-              <select name="kind">
+              <select aria-label="Kind" name="kind">
                 <option value="MATERIAL_AMBIGUITY">Material ambiguity</option>
                 <option value="OTHER">Other</option>
               </select>

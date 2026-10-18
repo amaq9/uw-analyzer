@@ -245,7 +245,8 @@ def _leverage(c: YearContext, p: YearContext | None, cur: str) -> Section:
     parts.append(
         "debt service coverage needs the debt service schedule, which is not in the figures"
     )
-    return Section("leverage", level, "; ".join(parts).capitalize() + ".", flags=flags)
+    text = "; ".join(parts)
+    return Section("leverage", level, text[:1].upper() + text[1:] + ".", flags=flags)
 
 
 def _cash_flow(c: YearContext, p: YearContext | None, cur: str) -> Section:

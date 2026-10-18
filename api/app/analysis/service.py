@@ -24,7 +24,7 @@ from app.analysis.assess import Level, Section, money, pct, times
 from app.analysis.dimensions import dimension_metrics
 from app.analysis.facts import METRICS, YearFigures, extract, to_figures
 from app.analysis.ratios import compute
-from app.analysis.report import FINDING_WORD, build_report
+from app.analysis.report import FINDING_WORD, STATUS_WORD, build_report
 from app.auth.models import Principal
 from app.cases.schemas import CaseRecord
 from app.escalations.store import PostgresEscalationStore
@@ -58,6 +58,23 @@ ORIGINS = {
     "ofac-sdn": "treasury.gov",
     "world-bank": "worldbank.org",
 }
+
+
+_FIGURE_NAMES = {
+    "cash": "Cash",
+    "ebit": "EBIT",
+    "ebitda": "EBITDA",
+    "inventory": "Inventory",
+    "interest_expense": "Interest expense",
+}
+
+
+def _derived_notes(derived: dict[str, str]) -> list[str]:
+    """Plain notes on figures that were derived, with names a person recognises."""
+    return [
+        f"Figure derived: {_FIGURE_NAMES.get(key, key.replace('_', ' '))} is {text}"
+        for key, text in derived.items()
+    ]
 
 
 class AnalysisUnavailable(Exception):
@@ -309,7 +326,7 @@ def _from_sec(
         return EvidenceRef(kind="web", url=url, retrieved_at=sec_call.ended_at, quote=quote)
 
     gaps = ["The printed 10-K text, notes and auditor's report were not read"]
-    gaps += [f"Figure derived: {key} is {text}" for key, text in latest.derived.items()]
+    gaps += _derived_notes(latest.derived)
     return _Financials(years, figures, ev, int(made), "SEC XBRL company facts", reference, gaps)
 
 
@@ -405,7 +422,7 @@ def _from_uploaded(
             + ") and were supplied by the company, so they count as weaker evidence"
         ),
     ]
-    gaps += [f"Figure derived: {key} is {text}" for key, text in latest.derived.items()]
+    gaps += _derived_notes(latest.derived)
     return _Financials(
         years, figures, existing, created, f"uploaded statement {filename}", reference, gaps
     )
@@ -796,16 +813,6 @@ def analyse(
                 ],
             )
         )
-    summary = (
-        f"Consolidated financial findings: {FINDING_WORD[level].lower()} ({why}) "
-        + "; ".join(
-            f"{s.title.lower()} {FINDING_WORD[s.level].lower()}"
-            for s in out.sections
-            if s.key in rules.CORE
-        )
-        + f". Proposed amount {money(float(proposed) / 1e6, currency)} of {money(float(case.exposure_amount) / 1e6, currency)} requested "
-        "after the reductions listed. The adverse-news search, court records and sector outlook are not complete."
-    )[:600]
     audit_note = next(
         (g for g in fin.gaps if "audited" in g.lower()), "Audit status is not stated."
     )
@@ -841,6 +848,17 @@ def analyse(
         ratings=ratings,
         as_of=datetime.now(UTC).date(),
     )
+    summary = (
+        f"Consolidated financial findings: {STATUS_WORD[analysis_report.consolidated_status]}. "
+        f"{analysis_report.consolidated_why} By dimension: "
+        + "; ".join(
+            f"{s.title.lower()} {FINDING_WORD[s.level].lower()}"
+            for s in out.sections
+            if s.key in rules.CORE
+        )
+        + f". Proposed amount {money(float(proposed) / 1e6, currency)} of {money(float(case.exposure_amount) / 1e6, currency)} requested "
+        "after the reductions listed. The adverse-news search, court records and sector outlook are not complete."
+    )[:600]
     body = DraftImport(
         ai_proposed_amount=proposed,
         financial_findings_weak=level is Level.WEAK,

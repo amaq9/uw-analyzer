@@ -94,7 +94,7 @@ function RecordForm({
       <form className="ws-form" onSubmit={submit}>
         <label className="ws-field">
           Agency
-          <select onChange={(event) => setAgency(event.target.value as Agency)} value={agency}>
+          <select aria-label="Agency" onChange={(event) => setAgency(event.target.value as Agency)} value={agency}>
             {AGENCIES.map((item) => (
               <option key={item.id} value={item.id}>
                 {item.name}
@@ -108,7 +108,7 @@ function RecordForm({
         </label>
         <label className="ws-field">
           Outlook
-          <select onChange={(event) => setOutlook(event.target.value)} value={outlook}>
+          <select aria-label="Outlook" onChange={(event) => setOutlook(event.target.value)} value={outlook}>
             {OUTLOOKS.map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
@@ -118,7 +118,7 @@ function RecordForm({
         </label>
         <label className="ws-field">
           Last action
-          <select onChange={(event) => setChange(event.target.value)} value={change}>
+          <select aria-label="Last action" onChange={(event) => setChange(event.target.value)} value={change}>
             {CHANGES.map(([value, label]) => (
               <option key={value} value={value}>
                 {label}

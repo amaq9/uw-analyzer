@@ -338,3 +338,12 @@ def test_money_helpers_show_currency_and_billions() -> None:
     assert rules.money(0.75, "CAD") == "CAD 0.75m"
     assert rules.money(1.0, "CAD") == "CAD 1.00m"
     assert rules.money(None) == "not available"
+
+
+def test_leverage_text_keeps_currency_codes_and_ebitda_in_capitals() -> None:
+    """Found on the live Nike case: the text read 'net debt is 0.44x ebitda' and 'Equity is -usd 50m'."""
+    strong = rules.assess(contexts(STRONG))["leverage"].why
+    assert "EBITDA" in strong and "ebitda" not in strong and strong[0].isupper()
+    distressed = rules.assess(contexts(DISTRESSED))["leverage"].why
+    assert "-USD 50m" in distressed and "usd" not in distressed
+    assert "EBITDA" in distressed and distressed.endswith(".")

@@ -60,7 +60,9 @@ describe("draft recommendation design", () => {
         <DraftBasis draft={draft} />
       </>,
     );
-    expect(screen.getByText("Liquidity is adequate.")).toBeInTheDocument();
+    expect(screen.getAllByText("Liquidity is adequate.").length).toBeGreaterThan(0);
+    expect(screen.getByText(/Sector outlook is soft\./)).toBeInTheDocument();
+    expect(screen.getByText("Weak sector outlook.")).toBeInTheDocument(); // a readable name, not the code
     expect(screen.getByText(/Current ratio 1.8/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Open source" })).toHaveAttribute("href", "https://example.com/a");
     expect(screen.getByText("No aging report.")).toBeInTheDocument();

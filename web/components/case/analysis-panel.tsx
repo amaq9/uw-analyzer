@@ -43,7 +43,7 @@ export function AnalysisPanel({
       <h3>{hasDraft ? "Analyse again for a new draft version" : "Prepare a draft recommendation from the research"}</h3>
       <p>
         The analyzer reads the finished research (the exact copies fetched from the public sources), assesses the five
-        financial areas and the other research areas, and prepares a draft recommendation for you. It records every finding
+        dimensions (liquidity, profitability, leverage, cash flow, efficiency and sector) and the other research areas, and prepares a draft recommendation for you. It records every finding
         it relies on. It does not decide anything; you decide below.
       </p>
       {canRun ? (

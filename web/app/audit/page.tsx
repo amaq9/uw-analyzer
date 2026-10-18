@@ -1,6 +1,9 @@
+import type { Metadata } from "next";
 import { AuditTrail } from "@/components/audit-trail";
 import { Sidebar } from "@/components/sidebar";
 import { Topbar } from "@/components/topbar";
+
+export const metadata: Metadata = { title: "Audit trail" };
 
 export default function AuditPage() {
   return (

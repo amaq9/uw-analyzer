@@ -7,7 +7,7 @@ import { TestProductLabel } from "@/components/test-product-label";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "UW Analyzer",
+  title: { default: "UW Analyzer", template: "%s · UW Analyzer" },
   description: "Verified external research for human-led credit underwriting.",
 };
 

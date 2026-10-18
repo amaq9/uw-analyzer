@@ -120,6 +120,23 @@ describe("Step 1 analysis report", () => {
     expect(liquidity.className).toContain("st-weak-edge");
   });
 
+  it("shows the prompts that need a look first and keeps the rest one click away", () => {
+    render(<AnalysisReportView currency="CAD" report={report} />);
+    const checklist = screen.getByText("3 prompts for the underwriter's attention").closest("section") as HTMLElement;
+    const open = within(checklist).getAllByRole("table")[0];
+    expect(within(open).getByText("Net debt to EBITDA above 3.0x")).toBeInTheDocument();
+    expect(within(open).queryByText("Negative shareholders' equity")).not.toBeInTheDocument();
+    const more = within(checklist).getByText(/Show the other 2 prompts/);
+    expect(more.closest("details")).not.toHaveAttribute("open");
+    expect(within(more.closest("details") as HTMLElement).getByText("Negative shareholders' equity")).toBeInTheDocument();
+  });
+
+  it("says so when no prompt needs a look", () => {
+    const calm = { ...report, red_flags: report.red_flags.filter((flag) => flag.state !== "TRIGGERED") };
+    render(<AnalysisReportView currency="CAD" report={calm} />);
+    expect(screen.getByText("No figure crossed the usual lines.")).toBeInTheDocument();
+  });
+
   it("lists the red-flag checklist as prompts, with the checks that could not be made", () => {
     render(<AnalysisReportView currency="CAD" report={report} />);
     expect(screen.getByText("3 prompts for the underwriter's attention")).toBeInTheDocument();

@@ -14,6 +14,13 @@ function share(amount: string | null, requested: string | null) {
   return Math.max(0, Math.min(100, (a / r) * 100));
 }
 
+const FACTOR_NAMES: Record<string, string> = {
+  sector_outlook: "Weak sector outlook",
+  acceptable_not_strong: "Findings acceptable but not strong",
+  missing_information: "Missing information",
+  concentration: "Dependence on a few customers or suppliers",
+};
+
 export function TestPill() {
   return <span className="rec-test-pill">Test product</span>;
 }
@@ -95,11 +102,12 @@ export function AnalysisFindings({ draft }: Readonly<{ draft: DraftRecord }>) {
       <ol className="rec-reason-list">
         {draft.reasons.map((reason, index) => (
           <li key={`${index}-${reason.text}`}>
-            <p className="rec-reason-text">{shorten(reason.text, currency)}</p>
+            <p className="rec-reason-text">{shorten(reason.text.split(". ")[0], currency)}</p>
             <details>
               <summary>
                 {reason.evidence.length} source{reason.evidence.length === 1 ? "" : "s"}
               </summary>
+              <p className="ws-muted">{shorten(reason.text, currency)}</p>
               <ul className="rec-evidence">
                 {reason.evidence.map((item, i) => (
                   <li key={`${item.kind}-${item.document_id ?? item.url}-${i}`}>
@@ -137,7 +145,7 @@ export function DraftBasis({ draft }: Readonly<{ draft: DraftRecord }>) {
           <ul className="ws-bullets">
             {draft.factors.map((factor) => (
               <li key={factor.code}>
-                <strong>{readable(factor.code)}.</strong> {shorten(factor.explanation, currency)}
+                <strong>{FACTOR_NAMES[factor.code] ?? readable(factor.code)}.</strong> {shorten(factor.explanation, currency)}
               </li>
             ))}
           </ul>

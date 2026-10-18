@@ -120,7 +120,7 @@ export function StatementReview({
       <div className="ws-split">
         <label className="ws-field">
           Unit the document uses
-          <select onChange={(event) => setUnit(event.target.value)} value={unit}>
+          <select aria-label="Unit the document uses" onChange={(event) => setUnit(event.target.value)} value={unit}>
             <option value="">Choose…</option>
             {UNITS.map((option) => (
               <option key={option.value} value={option.value}>
@@ -135,7 +135,7 @@ export function StatementReview({
         </label>
         <label className="ws-field">
           The statements are
-          <select onChange={(event) => setAudit(event.target.value)} value={audit}>
+          <select aria-label="The statements are" onChange={(event) => setAudit(event.target.value)} value={audit}>
             <option value="">Choose…</option>
             <option value="AUDITED">Audited</option>
             <option value="REVIEWED">Reviewed (not a full audit)</option>

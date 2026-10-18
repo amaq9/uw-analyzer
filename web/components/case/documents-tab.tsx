@@ -162,7 +162,7 @@ export function DocumentsTab({ caseId, onChanged, permissions, token }: TabProps
           <form className="ws-form" onSubmit={submit}>
             <label className="ws-field">
               Category
-              <select defaultValue="financial_statement" name="category">
+              <select aria-label="Category" defaultValue="financial_statement" name="category">
                 <option value="financial_statement">Financial statement</option>
                 <option value="credit_report">Credit report</option>
                 <option value="supporting">Supporting document</option>

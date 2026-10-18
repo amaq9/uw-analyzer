@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 
 import { useSession } from "@/components/session-provider";
 import { ApiRequestError } from "@/lib/api/client";
@@ -16,6 +16,9 @@ export function DevTokenSignIn() {
   const [token, setToken] = useState("");
   const [error, setError] = useState<SignInError>();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Until the page is interactive the browser would submit the form itself, so the button waits.
+  const [ready, setReady] = useState(false);
+  useEffect(() => setReady(true), []);
   const { session, signIn, signOut: clearSession } = useSession();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -93,14 +96,13 @@ export function DevTokenSignIn() {
       <textarea
         autoComplete="off"
         id="development-token"
-        name="development-token"
         onChange={(event) => setToken(event.target.value)}
         placeholder="Paste a token printed by the local API"
         rows={3}
         spellCheck={false}
         value={token}
       />
-      <button className="dev-sign-in-button" disabled={isSubmitting} type="submit">
+      <button className="dev-sign-in-button" disabled={isSubmitting || !ready} type="submit">
         {isSubmitting ? "Checking access…" : "Continue to local workspace"}
       </button>
       <p className="memory-note">Development only · The token is kept in memory, never local storage.</p>

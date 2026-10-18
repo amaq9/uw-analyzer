@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import { ControlCards } from "@/components/control-cards";
 import { Readiness } from "@/components/readiness";
 import { Sidebar } from "@/components/sidebar";
 import { SkillSpotlight } from "@/components/skill-spotlight";
 import { Topbar } from "@/components/topbar";
 import { Workflow } from "@/components/workflow";
+
+export const metadata: Metadata = { title: "Overview" };
 
 export default function Home() {
   return (

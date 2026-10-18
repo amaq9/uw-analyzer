@@ -1,8 +1,11 @@
+import type { Metadata } from "next";
 import { DocumentChartIcon } from "@/components/icons";
 import { Sidebar } from "@/components/sidebar";
 import { SkillMethod } from "@/components/skill-method";
 import { SkillSafeguards } from "@/components/skill-safeguards";
 import { Topbar } from "@/components/topbar";
+
+export const metadata: Metadata = { title: "Skills" };
 
 export default function SkillsPage() {
   return (
