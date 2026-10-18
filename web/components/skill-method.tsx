@@ -19,21 +19,21 @@ type MethodItem = {
 const method: MethodItem[] = [
   {
     number: "01",
-    title: "Liquidity",
-    detail: "Test short-term obligations against genuinely available resources.",
-    checks: "Current · quick · cash ratios · working capital · cash from operations over current liabilities",
-    icon: ResearchIcon,
-  },
-  {
-    number: "02",
     title: "Profitability",
     detail: "Check that profits are real, sustainable and turning into cash.",
     checks: "Gross · operating · EBITDA · net margin · return on assets and equity · trend",
     icon: CasesIcon,
   },
   {
+    number: "02",
+    title: "Liquidity",
+    detail: "Test short-term obligations against genuinely available resources.",
+    checks: "Current · quick · cash ratios · working capital · cash from operations over current liabilities",
+    icon: ResearchIcon,
+  },
+  {
     number: "03",
-    title: "Leverage",
+    title: "Balance sheet and leverage",
     detail: "Separate gross debt, leases and net debt from headline leverage.",
     checks: "Debt to equity · equity share of assets · interest cover · net debt to EBITDA",
     icon: ReportsIcon,
@@ -41,8 +41,8 @@ const method: MethodItem[] = [
   {
     number: "04",
     title: "Cash flow",
-    detail: "Follow cash through operations, investment and distributions.",
-    checks: "Cash from operations · free cash flow · conversion of profit · capital spending",
+    detail: "Follow cash through operations, investment and distributions, and how long cash is tied up in working capital.",
+    checks: "Cash from operations · free cash flow · conversion of profit · capital spending · cash conversion cycle (DSO, DIO, DPO)",
     icon: DocumentChartIcon,
   },
   {

@@ -247,6 +247,12 @@ describe("Step 1 paragraphs and the cash conversion cycle", () => {
     periods: ["2026-05-31", "2025-05-31", "2024-05-31"],
     summary: "The company collects from customers in 46.7 days (was 37.2 days). Cash is therefore tied up for 100.4 days.",
     notes: ["Inventory is taken from the finished-goods figure (total inventory is not tagged)."],
+    status: "WEAK",
+    finding: "Concerning",
+    trend: "Weakening",
+    flags: ["Change in the cash conversion cycle: +8.0 days"],
+    standing:
+      "The cash conversion cycle is rated Concerning (shown as Weak) because it is judged by its weakest measure. What to do: Ask for the receivables ageing. This is context only: it does not change the recommended amount.",
     rows: [
       { key: "dso", label: "Days sales outstanding (DSO)", current: "46.7 days", prior: "37.2 days", earlier: "31.5 days", movement: "Longer by 9.5 days (slower collection)", direction: "worse" },
       { key: "dio", label: "Days inventory outstanding (DIO)", current: "No inventory reported", prior: "No inventory reported", earlier: null, movement: "Not applicable: no inventory", direction: "unknown" },
@@ -269,6 +275,11 @@ describe("Step 1 paragraphs and the cash conversion cycle", () => {
     render(<AnalysisReportView currency="CAD" report={{ ...report, cash_cycle: cycle }} />);
     const section = screen.getByLabelText("Cash conversion cycle");
     expect(within(section).getByRole("heading", { name: "Cash conversion cycle" })).toBeInTheDocument();
+    expect(within(section).getByText("Weak")).toBeInTheDocument(); // the same signal as the other financial areas
+    expect(section).toHaveClass("st-weak-edge");
+    expect(within(section).getByText("Why this standing, and what to do")).toBeInTheDocument();
+    expect(within(section).getByText(/What to do: Ask for the receivables ageing/)).toBeInTheDocument();
+    expect(within(section).getByText("Change in the cash conversion cycle: +8.0 days")).toBeInTheDocument();
     expect(within(section).getByText("46.7 days")).toBeInTheDocument();
     expect(within(section).getAllByText("No inventory reported").length).toBeGreaterThanOrEqual(1);
     expect(within(section).getByText("Not applicable: no inventory")).toBeInTheDocument();
@@ -278,7 +289,7 @@ describe("Step 1 paragraphs and the cash conversion cycle", () => {
     expect(worse[0]).toHaveClass("is-worse");
     expect(within(section).getByText(/better for cash/, { selector: "strong" })).toHaveClass("is-better");
     expect(within(section).getByText(/finished-goods figure/)).toBeInTheDocument();
-    expect(within(section).getByText(/does not change the recommended amount/)).toBeInTheDocument();
+    expect(within(section).getAllByText(/does not change the recommended amount/).length).toBeGreaterThanOrEqual(1);
   });
 
   it("shows no cash conversion section when there is nothing to calculate", () => {

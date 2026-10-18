@@ -144,6 +144,13 @@ class CashCycle(BaseModel):
     rows: list[CycleRow] = Field(max_length=4)
     summary: Line
     notes: list[Line] = Field(default_factory=list, max_length=8)
+    # Rated like the financial dimensions but context only: the policy reads the core four,
+    # so this never changes the amount.
+    status: Status = "NOT_ASSESSED"
+    finding: Annotated[str, StringConstraints(max_length=40)] = "Not assessed"
+    trend: Annotated[str, StringConstraints(max_length=60)] = "No earlier year to compare"
+    standing: Annotated[str, StringConstraints(max_length=1800)] | None = None
+    flags: list[Line] = Field(default_factory=list, max_length=6)
 
 
 class BriefSection(BaseModel):
@@ -152,7 +159,7 @@ class BriefSection(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     heading: Annotated[str, StringConstraints(min_length=1, max_length=80)]
-    text: Annotated[str, StringConstraints(min_length=1, max_length=900)]
+    text: Annotated[str, StringConstraints(min_length=1, max_length=1800)]
 
 
 class ExecutiveBrief(BaseModel):

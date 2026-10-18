@@ -20,6 +20,7 @@ from app.recommendation.analysis_report import (
     AnalysisReport,
     AreaReport,
     Basis,
+    CashCycle,
     FlagCheck,
     Metric,
     NoteFinding,
@@ -791,12 +792,17 @@ def _concerns(
     checks: list[FlagCheck],
     gaps: list[str],
     notes: NotesReview | None = None,
+    cycle: CashCycle | None = None,
 ) -> list[str]:
     """Most important first: distressed areas, then flags to look at, then weak areas, then missing information."""
     out: list[str] = []
     out += [f"{a.title}: {a.finding.lower()}. {a.why}" for a in areas if a.status == "DISTRESSED"]
     out += [f"{c.text}: {c.detail}" for c in checks if c.state == "TRIGGERED"]
     out += [f"{a.title}: {a.finding.lower()}. {a.why}" for a in areas if a.status == "WEAK"]
+    if cycle is not None and cycle.status in ("WEAK", "DISTRESSED"):
+        out.append(
+            f"Cash conversion cycle: {cycle.finding.lower()}. " + "; ".join(cycle.flags[:2]) + "."
+        )
     out += [
         f"In the filing: {f.title}: {f.summary}"
         for f in (notes.findings if notes else [])
@@ -930,6 +936,7 @@ def build_report(
     all_definitions = list(dict.fromkeys(STANDARD_DEFINITIONS + (definitions or [])))
     ds_metrics, ds_notes = debt_service_block(ratio_sets, figure_sets, currency)
     stress, stress_note = stress_block(ratio_sets, figure_sets, currency)
+    cash_cycle = build_cash_cycle(figure_sets, periods, all_definitions)
     report = AnalysisReport(
         basis=Basis(
             statements=statements_label,
@@ -952,7 +959,9 @@ def build_report(
         debt_service_notes=[n[:600] for n in ds_notes],
         stress=stress,
         stress_note=stress_note,
-        key_concerns=[c[:600] for c in _concerns(areas, checks, unique_gaps, notes)][:15],
+        key_concerns=[c[:600] for c in _concerns(areas, checks, unique_gaps, notes, cash_cycle)][
+            :15
+        ],
         published_ratings=ratings or [],
         ratings_reconciliation=reconcile(core, ratings or [])[:600],
         strengths=[s[:600] for s in strengths],
@@ -961,7 +970,7 @@ def build_report(
         gaps=[g[:600] for g in unique_gaps],
         definitions=[d[:600] for d in all_definitions][:20],
         notes_review=notes,
-        cash_cycle=build_cash_cycle(figure_sets, periods, all_definitions),
+        cash_cycle=cash_cycle,
         other_checks=other_checks,
         analyzer_version=analyzer_version,
     )

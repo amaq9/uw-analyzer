@@ -86,10 +86,28 @@ function CashCycleSection({ cycle }: Readonly<{ cycle: AnalysisReportData["cash_
   if (!cycle) return null;
   const periods = cycle.periods ?? [];
   return (
-    <section aria-label="Cash conversion cycle" className="ws-card" id="ar-cash-cycle">
-      <p className="eyebrow">Working capital</p>
-      <h3>Cash conversion cycle</h3>
-      <p className="ar-summary-para-text">{cycle.summary}</p>
+    <section aria-label="Cash conversion cycle" className={`ws-card ar-area ${STATUS[cycle.status].className}-edge`} id="ar-cash-cycle">
+      <header className="ar-area-head">
+        <h3>Cash conversion cycle</h3>
+        <div className="ar-area-status">
+          <StatusChip status={cycle.status} />
+          <span className="ws-muted">Shown for context · {cycle.finding} · {cycle.trend}</span>
+        </div>
+      </header>
+      {cycle.standing && (
+        <div className="ar-summary-para">
+          <p className="eyebrow">Why this standing, and what to do</p>
+          <p>{cycle.standing}</p>
+        </div>
+      )}
+      <p className="ar-why">{cycle.summary}</p>
+      {(cycle.flags ?? []).length > 0 && (
+        <ul className="ar-flags">
+          {(cycle.flags ?? []).map((flag) => (
+            <li key={flag}>{flag}</li>
+          ))}
+        </ul>
+      )}
       <div className="ws-table-wrap">
         <table className="ws-table ar-metrics">
           <thead>
@@ -267,6 +285,13 @@ export function AnalysisReportView({ currency, report }: Readonly<{ currency?: s
               <small>{area.feeds_draft ? area.trend : "Context only: does not change the recommended amount"}</small>
             </a>
           ))}
+          {report.cash_cycle && (
+            <a className="ar-tile is-context" href="#ar-cash-cycle">
+              <span>Cash conversion cycle</span>
+              <StatusChip status={report.cash_cycle.status} />
+              <small>Context only: does not change the recommended amount</small>
+            </a>
+          )}
           <div className="ar-tile is-total">
             <span>Consolidated financial findings</span>
             <StatusChip status={report.consolidated_status} />

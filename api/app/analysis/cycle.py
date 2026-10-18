@@ -12,7 +12,8 @@ It is context for the underwriter and sets no finding and no amount."""
 
 from typing import Any
 
-from app.analysis.formats import days
+from app.analysis.formats import days, pct
+from app.analysis.narrative import FINDING, Measure, summarise
 from app.analysis.ratios import Figures
 from app.recommendation.analysis_report import CashCycle, CycleRow
 
@@ -136,11 +137,17 @@ def build_cash_cycle(
             "Receivables or revenue were not available, so days sales outstanding cannot be calculated."
         )
 
+    rating = rate_cycle(sets, figs)
     return CashCycle(
         periods=periods[: len(sets)],
         rows=rows,
         summary=_summary(sets),
         notes=notes,
+        status=rating["status"],
+        finding=rating["finding"],
+        trend=rating["trend"],
+        standing=rating["standing"],
+        flags=rating["flags"],
     )
 
 
@@ -207,3 +214,224 @@ def _summary(sets: list[dict[str, Any]]) -> str:
     else:
         text += "."
     return text
+
+
+# --- the rating: same four words as the financial dimensions, judged on how the cycle moved ----------------
+
+_LEVEL = {3: "STRONG", 2: "SATISFACTORY", 1: "NEEDS_ATTENTION", 0: "WEAK"}
+_RANK = {"WEAK": 0, "NEEDS_ATTENTION": 1, "SATISFACTORY": 2, "STRONG": 3}
+_CYCLE_REFERENCE = (
+    "no longer (a day more at most) is strong; up to 5 days longer adequate; more than 5 days longer "
+    "concerning, more than 15 days critical"
+)
+
+
+def _band_days(change: float) -> int:
+    """How a lengthening (or shortening) in days is judged. More days tie up more cash."""
+    return 3 if change <= 1 else 2 if change <= 5 else 1 if change <= 15 else 0
+
+
+def _band_payables(change: float) -> int | None:
+    """Paying much later may mean suppliers are being stretched; much sooner, that suppliers tightened terms."""
+    return 1 if change > 15 or change < -10 else None
+
+
+def _measures(now: dict[str, Any], before: dict[str, Any]) -> list[Measure] | None:
+    if now["ccc"] is None or before["ccc"] is None:
+        return None
+    ch = {
+        k: None if now[k] is None or before[k] is None else now[k] - before[k]
+        for k in ("dso", "dio", "dpo", "ccc")
+    }
+    out = [
+        Measure(
+            "Change in the cash conversion cycle",
+            ch["ccc"],
+            None,
+            "days_change",
+            None if ch["ccc"] is None else _band_days(ch["ccc"]),
+            _CYCLE_REFERENCE,
+            False,
+        ),
+        Measure(
+            "Change in days sales outstanding",
+            ch["dso"],
+            None,
+            "days_change",
+            None if ch["dso"] is None else _band_days(ch["dso"]),
+            _CYCLE_REFERENCE,
+            False,
+        ),
+    ]
+    if not now["no_inventory"] and ch["dio"] is not None:
+        out.append(
+            Measure(
+                "Change in days inventory outstanding",
+                ch["dio"],
+                None,
+                "days_change",
+                _band_days(ch["dio"]),
+                _CYCLE_REFERENCE,
+                False,
+            )
+        )
+    if ch["dpo"] is not None:
+        out.append(
+            Measure(
+                "Change in days payables outstanding",
+                ch["dpo"],
+                None,
+                "days_change",
+                _band_payables(ch["dpo"]),
+                "a change of more than 15 days longer or 10 days shorter is a warning",
+                True,
+            )
+        )
+    out += [
+        Measure(
+            "Cash conversion cycle",
+            now["ccc"],
+            before["ccc"],
+            "days",
+            None,
+            "shown for context",
+            False,
+        ),
+        Measure(
+            "Days sales outstanding",
+            now["dso"],
+            before["dso"],
+            "days",
+            None,
+            "shown for context",
+            False,
+        ),
+    ]
+    if not now["no_inventory"]:
+        out.append(
+            Measure(
+                "Days inventory outstanding",
+                now["dio"],
+                before["dio"],
+                "days",
+                None,
+                "shown for context",
+                False,
+            )
+        )
+    out.append(
+        Measure(
+            "Days payables outstanding",
+            now["dpo"],
+            before["dpo"],
+            "days",
+            None,
+            "shown for context",
+            True,
+        )
+    )
+    return out
+
+
+def _level(measures: list[Measure]) -> str | None:
+    banded = [m.band for m in measures if m.band is not None and m.value is not None]
+    return _LEVEL[min(banded)] if banded else None
+
+
+def _recommendations(measures: list[Measure], figs: list[Figures]) -> list[str]:
+    by = {m.label: m for m in measures}
+    recs: list[str] = []
+    dso = by.get("Change in days sales outstanding")
+    if dso is not None and dso.band is not None and dso.band <= 1:
+        cur, prev = figs[0], figs[1] if len(figs) > 1 else {}
+        rec_now, rec_before = cur.get("receivables"), prev.get("receivables")
+        rev_now, rev_before = cur.get("revenue"), prev.get("revenue")
+        extra = ""
+        if rec_now and rec_before and rev_now and rev_before and rec_before > 0 and rev_before > 0:
+            extra = f" (receivables {pct(rec_now / rec_before - 1)} against revenue {pct(rev_now / rev_before - 1)})"
+        recs.append(
+            "Customers are paying more slowly"
+            + extra
+            + ". Ask for the receivables ageing and the largest overdue "
+            "balances, and whether payment terms were extended or sales were pulled forward."
+        )
+    dio = by.get("Change in days inventory outstanding")
+    if dio is not None and dio.band is not None and dio.band <= 1:
+        recs.append(
+            "Stock is turning more slowly. Ask what is behind the build-up (slow-moving or aged stock) and whether write-downs are needed."
+        )
+    dpo = by.get("Change in days payables outstanding")
+    if dpo is not None and dpo.band == 1 and dpo.value is not None:
+        recs.append(
+            "The company is paying suppliers much later. Ask whether it is stretching suppliers to fund working capital."
+            if dpo.value > 0
+            else "The company is paying suppliers much sooner. Ask whether suppliers have tightened their terms."
+        )
+    ccc = by.get("Change in the cash conversion cycle")
+    if not recs and ccc is not None and ccc.band is not None and ccc.band <= 1:
+        recs.append("Ask what has lengthened the cycle and whether it is temporary.")
+    if recs:
+        recs.append(
+            "Check the next period: a cycle that keeps lengthening ties up cash and strains liquidity."
+        )
+    return recs
+
+
+def rate_cycle(sets: list[dict[str, Any]], figs: list[Figures]) -> dict[str, Any]:
+    """Status, finding, trend and the paragraph (why it stands there, and what to do) for the cycle."""
+    none = {
+        "status": "NOT_ASSESSED",
+        "finding": "Not assessed",
+        "trend": "No earlier year to compare",
+        "flags": [],
+        "standing": (
+            "The cycle is not rated: it needs the cycle for this period and the period before, and "
+            "receivables, trade payables and cost of sales for both."
+        ),
+    }
+    if len(sets) < 2:
+        return none
+    measures = _measures(sets[0], sets[1])
+    level = _level(measures) if measures else None
+    if not measures or level is None:
+        return none
+    earlier_measures = _measures(sets[1], sets[2]) if len(sets) > 2 else None
+    earlier = _level(earlier_measures) if earlier_measures else None
+    trend = "No earlier year to compare"
+    if earlier is not None:
+        delta = _RANK[level] - _RANK[earlier]
+        trend = "Improving" if delta > 0 else "Weakening" if delta < 0 else "Stable"
+    text = summarise(
+        title="The cash conversion cycle",
+        level=level,
+        trend=trend,
+        earlier_level=earlier,
+        measures=measures,
+        currency="USD",
+        cut_percent=None,
+        core=False,
+    )
+    recs = _recommendations(measures, figs)
+    if recs:
+        text += " What to do: " + " ".join(recs)
+    text += " This is context only: it does not change the recommended amount."
+    flags = [
+        f"{m.label}: {m.show(m.value, 'USD')}"
+        for m in measures
+        if m.band is not None and m.band <= 1 and m.value is not None
+    ]
+    return {
+        "status": _STATUS_WORD[level],
+        "finding": FINDING[level],
+        "trend": trend,
+        "flags": flags[:6],
+        "standing": text[:1800],
+    }
+
+
+_STATUS_WORD = {
+    "STRONG": "OK",
+    "SATISFACTORY": "OK",
+    "NEEDS_ATTENTION": "WEAK",
+    "WEAK": "DISTRESSED",
+}

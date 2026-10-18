@@ -6,7 +6,7 @@ better, what moved against the year before, and what the rating does to the prop
 
 from dataclasses import dataclass
 
-from app.analysis.formats import money, pct, times
+from app.analysis.formats import days, money, pct, times
 
 BAND_WORD = {3: "strong", 2: "adequate", 1: "concerning", 0: "critical"}
 FINDING = {
@@ -40,6 +40,10 @@ class Measure:
             return pct(v)
         if self.kind == "points":
             return f"{v * 100:+.1f} points"
+        if self.kind == "days":
+            return days(v)
+        if self.kind == "days_change":
+            return f"{v:+.1f} days"
         return money(v, currency)
 
     def worsened(self) -> bool:
