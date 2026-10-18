@@ -693,8 +693,8 @@ def test_the_comparison_with_the_financials_leaves_no_dangling_source_fragment()
 
 def test_a_second_year_of_slower_collection_is_called_out() -> None:
     figs = [
-        cycle_year(receivables=135.0),
-        cycle_year(receivables=110.0),
+        cycle_year(receivables=145.0),
+        cycle_year(receivables=120.0),
         cycle_year(receivables=100.0),
     ]
     cc = build_cash_cycle(figs, PERIODS, [])
