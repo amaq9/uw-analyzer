@@ -108,7 +108,9 @@ def _clip(text: str, limit: int) -> str:
     ..."), which repeat what the summary already says about the source, are left out."""
     text = " ".join(text.split())
     kept = [
-        s for s in re.split(r"(?<=[.!?]) ", text) if not re.match(r"(Reported by|Source:|Per )", s)
+        s
+        for s in re.split(r"(?<=[.!?]) ", text)
+        if not re.match(r"(Reported by|Source:|Per |This supersedes)", s)
     ]
     text = " ".join(kept) or text
     if len(text) <= limit:
@@ -156,7 +158,9 @@ def _ratings(report: AnalysisReport) -> str:
     if report.ratings_reconciliation:
         # The comparison with the financial picture, without its trailing note on source quality.
         sentences = re.split(r"(?<=[.!?]) ", report.ratings_reconciliation)
-        compare = " ".join(s for s in sentences if " came from" not in s).strip()
+        compare = " ".join(
+            s for s in sentences if " came from" not in s and not s.startswith("Confirm ")
+        ).strip()
         if compare:
             text += " Against the financials: " + compare.rstrip(".") + "."
     if any(r.source_kind != "AGENCY_SITE" for r in report.published_ratings):
