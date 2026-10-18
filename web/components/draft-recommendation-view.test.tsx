@@ -28,7 +28,7 @@ const draft = {
   limitations: ["This draft supports, but does not replace, human underwriting judgment."],
   notice: "Draft recommendation for the underwriter. Not a decision.",
   outcome: "APPROVE" as const,
-  policy_version: "1.0",
+  policy_version: "1.1",
   reasons: [
     {
       evidence: [
@@ -51,7 +51,7 @@ const draft = {
   source: {
     kind: "claude_code_session" as const,
     model: "test-model",
-    policy_version: "1.0",
+    policy_version: "1.1",
     skill_version: "financial-assessment-1",
   },
   summary: "The evidence supports a reduced draft amount, subject to the stated gaps.",

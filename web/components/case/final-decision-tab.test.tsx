@@ -25,7 +25,7 @@ const draft = {
   information_gaps: ["Gap A", "Gap A"],
   limitations: ["Payment behaviour was not assessed."],
   source: { model: "m", skill_version: "1" },
-  policy_version: "1.0",
+  policy_version: "1.1",
   created_by: "analyst",
   created_at: "2026-10-12T12:00:00Z",
 };

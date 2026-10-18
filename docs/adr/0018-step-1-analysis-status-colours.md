@@ -17,17 +17,16 @@ conflict with an invariant to be stopped, explained and approved as a documented
 chose to amend the ban for Step 1 only (the other options were: amend it everywhere, or keep words only).
 
 ## Decision
-1. **Where colours are allowed.** Only on the financial areas of the Step 1 analysis report and on the
-   consolidated financial findings in that report. Nowhere else. The areas are the five **core** areas
-   (balance sheet strength, liquidity, gearing, accounts receivable, cash flow generation), which the
-   recommendation policy reads, plus **profitability**, which is **context only**: it is shown with a
-   status but never changes the draft amount or outcome. **Efficiency and industry context** is shown
-   with its figures but gets no status, because peer data is not connected (a status would be a guess).
+1. **Where colours are allowed.** Only on the financial dimensions of the Step 1 analysis report and on the
+   consolidated financial findings in that report. Nowhere else. **Amended by ADR 0019:** the dimensions are
+   now liquidity, profitability, leverage and cash flow (the four the recommendation policy reads), plus
+   efficiency and sector, which is shown with its figures but gets no status because peer data is not
+   connected (a status would be a guess).
 2. **Three statuses plus one.** `OK` (green), `WEAK` (yellow), `DISTRESSED` (red), and `NOT_ASSESSED`
-   (grey) when the data is missing. They are derived on the server from the analyzer's finding: strong or
-   satisfactory = OK, needs attention = WEAK, weak = DISTRESSED. The analyzer's own word is shown beside
-   the status ("Analyzer finding: Needs attention") so the two vocabularies are never confused. The
-   recommendation policy v1.0 still reads the analyzer's finding, not the colour.
+   (grey) when the data is missing. They are derived on the server from the dimension's finding: Strong or
+   Adequate = OK, Concerning = WEAK, Critical = DISTRESSED. The framework's own word is shown beside
+   the status ("Concerning") so the two vocabularies are never confused. The recommendation policy reads the
+   finding, not the colour (ADR 0019).
 3. **Never colour alone.** Every colour comes with its word and a symbol (check, exclamation, cross), so
    it reads in black and white and to colour-blind users. A colour key and a plain-language note say it is
    the analyst's reading of the evidence, "not a score or rating of the company and not the decision".

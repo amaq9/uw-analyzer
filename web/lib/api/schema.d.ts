@@ -2068,6 +2068,11 @@ export interface components {
             label: string;
             /** Prior */
             prior: string;
+            /**
+             * Reference
+             * @default
+             */
+            reference: string;
         };
         /** MetricInfo */
         MetricInfo: {

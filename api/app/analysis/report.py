@@ -1,13 +1,15 @@
 """Build the written-up analysis (Step 1) from the analyzer's figures and findings.
 
 Pure and deterministic: the same figures give the same report. Nothing here decides anything. It lays
-out the five areas of the financial-statement-assessment skill with their figures, runs the skill's
-red-flag checklist as prompts for attention, and closes with strengths, weaknesses, what to watch and
-what is not known."""
+out the five dimensions of the analyst framework (liquidity, profitability, leverage, cash flow,
+efficiency and sector) with their figures and reference ranges, runs the red-flag checklist as prompts
+for attention, and closes with strengths, weaknesses, what to watch and what is not known."""
 
 from typing import Any, Literal
 
 from app.analysis.assess import CORE, Level, Section, money, pct, times
+from app.analysis.dimensions import dimension_metrics
+from app.analysis.dimensions import div as _div
 from app.analysis.ratios import Figures
 from app.recommendation.analysis_report import (
     AnalysisReport,
@@ -37,63 +39,78 @@ STATUS_WORD: dict[Status, str] = {
 }
 
 
+FINDING_WORD = {
+    Level.STRONG: "Strong",
+    Level.SATISFACTORY: "Adequate",
+    Level.NEEDS_ATTENTION: "Concerning",
+    Level.WEAK: "Critical",
+    Level.NOT_ASSESSED: "Not assessed",
+}
+
+
 def finding_word(level: Level) -> str:
-    return level.value.replace("_", " ").capitalize()
+    return FINDING_WORD[level]
 
 
-# (label, where it lives, key, how to show it). "r" = a computed ratio, "f" = a supplied figure.
+# (label, metric key, how to show it, the framework's reference range). Reference ranges are the
+# framework's own and are indicative only: no verified peer data is used.
 _SPECS: dict[str, list[tuple[str, str, str, str]]] = {
-    "balance_sheet": [
-        ("Total assets", "f", "total_assets", "money"),
-        ("Total equity", "r", "equity", "money"),
-        ("Equity as a share of assets", "r", "equity_to_assets", "pct"),
-        ("Goodwill and intangibles", "r", "goodwill_and_intangibles", "money"),
-        (
-            "Goodwill and intangibles as a share of assets",
-            "r",
-            "goodwill_and_intangibles_to_assets",
-            "pct",
-        ),
-        (
-            "Goodwill and intangibles as a share of equity",
-            "r",
-            "goodwill_and_intangibles_to_equity",
-            "pct",
-        ),
-    ],
     "liquidity": [
-        ("Current ratio", "r", "current_ratio", "times"),
-        ("Quick ratio", "r", "quick_ratio", "times"),
-        ("Cash ratio", "r", "cash_ratio", "times"),
-        ("Working capital", "r", "working_capital", "money"),
-        ("Cash less debt due within 12 months", "r", "cash_less_debt_due_12m", "money"),
-    ],
-    "gearing": [
-        ("Financial debt", "r", "financial_debt", "money"),
-        ("Total debt including leases", "r", "total_debt_incl_leases", "money"),
-        ("Net debt (negative is net cash)", "r", "net_debt", "money"),
-        ("Debt to equity", "r", "debt_to_equity", "times"),
-        ("Net debt to EBITDA", "r", "net_debt_to_ebitda", "times"),
-        ("Interest cover (EBIT over interest)", "r", "interest_cover", "times"),
-    ],
-    "receivables": [
-        ("Receivables", "r", "receivables", "money"),
-        ("Days of revenue in receivables", "r", "dso_days", "days"),
-        ("Cash absorbed by receivables in the year", "r", "cash_absorbed_by_receivables", "money"),
+        ("Current ratio", "current_ratio", "times", "1.5 to 2.0"),
+        ("Quick ratio", "quick_ratio", "times", "1.0 to 1.5"),
+        ("Cash ratio", "cash_ratio", "times", "0.5 to 1.0"),
+        ("Working capital", "working_capital", "money", ""),
         (
-            "Allowance for credit losses as a share of receivables",
-            "r",
-            "allowance_to_receivables",
-            "pct",
+            "Cash from operations over current liabilities",
+            "ocf_to_current_liabilities",
+            "times",
+            "above 0.40",
         ),
+        ("Cash less debt due within 12 months", "cash_less_debt_due_12m", "money", ""),
+    ],
+    "profitability": [
+        ("Revenue", "revenue", "money", ""),
+        ("Revenue growth on the year before", "growth", "pct", ""),
+        ("Gross margin", "gross_margin", "pct", ""),
+        ("Operating margin", "operating_margin", "pct", ""),
+        ("EBITDA margin", "ebitda_margin", "pct", "12 to 18%"),
+        ("Net margin", "net_margin", "pct", "above 10% strong, 5 to 10% adequate"),
+        ("Return on average assets", "return_on_assets", "pct", ""),
+        ("Return on average equity", "return_on_equity", "pct", ""),
+    ],
+    "leverage": [
+        ("Financial debt", "financial_debt", "money", ""),
+        ("Net debt (negative is net cash)", "net_debt", "money", ""),
+        ("Debt to equity", "debt_to_equity", "times", "below 1.0 strong, above 2.5 critical"),
+        ("Debt to assets", "debt_to_assets", "times", "below 0.60"),
+        ("Equity as a share of assets", "equity_ratio", "pct", "above 40%"),
+        ("Interest cover (EBIT over interest)", "interest_cover", "times", "above 2.5"),
+        ("Net debt to EBITDA", "net_debt_to_ebitda", "times", "below 3.0"),
     ],
     "cash_flow": [
-        ("Cash from operations", "r", "operating_cash_flow", "money"),
-        ("Free cash flow (after capital spending)", "r", "free_cash_flow", "money"),
-        ("Dividends and buybacks", "r", "distributions", "money"),
-        ("Free cash flow after dividends and buybacks", "r", "fcf_after_distributions", "money"),
-        ("Cash from operations as a multiple of net income", "r", "ocf_to_net_income", "times"),
-        ("Net change in cash", "r", "net_change_in_cash", "money"),
+        ("Cash from operations", "operating_cash_flow", "money", ""),
+        ("Free cash flow (after capital spending)", "free_cash_flow", "money", ""),
+        ("Free cash flow as a share of revenue", "fcf_margin", "pct", "above 10%"),
+        (
+            "Cash from operations as a multiple of net income",
+            "ocf_to_net_income",
+            "times",
+            "above 0.80",
+        ),
+        ("Capital spending over depreciation", "capex_to_depreciation", "times", "below 1.0"),
+        ("Dividends and buybacks", "distributions", "money", ""),
+        ("Free cash flow after dividends and buybacks", "fcf_after_distributions", "money", ""),
+        ("Net change in cash", "net_change_in_cash", "money", ""),
+    ],
+    "efficiency": [
+        ("Asset turnover (revenue over average assets)", "asset_turnover", "times", ""),
+        ("Days of revenue in receivables", "dso_days", "days", ""),
+        (
+            "Inventory turnover (cost of sales over average inventory)",
+            "inventory_turnover",
+            "times",
+            "",
+        ),
     ],
 }
 
@@ -119,7 +136,9 @@ def _change(cur: float | None, prior: float | None) -> Literal["up", "down", "fl
     return "up" if cur > prior else "down"
 
 
-def _row(label: str, kind: str, values: list[float | None], currency: str) -> Metric | None:
+def _row(
+    label: str, kind: str, values: list[float | None], currency: str, reference: str = ""
+) -> Metric | None:
     """One figure across up to three periods (newest first). Skipped when nothing is disclosed."""
     if all(v is None for v in values):
         return None
@@ -130,22 +149,16 @@ def _row(label: str, kind: str, values: list[float | None], currency: str) -> Me
         prior=_show(kind, padded[1], currency) if len(values) > 1 else "No earlier year",
         earlier=_show(kind, padded[2], currency) if len(values) > 2 else "No earlier year",
         change=_change(padded[0], padded[1]),
+        reference=reference,
     )
 
 
 def _metrics(
-    key: str,
-    ratio_sets: list[dict[str, dict[str, Any]]],
-    figure_sets: list[Figures],
-    currency: str,
+    key: str, metric_sets: list[dict[str, dict[str, float | None]]], currency: str
 ) -> list[Metric]:
     out: list[Metric] = []
-    for label, where, name, kind in _SPECS[key]:
-        values = [
-            figure_sets[i].get(name) if where == "f" else ratio_sets[i][key].get(name)
-            for i in range(len(ratio_sets))
-        ]
-        row = _row(label, kind, values, currency)
+    for label, name, kind, reference in _SPECS[key]:
+        row = _row(label, kind, [m[key].get(name) for m in metric_sets], currency, reference)
         if row is not None:
             out.append(row)
     return out
@@ -303,165 +316,56 @@ def _watch(
     return watch
 
 
-def _div(num: float | None, den: float | None) -> float | None:
-    if num is None or den is None or den <= 0:
-        return None
-    return num / den
-
-
-def _avg(a: float | None, b: float | None) -> float | None:
-    return a if b is None else None if a is None else (a + b) / 2
-
-
-def _year_profit(figs: list[Figures], i: int) -> dict[str, float | None]:
-    """Margins and returns for period i (newest first). Averages use the period before when there is one."""
-    f = figs[i]
-    prior = figs[i + 1] if i + 1 < len(figs) else None
-    rev = f.get("revenue")
-    ebit = f.get("operating_income") if f.get("operating_income") is not None else f.get("ebit")
-    ni = f.get("net_income")
-    assets = _avg(f.get("total_assets"), prior.get("total_assets") if prior else None)
-    equity = _avg(f.get("total_equity"), prior.get("total_equity") if prior else None)
-    prior_rev = prior.get("revenue") if prior else None
-    return {
-        "revenue": rev,
-        "growth": None if rev is None or not prior_rev or prior_rev <= 0 else rev / prior_rev - 1,
-        "gross": _div(f.get("gross_profit"), rev),
-        "operating": None if ebit is None or rev is None or rev <= 0 else ebit / rev,
-        "ebitda": _div(f.get("ebitda"), rev),
-        "net": None if ni is None or rev is None or rev <= 0 else ni / rev,
-        "roa": None if ni is None or assets is None or assets <= 0 else ni / assets,
-        "roe": None if ni is None or equity is None or equity <= 0 else ni / equity,
-    }
-
-
-def profitability_area(figs: list[Figures], currency: str) -> AreaReport:
-    """Context only (the skill: profitability explains cash flow and gearing, it does not lead)."""
-    years = [_year_profit(figs, i) for i in range(len(figs))]
-    cur, prev = years[0], years[1] if len(years) > 1 else None
-    net, pnet = cur["net"], prev["net"] if prev else None
-    flags: list[str] = []
-    if net is None:
-        level = Level.NOT_ASSESSED
-        why = "Revenue or net income was not available."
-    else:
-        if net < 0.02:
-            level = Level.WEAK
-        elif net < 0.05:
-            level = Level.NEEDS_ATTENTION
-        elif net < 0.10:
-            level = Level.SATISFACTORY
-        else:
-            level = Level.STRONG if pnet is None or net >= pnet - 0.005 else Level.SATISFACTORY
-        if net < 0:
-            flags.append("Net loss for the period")
-        if pnet is not None and pnet - net > 0.05:
-            flags.append("Net margin fell by more than 5 percentage points")
-            if level in (Level.STRONG, Level.SATISFACTORY):
-                level = Level.NEEDS_ATTENTION
-        why = f"Net margin {pct(net)}"
-        if pnet is not None:
-            why += f" (was {pct(pnet)})"
-        why += f"; operating margin {pct(cur['operating'])}; EBITDA margin {pct(cur['ebitda'])}"
-        if cur["growth"] is not None:
-            why += f"; revenue changed {pct(cur['growth'])} on the year before"
-        why += ". Shown for context: it does not change the draft amount."
-    if net is None or pnet is None:
-        trend = "No earlier year to compare"
-    else:
-        trend = (
-            "Improving" if net > pnet + 0.005 else "Weakening" if net < pnet - 0.005 else "Stable"
-        )
-    specs = [
-        ("Revenue", "money", "revenue"),
-        ("Revenue growth on the year before", "pct", "growth"),
-        ("Gross margin", "pct", "gross"),
-        ("Operating margin", "pct", "operating"),
-        ("EBITDA margin", "pct", "ebitda"),
-        ("Net margin", "pct", "net"),
-        ("Return on average assets", "pct", "roa"),
-        ("Return on average equity", "pct", "roe"),
+def _metric_sets(
+    ratio_sets: list[dict[str, dict[str, Any]]], figs: list[Figures]
+) -> list[dict[str, dict[str, float | None]]]:
+    return [
+        dimension_metrics(r, f, figs[i + 1] if i + 1 < len(figs) else None)
+        for i, (r, f) in enumerate(zip(ratio_sets, figs, strict=True))
     ]
-    metrics = [
-        m
-        for label, kind, key in specs
-        if (m := _row(label, kind, [y[key] for y in years], currency))
-    ]
-    return AreaReport(
-        key="profitability",
-        title="Profitability (context)",
-        status=STATUS_OF[level],
-        finding=finding_word(level),
-        trend=trend,
-        why=why,
-        flags=flags,
-        metrics=metrics,
-        feeds_draft=False,
-    )
-
-
-def efficiency_area(
-    ratio_sets: list[dict[str, dict[str, Any]]], figs: list[Figures], currency: str
-) -> AreaReport:
-    """Shown for context. Without verified peer data an efficiency status would be a guess, so none is given."""
-    turnover: list[float | None] = []
-    inv_turnover: list[float | None] = []
-    for i, f in enumerate(figs):
-        prior = figs[i + 1] if i + 1 < len(figs) else None
-        assets = _avg(f.get("total_assets"), prior.get("total_assets") if prior else None)
-        turnover.append(_div(f.get("revenue"), assets))
-        rev, gp = f.get("revenue"), f.get("gross_profit")
-        cogs = None if rev is None or gp is None else rev - gp
-        inv = _avg(f.get("inventory"), prior.get("inventory") if prior else None)
-        inv_turnover.append(_div(cogs, inv))
-    rows = [
-        ("Asset turnover (revenue over average assets)", "times", turnover),
-        ("Inventory turnover (cost of sales over average inventory)", "times", inv_turnover),
-        (
-            "Days of revenue in receivables",
-            "days",
-            [r["receivables"]["dso_days"] for r in ratio_sets],
-        ),
-    ]
-    metrics = [m for label, kind, values in rows if (m := _row(label, kind, values, currency))]
-    return AreaReport(
-        key="efficiency",
-        title="Efficiency and industry context (context)",
-        status="NOT_ASSESSED",
-        finding="Not assessed",
-        trend="Not compared with peers",
-        why=(
-            "Peer, market-share and customer-concentration data are not connected, so efficiency is shown "
-            "for context and is not given a status. Benchmarks are not used."
-        ),
-        flags=[],
-        metrics=metrics,
-        feeds_draft=False,
-    )
 
 
 def extra_flags(
     ratio_sets: list[dict[str, dict[str, Any]]], figs: list[Figures], currency: str
 ) -> list[FlagCheck]:
-    """Red flags from the senior-analyst framework that the figures can answer (the rest cannot be assessed)."""
+    """Red flags from the analyst framework that the figures can answer (the rest cannot be assessed)."""
     cur = figs[0]
-    years = [_year_profit(figs, i) for i in range(len(figs))]
-    net, pnet = years[0]["net"], years[1]["net"] if len(years) > 1 else None
+    ms = _metric_sets(ratio_sets, figs)
+    net = ms[0]["profitability"]["net_margin"]
+    pnet = ms[1]["profitability"]["net_margin"] if len(ms) > 1 else None
     rev, due = cur.get("revenue"), cur.get("debt_due_12m")
     share = _div(due, rev)
     fcf, ni = ratio_sets[0]["cash_flow"]["free_cash_flow"], cur.get("net_income")
     nd = ratio_sets[0]["gearing"]["net_debt_to_ebitda"]
     pnd = ratio_sets[1]["gearing"]["net_debt_to_ebitda"] if len(ratio_sets) > 1 else None
+    de = ms[0]["leverage"]["debt_to_equity"]
+    conv = ms[0]["cash_flow"]["ocf_to_net_income"]
     margin = f"Net margin {pct(net)} against {pct(pnet)} the year before."
     due_text = f"Debt due within 12 months is {pct(share)} of revenue ({money(due, currency)})."
     fcf_text = f"Free cash flow {money(fcf, currency)} with net income {money(ni, currency)}."
     lev_text = f"Net debt to EBITDA {times(nd)} (was {times(pnd)}); net margin {pct(net)} (was {pct(pnet)})."
+    de_text = f"Debt to equity is {times(de)}."
+    conv_text = f"Cash from operations is {times(conv)} net income."
     rising = (
         None
         if nd is None or pnd is None or net is None or pnet is None
         else (nd > pnd and net < pnet)
     )
     return [
+        _flag(
+            "Debt to equity above 2.5",
+            None if de is None else de > 2.5,
+            de_text,
+            de_text,
+            "Debt to equity was not available (no debt, or no positive equity).",
+        ),
+        _flag(
+            "Cash from operations below 80% of net income",
+            None if conv is None else conv < 0.8,
+            conv_text,
+            conv_text,
+            "Cash from operations or positive net income was not available.",
+        ),
         _flag(
             "Net margin down by more than 5 percentage points on the year before",
             None if net is None or pnet is None else pnet - net > 0.05,
@@ -499,6 +403,11 @@ def extra_flags(
             text="Market share falling while the industry grows",
             state="NOT_ASSESSABLE",
             detail="Market share and industry growth data are not connected.",
+        ),
+        FlagCheck(
+            text="Covenant violations or near-misses",
+            state="NOT_ASSESSABLE",
+            detail="Covenants are in the loan documents, which are not part of the figures.",
         ),
     ]
 
@@ -596,37 +505,27 @@ def _counts(core: list[AreaReport]) -> dict[str, int]:
 
 
 def _consolidated_why(core: list[AreaReport]) -> str:
-    """The consolidated line in the status words (the analyzer's own word is shown beside each area)."""
-    four = _counts([a for a in core if a.key in CORE])
-    parts = [f"{four['OK']} OK", f"{four['WEAK']} weak", f"{four['DISTRESSED']} distressed"]
-    if four["NOT_ASSESSED"]:
-        parts.append(f"{four['NOT_ASSESSED']} not assessed")
-    return (
-        f"The four core areas (balance sheet, liquidity, gearing, cash flow): {', '.join(parts)}."
-    )
+    """The consolidated line in the status words (the framework's own word is shown beside each area)."""
+    c = _counts(core)
+    parts = [f"{c['OK']} OK", f"{c['WEAK']} weak", f"{c['DISTRESSED']} distressed"]
+    if c["NOT_ASSESSED"]:
+        parts.append(f"{c['NOT_ASSESSED']} not assessed")
+    return f"The four core dimensions (liquidity, profitability, leverage, cash flow): {', '.join(parts)}."
 
 
 def _executive_summary(
     core: list[AreaReport],
-    profit: AreaReport,
     status: Status,
     why: str,
     strengths: list[str],
     weaknesses: list[str],
 ) -> str:
-    counts = _counts(core)
     text = (
-        f"Consolidated financial findings: {STATUS_WORD[status]}. {why} Of the five core areas, "
-        f"{counts['OK']} are OK, {counts['WEAK']} weak and {counts['DISTRESSED']} distressed"
-        + (
-            f", and {counts['NOT_ASSESSED']} could not be assessed"
-            if counts["NOT_ASSESSED"]
-            else ""
-        )
-        + f". Profitability, shown for context, is {STATUS_WORD[profit.status]}."
+        f"Consolidated financial findings: {STATUS_WORD[status]}. {why} "
+        "Efficiency and sector are shown for context and are not assessed, because peer data is not connected."
     )
-    good = [x.split(":")[0] for x in strengths if not x.startswith("Profitability")][:3]
-    bad = [x.split(":")[0] for x in weaknesses if not x.startswith("Profitability")][:3]
+    good = [x.split(":")[0] for x in strengths][:3]
+    bad = [x.split(":")[0] for x in weaknesses][:3]
     if good:
         text += " Strongest: " + ", ".join(good).lower() + "."
     if bad:
@@ -652,7 +551,8 @@ def build_report(
     ratios, figures = ratio_sets[0], figure_sets[0]
     prior_figures = figure_sets[1] if len(figure_sets) > 1 else None
 
-    core = [
+    metric_sets = _metric_sets(ratio_sets, figure_sets)
+    areas = [
         AreaReport(
             key=key,
             title=sections[key].title,
@@ -661,12 +561,12 @@ def build_report(
             trend=sections[key].trend,
             why=sections[key].why,
             flags=sections[key].flags[:10],
-            metrics=_metrics(key, ratio_sets, figure_sets, currency),
+            metrics=_metrics(key, metric_sets, currency),
+            feeds_draft=key in CORE,
         )
         for key in order
     ]
-    profit = profitability_area(figure_sets, currency)
-    areas = [*core, profit, efficiency_area(ratio_sets, figure_sets, currency)]
+    core = [a for a in areas if a.key in CORE]
     checks = [
         *red_flag_checklist(ratios, figures, prior_figures, currency),
         *extra_flags(ratio_sets, figure_sets, currency),
@@ -681,12 +581,8 @@ def build_report(
         if s.level in (Level.NEEDS_ATTENTION, Level.WEAK):
             extra = f" Flags: {'; '.join(s.flags)}." if s.flags else ""
             weaknesses.append(f"{s.title}: {finding_word(s.level).lower()}. {s.why}{extra}")
-        elif s.level is Level.NOT_ASSESSED:
+        elif s.level is Level.NOT_ASSESSED and s.key in CORE:
             weaknesses.append(f"{s.title}: could not be assessed. {s.why}")
-    if profit.status in ("WEAK", "DISTRESSED"):
-        weaknesses.append(f"Profitability: {profit.finding.lower()}. {profit.why}")
-    elif profit.status == "OK":
-        strengths.append(f"Profitability: {profit.finding.lower()}. {profit.why}")
     level, _analyzer_why = consolidated
     why = _consolidated_why(core)
     unique_gaps = list(dict.fromkeys(gaps))
@@ -700,13 +596,11 @@ def build_report(
             units=f"Figures shown in millions of {currency} unless stated",
             audit_note=audit_note,
             method=(
-                "Financial-statement assessment method (five core areas), with profitability and "
-                "efficiency added for context, as written rules"
+                "Analyst framework: liquidity, profitability, leverage, cash flow, efficiency and sector, "
+                "as written rules with the framework's reference ranges"
             ),
         ),
-        executive_summary=_executive_summary(
-            core, profit, STATUS_OF[level], why, strengths, weaknesses
-        ),
+        executive_summary=_executive_summary(core, STATUS_OF[level], why, strengths, weaknesses),
         areas=areas,
         consolidated_status=STATUS_OF[level],
         consolidated_finding=finding_word(level),

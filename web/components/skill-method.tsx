@@ -19,38 +19,38 @@ type MethodItem = {
 const method: MethodItem[] = [
   {
     number: "01",
-    title: "Balance sheet strength",
-    detail: "Assess the equity buffer and the quality of the asset base.",
-    checks: "Assets · liabilities · equity · goodwill · disclosed ratings",
-    icon: CasesIcon,
-  },
-  {
-    number: "02",
     title: "Liquidity",
     detail: "Test short-term obligations against genuinely available resources.",
-    checks: "Current · quick · cash ratios · working capital · maturities",
+    checks: "Current · quick · cash ratios · working capital · cash from operations over current liabilities",
     icon: ResearchIcon,
   },
   {
+    number: "02",
+    title: "Profitability",
+    detail: "Check that profits are real, sustainable and turning into cash.",
+    checks: "Gross · operating · EBITDA · net margin · return on assets and equity · trend",
+    icon: CasesIcon,
+  },
+  {
     number: "03",
-    title: "Gearing",
-    detail: "Separate gross debt, leases, and net debt from headline leverage.",
-    checks: "Debt · net debt · leases · EBITDA · interest cover",
+    title: "Leverage",
+    detail: "Separate gross debt, leases and net debt from headline leverage.",
+    checks: "Debt to equity · equity share of assets · interest cover · net debt to EBITDA",
     icon: ReportsIcon,
   },
   {
     number: "04",
-    title: "Receivables aging",
-    detail: "Show collection pressure and say plainly when aging is not disclosed.",
-    checks: "Receivables · DSO · allowance · cash absorbed · aging gaps",
-    icon: EvidenceIcon,
+    title: "Cash flow",
+    detail: "Follow cash through operations, investment and distributions.",
+    checks: "Cash from operations · free cash flow · conversion of profit · capital spending",
+    icon: DocumentChartIcon,
   },
   {
     number: "05",
-    title: "Cash flow generation",
-    detail: "Follow cash through operations, investment, and distributions.",
-    checks: "OCF · free cash flow · dividends · buybacks · change in cash",
-    icon: DocumentChartIcon,
+    title: "Efficiency and sector",
+    detail: "Show how hard the assets work, and say plainly that no peer data is connected.",
+    checks: "Asset turnover · receivables days · inventory turnover · concentration and market share not assessed",
+    icon: EvidenceIcon,
   },
 ];
 
@@ -60,7 +60,7 @@ export function SkillMethod() {
       <div className="section-heading skill-section-heading">
         <div>
           <p className="eyebrow">Required review sequence</p>
-          <h2 id="skill-method-title">Five areas, always in this order</h2>
+          <h2 id="skill-method-title">Five dimensions, always in this order</h2>
         </div>
         <span className="phase-tag">Financial evidence</span>
       </div>

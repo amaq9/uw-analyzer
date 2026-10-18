@@ -31,8 +31,8 @@ const draft = {
   factors: [{ code: "sector_outlook", explanation: "Sector outlook is soft." }],
   information_gaps: ["No aging report."],
   limitations: ["Payment behaviour was not assessed."],
-  source: { kind: "analyzer_v1", model: "m", skill_version: "1", policy_version: "1.0" },
-  policy_version: "1.0",
+  source: { kind: "analyzer_v1", model: "m", skill_version: "1", policy_version: "1.1" },
+  policy_version: "1.1",
   created_by: "analyst",
   created_at: "2026-10-11T12:00:00Z",
 } as unknown as DraftRecord;

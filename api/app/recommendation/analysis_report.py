@@ -27,6 +27,8 @@ class Metric(BaseModel):
     prior: Annotated[str, StringConstraints(max_length=40)]
     earlier: Annotated[str, StringConstraints(max_length=40)] = "No earlier year"
     change: Literal["up", "down", "flat", "unknown"]
+    # The framework's own reference range, indicative only (no verified peer data is used).
+    reference: Annotated[str, StringConstraints(max_length=60)] = ""
 
 
 class AreaReport(BaseModel):

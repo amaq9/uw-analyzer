@@ -12,6 +12,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy.exc import DBAPIError
 
+from app.recommendation.policy import Band, Outcome
 from tests.test_cases_api import CASES, audit, headers, make_case
 
 NOTICE = "Draft recommendation for the underwriter. Not a decision."
@@ -25,7 +26,7 @@ SOURCE = {
     "kind": "claude_code_session",
     "model": "claude-sonnet-5-5 via Claude Code",
     "skill_version": "financial-statement-assessment adapted 2026-10-07",
-    "policy_version": "1.0",
+    "policy_version": "1.1",
 }
 
 
@@ -321,7 +322,11 @@ def test_only_the_approved_policy_version_and_source_are_accepted(
     client: TestClient, db_app: FastAPI, tenant: str
 ) -> None:
     case_id = resolved_case(client, db_app, tenant)
-    for source in ({**SOURCE, "policy_version": "0.9"}, {**SOURCE, "kind": "anonymous"}):
+    for source in (
+        {**SOURCE, "policy_version": "0.9"},
+        {**SOURCE, "policy_version": "1.0"},  # superseded: new drafts need the current version
+        {**SOURCE, "kind": "anonymous"},
+    ):
         response = post_draft(client, db_app, tenant, case_id, payload("900000", source=source))
         assert response.status_code == 422
 
@@ -347,7 +352,7 @@ def test_every_draft_is_labelled_and_states_the_payment_limitation(
     assert draft["limitations"] == [
         "Payment behaviour was not assessed (data not used in this product)."
     ]
-    assert draft["policy_version"] == "1.0" and draft["source"]["kind"] == "claude_code_session"
+    assert draft["policy_version"] == "1.1" and draft["source"]["kind"] == "claude_code_session"
 
 
 def test_new_drafts_get_new_versions_and_old_ones_are_kept(
@@ -484,3 +489,37 @@ def test_import_is_audited_without_outcomes_amounts_or_reasons(
     }
     text = str(imported[0])
     assert "APPROVE" not in text and "1000000" not in text and "Current ratio" not in text
+
+
+def test_a_draft_stored_under_policy_1_0_still_reads_after_the_upgrade(
+    client: TestClient, db_app: FastAPI, tenant: str
+) -> None:
+    """Old drafts are history (P-08): they keep their version and stay readable."""
+    case_id = resolved_case(client, db_app, tenant)
+    record = db_app.state.draft_store.add(
+        case_id=uuid.UUID(case_id),
+        tenant_id=tenant,
+        outcome=Outcome.APPROVE,
+        band=Band.FULL,
+        requested_amount=Decimal("1000000"),
+        requested_currency="CAD",
+        recommended_amount=Decimal("1000000"),
+        ai_proposed_amount=Decimal("900000"),
+        rule_codes=[],
+        content={
+            "summary": "Old draft.",
+            "reasons": [],
+            "decline_findings": [],
+            "factors": [],
+            "information_gaps": [],
+        },
+        source={**SOURCE, "policy_version": "1.0"},
+        policy_version="1.0",
+        created_by="underwriter-1",
+    )
+    shown = client.get(
+        f"{CASES}/{case_id}/draft-recommendations/{record.id}",
+        headers=headers(db_app, "underwriter", tenant),
+    )
+    assert shown.status_code == 200, shown.text
+    assert shown.json()["policy_version"] == "1.0" and shown.json()["analysis"] is None

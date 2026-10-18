@@ -20,7 +20,7 @@ from pydantic import (
 )
 
 from app.recommendation.analysis_report import AnalysisReport
-from app.recommendation.policy import POLICY_VERSION, Band, Outcome
+from app.recommendation.policy import KNOWN_POLICY_VERSIONS, POLICY_VERSION, Band, Outcome
 
 NOTICE = "Draft recommendation for the underwriter. Not a decision."
 PAYMENT_LIMITATION = "Payment behaviour was not assessed (data not used in this product)."
@@ -103,8 +103,8 @@ class SourceInfo(BaseModel):
     @field_validator("policy_version")
     @classmethod
     def _approved_policy(cls, value: str) -> str:
-        if value != POLICY_VERSION:
-            raise ValueError(f"Only the approved policy version {POLICY_VERSION} can be used.")
+        if value not in KNOWN_POLICY_VERSIONS:
+            raise ValueError(f"Unknown policy version {value}.")
         return value
 
 
@@ -129,6 +129,8 @@ class DraftImport(BaseModel):
         finding_codes = [f.code for f in self.decline_findings]
         if len(set(finding_codes)) != len(finding_codes):
             raise ValueError("Each finding can be given once.")
+        if self.source.policy_version != POLICY_VERSION:
+            raise ValueError(f"Only the approved policy version {POLICY_VERSION} can be used.")
         return self
 
 
