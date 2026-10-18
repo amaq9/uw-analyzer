@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { AnalysisPanel } from "@/components/case/analysis-panel";
 import { AnalysisReportView } from "@/components/case/analysis-report";
+import { PublishedRatings } from "@/components/case/published-ratings";
 import { DecisionForm, DecisionSummary } from "@/components/case/decision-form";
 import { loadDecision } from "@/components/case/decision-data";
 import { AnalysisFindings, DraftBasis, DraftHero, outcomeHeadline, StepHeading } from "@/components/case/draft-hero";
@@ -77,6 +78,12 @@ export function RecommendationTab({
           This draft was prepared before the detailed analysis existed. Run the analysis again to see the full Step 1 here.
         </p>
       )}
+      <PublishedRatings
+        analysis={latest?.analysis}
+        canRecord={can(permissions, "draft:import")}
+        caseId={caseId}
+        token={token}
+      />
       {latest && <AnalysisFindings draft={latest} />}
 
       <StepHeading

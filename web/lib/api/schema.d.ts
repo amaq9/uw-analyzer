@@ -479,6 +479,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cases/{case_id}/published-ratings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Published Ratings
+         * @description The latest opinion of each agency, or every record newest first (`latest=false`).
+         */
+        get: operations["list_published_ratings_api_v1_cases__case_id__published_ratings_get"];
+        put?: never;
+        /**
+         * Record Published Rating
+         * @description Record an agency's published opinion with where it was read, when, and the quoted words.
+         */
+        post: operations["record_published_rating_api_v1_cases__case_id__published_ratings_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/cases/{case_id}/report-preview": {
         parameters: {
             query?: never;
@@ -932,6 +956,10 @@ export interface components {
             key_concerns?: string[];
             /** Other Checks */
             other_checks?: components["schemas"]["OtherCheck"][];
+            /** Published Ratings */
+            published_ratings?: components["schemas"]["PublishedRatingOut"][];
+            /** Ratings Reconciliation */
+            ratings_reconciliation?: string | null;
             /** Red Flags */
             red_flags: components["schemas"]["FlagCheck"][];
             /** Strengths */
@@ -2120,6 +2148,105 @@ export interface components {
             content: components["schemas"]["ReportContent"];
             /** Gates */
             gates: components["schemas"]["Gate"][];
+        };
+        /** PublishedRatingIn */
+        PublishedRatingIn: {
+            /**
+             * Agency
+             * @enum {string}
+             */
+            agency: "MOODYS" | "SP" | "FITCH";
+            /**
+             * Change
+             * @default NOT_STATED
+             * @enum {string}
+             */
+            change: "UPGRADE" | "DOWNGRADE" | "AFFIRMED" | "NEW" | "NOT_STATED";
+            /** Grade */
+            grade: string;
+            /** Last Action On */
+            last_action_on?: string | null;
+            /**
+             * Outlook
+             * @default NOT_STATED
+             * @enum {string}
+             */
+            outlook: "STABLE" | "POSITIVE" | "NEGATIVE" | "DEVELOPING" | "NOT_STATED";
+            /** Quote */
+            quote: string;
+            /** Rationale */
+            rationale?: string | null;
+            /**
+             * Retrieved At
+             * Format: date-time
+             */
+            retrieved_at: string;
+            /** Source Url */
+            source_url: string;
+            /**
+             * Under Review
+             * @default false
+             */
+            under_review: boolean;
+        };
+        /** PublishedRatingOut */
+        PublishedRatingOut: {
+            /**
+             * Agency
+             * @enum {string}
+             */
+            agency: "MOODYS" | "SP" | "FITCH";
+            /**
+             * Case Id
+             * Format: uuid
+             */
+            case_id: string;
+            /**
+             * Change
+             * @enum {string}
+             */
+            change: "UPGRADE" | "DOWNGRADE" | "AFFIRMED" | "NEW" | "NOT_STATED";
+            /** Grade */
+            grade: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Investment Grade */
+            investment_grade: boolean;
+            /** Last Action On */
+            last_action_on: string | null;
+            /**
+             * Notice
+             * @default An agency's published opinion, recorded with its source. It is not this product's rating and does not change the draft.
+             */
+            notice: string;
+            /**
+             * Outlook
+             * @enum {string}
+             */
+            outlook: "STABLE" | "POSITIVE" | "NEGATIVE" | "DEVELOPING" | "NOT_STATED";
+            /** Quote */
+            quote: string;
+            /** Rationale */
+            rationale: string | null;
+            /**
+             * Recorded At
+             * Format: date-time
+             */
+            recorded_at: string;
+            /** Recorded By */
+            recorded_by: string;
+            /**
+             * Retrieved At
+             * Format: date-time
+             */
+            retrieved_at: string;
+            /** Source Url */
+            source_url: string;
+            /** Under Review */
+            under_review: boolean;
         };
         /** Readiness */
         Readiness: {
@@ -4560,6 +4687,128 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EvidenceOut"];
+                };
+            };
+            /** @description Not signed in, or the token is invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in but not permitted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found (or belongs to another tenant). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request was malformed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_published_ratings_api_v1_cases__case_id__published_ratings_get: {
+        parameters: {
+            query?: {
+                latest?: boolean;
+            };
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublishedRatingOut"][];
+                };
+            };
+            /** @description Not signed in, or the token is invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Signed in but not permitted. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found (or belongs to another tenant). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description The request was malformed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    record_published_rating_api_v1_cases__case_id__published_ratings_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublishedRatingIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublishedRatingOut"];
                 };
             };
             /** @description Not signed in, or the token is invalid. */

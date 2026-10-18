@@ -62,7 +62,7 @@ def test_strong_and_distressed_figures_give_the_full_report() -> None:
         "Adequate",
         "Not assessed",
     ]
-    assert strong.consolidated_status == "OK" and len(strong.red_flags) == 19
+    assert strong.consolidated_status == "OK" and len(strong.red_flags) == 23
     assert strong.gaps == ["Gap A", "Gap B"]  # a repeated gap is listed once
     assert all(len(a.metrics) == len({m.label for m in a.metrics}) for a in strong.areas)
     liquidity = strong.areas[0]

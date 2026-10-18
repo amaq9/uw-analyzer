@@ -28,6 +28,8 @@ from app.escalations.store import PostgresEscalationStore
 from app.evidence.router import router as evidence_router
 from app.evidence.store import PostgresEvidenceStore
 from app.middleware import correlation_id_middleware, make_upload_size_guard
+from app.ratings.router import router as ratings_router
+from app.ratings.store import PostgresRatingStore
 from app.recommendation.agreement import router as agreement_router
 from app.recommendation.decision_store import PostgresDecisionStore
 from app.recommendation.router import router as draft_router
@@ -108,6 +110,7 @@ def create_app(
     app.state.run_queue = PostgresRunQueue(engine)
     app.state.evidence_store = PostgresEvidenceStore(engine)
     app.state.statement_store = PostgresStatementStore(engine)
+    app.state.rating_store = PostgresRatingStore(engine)
     app.state.report_store = PostgresReportStore(engine)
     app.state.escalation_store = PostgresEscalationStore(engine)
     if document_service is None and settings.documents_configured:
@@ -202,6 +205,7 @@ def create_app(
     v1.include_router(reports_router)
     v1.include_router(analysis_router)
     v1.include_router(statements_router)
+    v1.include_router(ratings_router)
     v1.include_router(agreement_router)
     app.include_router(v1)
     return app

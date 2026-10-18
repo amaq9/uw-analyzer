@@ -5,12 +5,15 @@ out the five dimensions of the analyst framework (liquidity, profitability, leve
 efficiency and sector) with their figures and reference ranges, runs the red-flag checklist as prompts
 for attention, and closes with strengths, weaknesses, what to watch and what is not known."""
 
+from datetime import date, timedelta
 from typing import Any, Literal
 
 from app.analysis.assess import CORE, Level, Section, money, pct, times
 from app.analysis.dimensions import dimension_metrics
 from app.analysis.dimensions import div as _div
 from app.analysis.ratios import Figures
+from app.ratings.scale import AGENCY_NAMES
+from app.ratings.schemas import PublishedRatingOut
 from app.recommendation.analysis_report import (
     AnalysisReport,
     AreaReport,
@@ -488,6 +491,116 @@ def stress_block(
     return rows, note
 
 
+def rating_flags(ratings: list[PublishedRatingOut], as_of: date) -> list[FlagCheck]:
+    """The framework's ratings red flags. They need a recorded rating; without one they are not assessable."""
+    if not ratings:
+        detail = "No published rating is recorded for this company, so this could not be checked."
+        return [
+            FlagCheck(text=text, state="NOT_ASSESSABLE", detail=detail)
+            for text in (
+                "Recent downgrade by an agency (within 6 months)",
+                "Negative outlook from an agency",
+                "Speculative grade from an agency",
+                "Rating under review by an agency",
+            )
+        ]
+
+    def names(selected: list[PublishedRatingOut]) -> str:
+        return ", ".join(f"{AGENCY_NAMES[r.agency]} {r.grade}" for r in selected)
+
+    cutoff = as_of - timedelta(days=183)
+    recent = [
+        r
+        for r in ratings
+        if r.change == "DOWNGRADE" and r.last_action_on and r.last_action_on >= cutoff
+    ]
+    negative = [r for r in ratings if r.outlook == "NEGATIVE"]
+    speculative = [r for r in ratings if not r.investment_grade]
+    review = [r for r in ratings if r.under_review]
+    recorded = names(ratings)
+
+    def flag(text: str, hits: list[PublishedRatingOut], yes: str, no: str) -> FlagCheck:
+        return FlagCheck(
+            text=text,
+            state="TRIGGERED" if hits else "CLEAR",
+            detail=f"{yes}: {names(hits)}." if hits else f"{no} ({recorded}).",
+        )
+
+    return [
+        flag(
+            "Recent downgrade by an agency (within 6 months)",
+            recent,
+            "Downgraded within the last six months",
+            "No recorded downgrade in the last six months",
+        ),
+        flag(
+            "Negative outlook from an agency",
+            negative,
+            "Negative outlook",
+            "No negative outlook recorded",
+        ),
+        flag(
+            "Speculative grade from an agency",
+            speculative,
+            "Below investment grade",
+            "Investment grade",
+        ),
+        flag(
+            "Rating under review by an agency",
+            review,
+            "Under review",
+            "Not recorded as under review",
+        ),
+    ]
+
+
+def reconcile(core: list[AreaReport], ratings: list[PublishedRatingOut]) -> str:
+    """Do the published ratings and the financial analysis point the same way? Words only; the draft is
+    not changed by the answer."""
+    if not ratings:
+        return (
+            "No published rating is recorded, so there is nothing to compare with the financial analysis. "
+            "That is not a finding about the company: most private companies have none."
+        )
+    counts = _counts(core)
+    sound = counts["DISTRESSED"] == 0 and counts["WEAK"] <= 1
+    stressed = counts["DISTRESSED"] >= 2
+    investment = [r for r in ratings if r.investment_grade]
+    speculative = [r for r in ratings if not r.investment_grade]
+    listed = ", ".join(f"{AGENCY_NAMES[r.agency]} {r.grade}" for r in ratings)
+    if investment and not speculative and sound:
+        text = (
+            f"Published ratings ({listed}) are investment grade and the financial analysis shows no "
+            "critical dimension: the two point the same way."
+        )
+    elif speculative and stressed:
+        text = (
+            f"Published ratings ({listed}) are below investment grade and the financial analysis shows "
+            "strain in several dimensions: the two point the same way."
+        )
+    elif investment and stressed:
+        text = (
+            f"The two differ. Published ratings ({listed}) include investment grade, yet the financial "
+            "analysis shows strain in several dimensions. Possible reasons are a lag in the agency's view, "
+            "support or recovery expected by the agency, or factors that are not in the figures. Look closer; "
+            "neither overrides the other."
+        )
+    elif speculative and sound:
+        text = (
+            f"The two differ. Published ratings ({listed}) include a grade below investment grade, yet the "
+            "financial analysis shows no critical dimension. The grade may reflect factors not in the figures "
+            "such as size, sector or the agency's leverage targets. Look closer; neither overrides the other."
+        )
+    else:
+        text = (
+            f"Published ratings ({listed}) are shown beside a financial picture that is mixed, so no "
+            "alignment can be stated."
+        )
+    if any(r.outlook == "NEGATIVE" or r.under_review for r in ratings):
+        text += " An agency shows a negative outlook or has a rating under review."
+    return text
+
+
 def _concerns(areas: list[AreaReport], checks: list[FlagCheck], gaps: list[str]) -> list[str]:
     """Most important first: distressed areas, then flags to look at, then weak areas, then missing information."""
     out: list[str] = []
@@ -547,6 +660,8 @@ def build_report(
     other_checks: list[OtherCheck],
     gaps: list[str],
     analyzer_version: str,
+    ratings: list[PublishedRatingOut] | None = None,
+    as_of: date | None = None,
 ) -> AnalysisReport:
     ratios, figures = ratio_sets[0], figure_sets[0]
     prior_figures = figure_sets[1] if len(figure_sets) > 1 else None
@@ -570,6 +685,7 @@ def build_report(
     checks = [
         *red_flag_checklist(ratios, figures, prior_figures, currency),
         *extra_flags(ratio_sets, figure_sets, currency),
+        *rating_flags(ratings or [], as_of or date.today()),
     ]
     strengths = [
         f"{s.title}: {finding_word(s.level).lower()}. {s.why}"
@@ -611,6 +727,8 @@ def build_report(
         stress=stress,
         stress_note=stress_note,
         key_concerns=[c[:600] for c in _concerns(areas, checks, unique_gaps)][:15],
+        published_ratings=ratings or [],
+        ratings_reconciliation=reconcile(core, ratings or [])[:600],
         strengths=[s[:600] for s in strengths],
         weaknesses=[w[:600] for w in weaknesses],
         watch=[w[:600] for w in _watch(sections, ratios, checks)],

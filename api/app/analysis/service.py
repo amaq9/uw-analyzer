@@ -13,7 +13,7 @@ import json
 import re
 import uuid
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import UTC, date, datetime
 from decimal import ROUND_DOWN, Decimal
 from typing import Any
 
@@ -30,6 +30,8 @@ from app.cases.schemas import CaseRecord
 from app.escalations.store import PostgresEscalationStore
 from app.evidence.rules import Relation
 from app.evidence.store import PostgresEvidenceStore
+from app.ratings.scale import AGENCY_NAMES
+from app.ratings.schemas import to_out as to_rating_out
 from app.recommendation.analysis_report import OtherCheck
 from app.recommendation.policy import POLICY_VERSION
 from app.recommendation.schemas import (
@@ -807,6 +809,22 @@ def analyse(
     audit_note = next(
         (g for g in fin.gaps if "audited" in g.lower()), "Audit status is not stated."
     )
+    ratings = [
+        to_rating_out(r) for r in state.rating_store.latest_per_agency(case.id, case.tenant_id)
+    ]
+    other_checks.append(
+        OtherCheck(
+            title="Published credit ratings",
+            state="FOUND" if ratings else "NOT_SEARCHED",
+            detail=(
+                "Recorded: "
+                + ", ".join(f"{AGENCY_NAMES[r.agency]} {r.grade}" for r in ratings)
+                + ". Information only."
+                if ratings
+                else "No published rating is recorded. The product does not search for ratings by itself; a person or an analyst session records them with their source."
+            ),
+        )
+    )
     analysis_report = build_report(
         sections=sections,
         order=rules.SECTIONS,
@@ -820,6 +838,8 @@ def analyse(
         other_checks=other_checks,
         gaps=gaps,
         analyzer_version=rules.ANALYZER_VERSION,
+        ratings=ratings,
+        as_of=datetime.now(UTC).date(),
     )
     body = DraftImport(
         ai_proposed_amount=proposed,
