@@ -104,8 +104,13 @@ def _financial(nums: dict[str, Any], cur: str) -> str:
 
 
 def _clip(text: str, limit: int) -> str:
-    """Cut at a sentence end where possible, never mid-word."""
+    """Cut at a sentence end where possible, never mid-word. The recorder's own source notes ("Reported by
+    ..."), which repeat what the summary already says about the source, are left out."""
     text = " ".join(text.split())
+    kept = [
+        s for s in re.split(r"(?<=[.!?]) ", text) if not re.match(r"(Reported by|Source:|Per )", s)
+    ]
+    text = " ".join(kept) or text
     if len(text) <= limit:
         return text
     cut = text[:limit]
@@ -150,11 +155,10 @@ def _ratings(report: AnalysisReport) -> str:
     text = " ".join(bits)
     if report.ratings_reconciliation:
         # The comparison with the financial picture, without its trailing note on source quality.
-        compare = report.ratings_reconciliation.split(" came from a secondary source")[0].split(
-            " came from secondary sources"
-        )[0]
-        if " came from" not in compare and compare.strip():
-            text += " Against the financials: " + compare.strip().rstrip(".") + "."
+        sentences = re.split(r"(?<=[.!?]) ", report.ratings_reconciliation)
+        compare = " ".join(s for s in sentences if " came from" not in s).strip()
+        if compare:
+            text += " Against the financials: " + compare.rstrip(".") + "."
     if any(r.source_kind != "AGENCY_SITE" for r in report.published_ratings):
         text += " Confirm the ratings and the reasons on the agencies' own sites."
     text += " The agencies' views are shown for information and do not change the amount."

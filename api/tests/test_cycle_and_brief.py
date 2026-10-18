@@ -629,3 +629,74 @@ def test_the_brief_rates_the_cycle_in_its_own_section() -> None:
     cc = next(s for s in brief.sections if s.heading == "Cash conversion cycle").text
     assert cc.startswith("Rated ") and "collects from customers" in cc
     assert any(p.startswith("Cash conversion cycle:") for p in brief.points_to_settle)
+
+
+def test_two_drivers_with_one_reference_say_it_once() -> None:
+    drivers = [
+        Measure(
+            "Change in the cycle", 8.0, None, "days_change", 1, "up to 5 days is adequate", False
+        ),
+        Measure(
+            "Change in sales days", 9.5, None, "days_change", 1, "up to 5 days is adequate", False
+        ),
+    ]
+    text = summarise(
+        title="The cycle",
+        level="NEEDS_ATTENTION",
+        trend="Stable",
+        earlier_level="NEEDS_ATTENTION",
+        measures=drivers,
+        currency="USD",
+        cut_percent=None,
+        core=False,
+    )
+    assert text.count("up to 5 days is adequate") == 1
+    assert "(reference for each: up to 5 days is adequate)" in text
+
+
+def test_the_recorders_own_source_notes_are_not_repeated_in_the_agency_reason() -> None:
+    ratings = [
+        rating(
+            "MOODYS",
+            "A2",
+            "NEGATIVE",
+            "NOT_STATED",
+            "https://www.investinglive.com/x",
+            reason="Moody's revised the outlook to negative. Reported by investingLive on 15 Oct 2026 (trade press, not Moody's own page).",
+        ),
+        rating(
+            "SP",
+            "A",
+            "NEGATIVE",
+            "DOWNGRADE",
+            "https://example.org/b",
+            reason="S&P cut the outlook.",
+        ),
+    ]
+    brief = briefed(approve_reduced(), ratings).executive_brief
+    assert brief is not None
+    text = next(s for s in brief.sections if s.heading == "What the rating agencies say").text
+    assert "Moody's revised the outlook to negative." in text
+    assert "Reported by investingLive" not in text and "trade press" not in text
+
+
+def test_the_comparison_with_the_financials_leaves_no_dangling_source_fragment() -> None:
+    ratings = [
+        rating("MOODYS", "A2", "NEGATIVE", "NOT_STATED", "https://example.org/a", reason="Reason.")
+    ]
+    brief = briefed(approve_reduced(), ratings).executive_brief
+    assert brief is not None
+    text = next(s for s in brief.sections if s.heading == "What the rating agencies say").text
+    assert "Against the financials:" in text
+    assert " came from" not in text and "review. Moody's A2." not in text
+
+
+def test_a_second_year_of_slower_collection_is_called_out() -> None:
+    figs = [
+        cycle_year(receivables=135.0),
+        cycle_year(receivables=110.0),
+        cycle_year(receivables=100.0),
+    ]
+    cc = build_cash_cycle(figs, PERIODS, [])
+    assert cc is not None and cc.standing is not None
+    assert "has lengthened two years running (36.5 to 43.8 to 52.9 days)" in cc.standing

@@ -85,13 +85,17 @@ def summarise(
     rest = [m for m in measures if m not in drivers and m.value is not None]
     finding, status = FINDING[level], STATUS[level]
 
+    shared = len({m.reference for m in drivers}) == 1 and len(drivers) > 1
+
     def driver_text(m: Measure) -> str:
+        ref = "" if shared else f" (reference: {m.reference})"
         return (
-            f"{_lc(m.label)} "
-            f"is {m.show(m.value, currency)}, which is {BAND_WORD[m.band or 0]} (reference: {m.reference})"
+            f"{_lc(m.label)} is {m.show(m.value, currency)}, which is {BAND_WORD[m.band or 0]}{ref}"
         )
 
     drivers_text = "; ".join(driver_text(m) for m in drivers)
+    if shared:  # one reference for them all, said once
+        drivers_text += f" (reference for each: {drivers[0].reference})"
     if worst == 3:
         first = (
             f"{title} is rated {finding} (shown as {status}): every rated measure is strong: "
