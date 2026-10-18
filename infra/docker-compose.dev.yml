@@ -38,7 +38,9 @@ services:
       - s3_data:/data
       - ./s3-dev-config.json:/etc/seaweedfs/s3.json:ro
     healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8333/ || exit 1"]
+      # Storage answers an unsigned request with 403, which is correct. Any HTTP reply means it is up;
+      # only no reply at all is unhealthy (a plain wget treats the 403 as a failure).
+      test: ["CMD-SHELL", "wget -S -O /dev/null http://localhost:8333/ 2>&1 | grep -q 'HTTP/' || exit 1"]
       interval: 5s
       timeout: 5s
       retries: 20
