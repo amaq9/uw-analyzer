@@ -78,6 +78,48 @@ SOURCES = [
 ]
 
 
+def _agency(key: str, name: str, site: str, access_note: str) -> dict[str, object]:
+    """A rating agency's own website: the main source for its published ratings (ADR 0020)."""
+    return {
+        "key": key,
+        "name": name,
+        "source_class": "COMMERCIAL",
+        "source_type": "credit_rating_agency",
+        "jurisdictions": ["GLOBAL"],
+        "access_category": "RESTRICTED_LICENSED",
+        "auth_state": "MISSING",
+        "terms_notes": (
+            f"The main source for this agency's published ratings ({site}). {access_note} "
+            "A person or an analyst session records a rating on a case with the page address, "
+            "the time it was read and the agency's own words. The product does not fetch it and "
+            "holds no licence."
+        ),
+    }
+
+
+SOURCES += [
+    _agency(
+        "sp-global-ratings",
+        "S&P Global Ratings (the agency's own published ratings)",
+        "www.spglobal.com",
+        "Its site refuses automated requests, so a person opens it. Full reports need a "
+        "subscription.",
+    ),
+    _agency(
+        "moodys-ratings",
+        "Moody's Ratings (the agency's own published ratings)",
+        "ratings.moodys.com",
+        "Rating actions are public; full reports need a subscription.",
+    ),
+    _agency(
+        "fitch-ratings",
+        "Fitch Ratings (the agency's own published ratings)",
+        "www.fitchratings.com",
+        "Rating actions are public; full reports need a subscription.",
+    ),
+]
+
+
 def main() -> int:
     client, idp = _client()
     tenant = os.environ.get("ASSISTED_TENANT", "demo-tenant")

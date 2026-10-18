@@ -2243,6 +2243,12 @@ export interface components {
              * Format: date-time
              */
             retrieved_at: string;
+            /**
+             * Source Kind
+             * @default OTHER
+             * @enum {string}
+             */
+            source_kind: "AGENCY_SITE" | "OTHER";
             /** Source Url */
             source_url: string;
             /** Under Review */

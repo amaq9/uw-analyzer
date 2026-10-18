@@ -14,7 +14,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy.exc import DBAPIError
 
 from app.analysis.report import rating_flags, reconcile
-from app.ratings.scale import SCALES, is_investment_grade, normalise_grade
+from app.ratings.scale import SCALES, is_agency_site, is_investment_grade, normalise_grade
 from app.ratings.schemas import PublishedRatingOut
 from app.recommendation.analysis_report import AreaReport
 from tests.test_analysis_api import analyse, prepared_case
@@ -360,3 +360,101 @@ def test_ratings_never_rescue_a_distressed_company(
     out = analyse(client, case_id, h).json()
     assert out["draft"]["outcome"] == "DECLINE"
     assert out["draft"]["analysis"]["ratings_reconciliation"].startswith("The two differ")
+
+
+# --- the agencies' own websites are the main sources ----------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("agency", "url", "own_site"),
+    [
+        ("SP", "https://www.spglobal.com/ratings/en/research/articles/nike-a", True),
+        ("SP", "https://spglobal.com/ratings", True),
+        ("SP", "https://ratings.spglobal.com/x", True),
+        ("SP", "https://WWW.SPGLOBAL.COM/ratings", True),  # host names are not case sensitive
+        ("MOODYS", "https://ratings.moodys.com/ratings-news/123", True),
+        ("MOODYS", "https://www.moodys.com/credit-ratings/Nike-Inc-credit-rating-1", True),
+        ("FITCH", "https://www.fitchratings.com/research/corporate-finance/x", True),
+        ("FITCH", "https://fitchratings.com/entity/nike", True),
+        # Look-alikes and tricks never count as the agency's own site.
+        ("SP", "https://evil-spglobal.com/ratings", False),
+        ("SP", "https://notspglobal.com/ratings", False),
+        ("SP", "https://spglobal.com.evil.org/ratings", False),
+        ("SP", "https://www.spglobal.com@evil.org/ratings", False),
+        ("SP", "https://evil.org/spglobal.com", False),
+        ("FITCH", "https://www.fitchrating.com/x", False),  # missing 's': not Fitch's domain
+        ("MOODYS", "https://moodys.com.evil.org/x", False),
+        # Another agency's site is not this agency's site.
+        ("MOODYS", "https://www.spglobal.com/ratings", False),
+        ("SP", "https://ratings.moodys.com/x", False),
+        # Press and aggregators are secondary sources.
+        ("SP", "https://capital.com/en-au/news/nike-falls-after-s-p-cuts-rating", False),
+        ("MOODYS", "https://www.sgieurope.com/financial/moodys-cuts-nikes-rating", False),
+    ],
+)
+def test_the_agencys_own_website_is_the_main_source_and_lookalikes_never_count(
+    agency: str, url: str, own_site: bool
+) -> None:
+    assert is_agency_site(agency, url) is own_site
+
+
+def test_the_api_says_whether_a_rating_came_from_the_agencys_own_site(
+    client: TestClient, db_app: FastAPI, tenant: str
+) -> None:
+    case = make_case(client, db_app, tenant)
+    own = post(
+        client,
+        db_app,
+        tenant,
+        case["id"],
+        body(agency="SP", grade="A", source_url="https://www.spglobal.com/ratings/en/x"),
+    )
+    press = post(
+        client,
+        db_app,
+        tenant,
+        case["id"],
+        body(source_url="https://www.sgieurope.com/financial/moodys-cuts-nikes-rating"),
+    )
+    assert own.json()["source_kind"] == "AGENCY_SITE"
+    assert press.json()["source_kind"] == "OTHER"  # accepted, but labelled secondary
+    listed = client.get(
+        f"{CASES}/{case['id']}/published-ratings", headers=headers(db_app, "auditor", tenant)
+    ).json()
+    assert {x["agency"]: x["source_kind"] for x in listed} == {
+        "MOODYS": "OTHER",
+        "SP": "AGENCY_SITE",
+    }
+
+
+def test_the_comparison_asks_for_confirmation_when_a_rating_came_from_a_secondary_source() -> None:
+    press = view("SP", "A", source_url="https://capital.com/en-au/news/nike-falls")
+    own = view("SP", "A", source_url="https://www.spglobal.com/ratings/en/x")
+    secondary = reconcile(areas(4, 0, 0), [press])
+    assert "S&P A came from a secondary source, not the agency's own website" in secondary
+    assert "Confirm it on the agency's site, which is the main source." in secondary
+    assert "secondary source" not in reconcile(areas(4, 0, 0), [own])
+    mixed = reconcile(
+        areas(4, 0, 0), [own, view("FITCH", "AA", source_url="https://example.org/x")]
+    )
+    assert "Fitch AA came from a secondary source" in mixed and "S&P A came" not in mixed
+
+
+def test_the_research_check_names_the_secondary_ratings(
+    client: TestClient, db_app: FastAPI, tenant: str, storage: MemoryStorage
+) -> None:
+    case_id, h = prepared_case(client, db_app, tenant, storage, STRONG)
+    post(
+        client,
+        db_app,
+        tenant,
+        case_id,
+        body(agency="SP", grade="A", source_url="https://www.spglobal.com/ratings/x"),
+    )
+    post(client, db_app, tenant, case_id, body(source_url="https://www.sgieurope.com/x"))
+    checks = {
+        c["title"]: c
+        for c in analyse(client, case_id, h).json()["draft"]["analysis"]["other_checks"]
+    }
+    detail = checks["Published credit ratings"]["detail"]
+    assert "Moody's Baa2 (secondary source)" in detail and "S&P A (secondary" not in detail

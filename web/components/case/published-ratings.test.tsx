@@ -132,3 +132,49 @@ describe("published credit ratings", () => {
     expect(screen.queryByText("Record a published rating")).not.toBeInTheDocument();
   });
 });
+
+describe("the agencies' own websites are the main sources", () => {
+  it("links each agency to its own site, whether or not a rating is recorded", async () => {
+    stub([moodys]);
+    show();
+    await screen.findByText("Ba1");
+    const link = (name: RegExp) => screen.getByRole("link", { name }) as HTMLAnchorElement;
+    expect(link(/look up on www\.spglobal\.com/i).href).toBe("https://www.spglobal.com/ratings");
+    expect(link(/look up on ratings\.moodys\.com/i).href).toBe("https://ratings.moodys.com/");
+    expect(link(/look up on www\.fitchratings\.com/i).href).toBe("https://www.fitchratings.com/");
+    expect(link(/look up on www\.spglobal\.com/i).rel).toContain("noreferrer");
+  });
+
+  it("says whether a recorded rating came from the agency's own site or a secondary source", async () => {
+    stub([
+      { ...moodys, source_kind: "AGENCY_SITE", source_url: "https://ratings.moodys.com/ratings-news/1" },
+      { ...moodys, id: "r2", agency: "SP", grade: "A", investment_grade: true, source_kind: "OTHER", source_url: "https://capital.com/x" },
+    ]);
+    show();
+    await screen.findByText("Ba1");
+    expect(screen.getByText("Source: the agency's own website (main source).")).toBeInTheDocument();
+    expect(screen.getByText("Secondary source (press or another site). Confirm it on www.spglobal.com.")).toBeInTheDocument();
+  });
+
+  it("names the main sources in the form and warns when the address is not the agency's own", async () => {
+    stub([]);
+    show();
+    await screen.findAllByText("No published rating recorded");
+    fireEvent.click(screen.getByText("Record a published rating"));
+    expect(screen.getByText(/Main sources:/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /S&P \(www\.spglobal\.com\)/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Moody's \(ratings\.moodys\.com\)/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Fitch \(www\.fitchratings\.com\)/ })).toBeInTheDocument();
+
+    const address = screen.getByLabelText(/^source address/i);
+    expect(screen.queryByText(/will be recorded as a secondary source/i)).not.toBeInTheDocument();
+    fireEvent.change(address, { target: { value: "https://capital.com/en-au/news/nike" } });
+    expect(
+      screen.getByText(/This address is not on ratings\.moodys\.com, the main source for Moody's\. It will be\s+recorded as a secondary source\./),
+    ).toBeInTheDocument();
+    fireEvent.change(address, { target: { value: "https://ratings.moodys.com/ratings-news/123" } });
+    expect(screen.queryByText(/will be recorded as a secondary source/i)).not.toBeInTheDocument();
+    fireEvent.change(address, { target: { value: "https://evil-moodys.com/x" } });
+    expect(screen.getByText(/will be recorded as a secondary source/i)).toBeInTheDocument(); // a look-alike is not Moody's
+  });
+});

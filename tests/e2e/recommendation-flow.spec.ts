@@ -317,10 +317,15 @@ test.describe("the recommendation journey", () => {
     await block.getByLabel(/^Grade/).fill("A");
     await block.getByLabel("Agency", { exact: true }).selectOption("SP");
     await block.getByLabel("Outlook", { exact: true }).selectOption("NEGATIVE");
+    await expect(block.getByRole("link", { name: /S&P \(www\.spglobal\.com\)/ })).toBeVisible(); // the main sources are named
+    await expect(block.getByRole("link", { name: /Moody's \(ratings\.moodys\.com\)/ })).toBeVisible();
+    await expect(block.getByRole("link", { name: /Fitch \(www\.fitchratings\.com\)/ })).toBeVisible();
     await block.getByLabel(/Source address/).fill("https://example.com/sp-nike");
+    await expect(block.getByText(/This address is not on www\.spglobal\.com, the main source for S&P/)).toBeVisible();
     await block.getByLabel(/own words/).fill("S&P lowered the rating to A with a negative outlook.");
     await block.getByRole("button", { name: "Record this rating" }).click();
     await expect(block.getByRole("cell", { name: /^A\s/ }).first()).toBeVisible();
+    await expect(block.getByText(/Secondary source \(press or another site\)\. Confirm it on www\.spglobal\.com\./)).toBeVisible();
     await expect(block.getByText("No published rating recorded")).toHaveCount(2);
     expect(state.ratingPosts).toHaveLength(1);
     expect(state.ratingPosts[0]).toMatchObject({ agency: "SP", grade: "A", outlook: "NEGATIVE", source_url: "https://example.com/sp-nike" });

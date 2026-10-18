@@ -5,6 +5,7 @@ speculative grade. (A framework text supplied to the project stops investment gr
 too early, at A3 and A-; the agencies' published scales are used here.)"""
 
 from typing import Literal
+from urllib.parse import urlparse
 
 Agency = Literal["MOODYS", "SP", "FITCH"]
 
@@ -19,6 +20,19 @@ _LETTER_SCALE = (
     "BB+", "BB", "BB-", "B+", "B", "B-", "CCC+", "CCC", "CCC-", "CC", "C",
 )  # fmt: skip
 _DEFAULT_GRADES = {"SP": ("SD", "D"), "FITCH": ("RD", "D")}
+# The agencies' own websites are the main sources for a published rating (ADR 0020). The check is
+# on the whole domain, so a look-alike such as "evil-spglobal.com" or "spglobal.com.example.org"
+# never counts.
+AGENCY_SITES: dict[str, tuple[str, ...]] = {
+    "MOODYS": ("moodys.com",),  # ratings.moodys.com is the ratings site
+    "SP": ("spglobal.com",),
+    "FITCH": ("fitchratings.com",),
+}
+AGENCY_HOMES: dict[str, str] = {
+    "MOODYS": "https://ratings.moodys.com",
+    "SP": "https://www.spglobal.com/ratings",
+    "FITCH": "https://www.fitchratings.com",
+}
 INVESTMENT_GRADE_COUNT = 10  # the first ten steps of each scale
 
 SCALES: dict[str, tuple[str, ...]] = {
@@ -35,6 +49,12 @@ def normalise_grade(agency: str, grade: str) -> str | None:
         if text == known or text.upper() == known.upper():
             return known
     return None
+
+
+def is_agency_site(agency: str, url: str) -> bool:
+    """True when the address is on that agency's own website (its domain or a subdomain)."""
+    host = (urlparse(url).hostname or "").lower().rstrip(".")
+    return any(host == site or host.endswith("." + site) for site in AGENCY_SITES[agency])
 
 
 def is_investment_grade(agency: str, grade: str) -> bool:

@@ -4,6 +4,19 @@ The product does not search for agency ratings. A person, or a Claude Code sessi
 them and records them on the case with their source. They are information for the underwriter: they never change the
 draft outcome or amount.
 
+## Main sources
+The agencies' own websites are the main sources. Look the company up there and copy the address of the page you read:
+
+| Agency | Site |
+|---|---|
+| S&P Global | www.spglobal.com (this site refuses automated requests, so open it yourself) |
+| Moody's | ratings.moodys.com |
+| Fitch | www.fitchratings.com |
+
+Press and other sites are accepted but are labelled **secondary source**, and the report asks the underwriter to confirm
+the rating on the agency's site. A look-alike address such as `evil-spglobal.com` never counts as the agency's own site.
+Ratings change: record the newest action; the older record stays in the history.
+
 ## In the screen
 Open a case, the **Draft recommendation** tab, Step 1, **Published credit ratings**, then **Record a published
 rating**. Fill in:
