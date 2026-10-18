@@ -117,11 +117,11 @@ def test_a_strong_company_gets_a_full_draft_with_findings_and_reasons(
     assert out["status"] == "DRAFT_PREPARED" and "not a decision" in out["message"]
     assert out["periods_reviewed"] == ["2026-05-31", "2025-05-31", "2024-05-31"]
     assert [s["key"] for s in out["sections"]] == [
-        "balance_sheet",
         "liquidity",
-        "gearing",
-        "receivables",
+        "profitability",
+        "leverage",
         "cash_flow",
+        "efficiency",
     ]
     assert {s["assessment"] for s in out["sections"]} <= {
         "STRONG",
@@ -143,21 +143,22 @@ def test_a_strong_company_gets_a_full_draft_with_findings_and_reasons(
     assert draft["limitations"]
     report = draft["analysis"]
     assert [a["key"] for a in report["areas"]] == [
-        "balance_sheet",
         "liquidity",
-        "gearing",
-        "receivables",
-        "cash_flow",
         "profitability",
+        "leverage",
+        "cash_flow",
         "efficiency",
     ]
     core = [a for a in report["areas"] if a["feeds_draft"]]
     context = [a for a in report["areas"] if not a["feeds_draft"]]
-    assert len(core) == 5 and [a["key"] for a in context] == ["profitability", "efficiency"]
-    assert next(a for a in context if a["key"] == "efficiency")["status"] == "NOT_ASSESSED"
+    assert [a["key"] for a in core] == ["liquidity", "profitability", "leverage", "cash_flow"]
+    assert [a["key"] for a in context] == ["efficiency"]
+    assert context[0]["status"] == "NOT_ASSESSED"
     assert {a["status"] for a in report["areas"]} <= {"OK", "WEAK", "DISTRESSED", "NOT_ASSESSED"}
-    profitability = next(a for a in context if a["key"] == "profitability")
-    assert any(m["label"] == "Net margin" for m in profitability["metrics"])
+    assert {a["finding"] for a in core} <= {"Strong", "Adequate", "Concerning", "Critical"}
+    profitability = next(a for a in core if a["key"] == "profitability")
+    assert any(m["label"] == "Net margin" and m["reference"] for m in profitability["metrics"])
+    assert draft["policy_version"] == "1.1"
     assert all("earlier" in m for a in report["areas"] for m in a["metrics"])
     assert report["executive_summary"].startswith("Consolidated financial findings")
     assert report["debt_service"] and report["debt_service_notes"]
@@ -168,7 +169,7 @@ def test_a_strong_company_gets_a_full_draft_with_findings_and_reasons(
     ]
     assert "not a forecast" in report["stress_note"]
     assert report["consolidated_status"] == "OK"
-    assert len(report["red_flags"]) == 16
+    assert len(report["red_flags"]) == 19
     assert {f["state"] for f in report["red_flags"]} <= {"TRIGGERED", "CLEAR", "NOT_ASSESSABLE"}
     assert report["red_flags"][-1]["state"] == "NOT_ASSESSABLE"  # needs the printed statements
     liquidity = next(a for a in report["areas"] if a["key"] == "liquidity")

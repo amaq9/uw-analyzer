@@ -3862,6 +3862,12 @@
             "maxLength": 40,
             "title": "Prior",
             "type": "string"
+          },
+          "reference": {
+            "default": "",
+            "maxLength": 60,
+            "title": "Reference",
+            "type": "string"
           }
         },
         "required": [

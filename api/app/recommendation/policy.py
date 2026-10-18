@@ -1,4 +1,4 @@
-"""The Product Owner's recommendation policy v1.0 (test run) as deterministic rules.
+"""The Product Owner's recommendation policy v1.1 (test run) as deterministic rules.
 
 Whoever writes a draft (the AI, a Claude Code session, anyone) supplies findings and the AI's
 proposed amount. These rules, not the author, decide the outcome and the final amount, so the
@@ -8,8 +8,8 @@ structure live here.
     entity cannot be confirmed or found                -> decline
     a VERIFIED insolvency, sanctions, fraud or serious
     regulatory action, or going-concern doubt          -> decline
-    balance sheet, liquidity, gearing and cash flow
-    weak on the consolidated findings                  -> decline
+    liquidity, profitability, leverage and cash flow
+    critical on the consolidated findings              -> decline
     otherwise the AI proposes an amount A against the limit requested R:
         A >= 80% of R                                  -> full approval (the full amount, R)
         20% <= A < 80% of R                            -> reduced approval, A rounded DOWN
@@ -23,7 +23,9 @@ from enum import StrEnum
 
 from app.cases.schemas import CaseStatus
 
-POLICY_VERSION = "1.0"
+POLICY_VERSION = "1.1"
+# Versions that stored drafts may carry. New drafts must use POLICY_VERSION; old ones stay readable.
+KNOWN_POLICY_VERSIONS = ("1.0", POLICY_VERSION)
 FLOOR_FRACTION = Decimal("0.20")
 FULL_FRACTION = Decimal("0.80")
 ROUND_DOWN_STEP = Decimal("1000")

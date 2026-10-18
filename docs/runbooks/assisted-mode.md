@@ -20,14 +20,14 @@ same checked API as everything else. **It never records the decision.** You do t
    `plan`, `start`, `run` and `snapshot` plan and run the connectors (SEC EDGAR, GLEIF; see
    [research-worker.md](research-worker.md)) and save the exact material they fetched. `evidence`,
    `claim` and `link` record what it found; the server computes the verification status.
-3. Applies the five areas of the financial statement method (balance sheet, liquidity, gearing,
-   receivables aging, cash flow) with the deterministic ratio script. If no aging schedule is disclosed
-   it says so rather than inferring one.
+3. Applies the five dimensions of the analyst framework (liquidity, profitability, leverage, cash flow,
+   efficiency and sector; ADR 0019) with the deterministic ratio code. If a figure such as a receivables
+   aging schedule is not disclosed it says so rather than inferring one.
 4. Searches the web for sector outlook (market sentiment plus macroeconomic impact) and for adverse
    findings, keeping every source address, read time and quoted words. Anything not found is listed as
    an information gap, never invented (P-01, P-02).
 5. Writes `draft.json` (shape below) and runs `uv run python scripts/assisted.py submit <id> draft.json`.
-6. Reports back in plain language, including limitations. The server applies policy v1.0, so the
+6. Reports back in plain language, including limitations. The server applies policy v1.1, so the
    outcome and amount come from the rules, not from the author.
 
 ## Draft file shape
@@ -42,7 +42,7 @@ same checked API as everything else. **It never records the decision.** You do t
                "evidence": [{"kind": "document", "document_id": "<uuid>", "quote": "exact words"}]}],
   "information_gaps": ["Receivables aging not disclosed"],
   "source": {"kind": "claude_code_session", "model": "<model>", "skill_version": "<version>",
-             "policy_version": "1.0"}
+             "policy_version": "1.1"}
 }
 ```
 Web evidence uses `{"kind": "web", "url": "https://...", "retrieved_at": "<time>", "quote": "..."}`.

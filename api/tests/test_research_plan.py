@@ -151,7 +151,7 @@ def test_plan_run_records_versions_steps_and_audit(
     assert r.status_code == 201, r.text
     run = r.json()
     assert run["status"] == "PLANNED" and run["jurisdictions"] == ["CA"]
-    assert run["versions"]["policy"] == "1.0" and run["versions"]["registry"]["ca-registry"] == 1
+    assert run["versions"]["policy"] == "1.1" and run["versions"]["registry"]["ca-registry"] == 1
     assert run["versions"]["model"] is None  # not run yet: nothing invented
     assert "not" in run["notice"].lower() and "accessed" in run["notice"]
     states = {(s["category"], s["state"]) for s in run["steps"]}

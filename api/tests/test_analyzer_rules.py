@@ -129,12 +129,10 @@ def test_missing_tags_stay_missing_and_ratios_are_not_calculable() -> None:
     profile = {k: v for k, v in STRONG.items() if k != "AccountsReceivableNetCurrent"}
     ctx = contexts(profile)
     assert ctx[0].ratios["receivables"]["dso_days"] is None
-    assert rules.assess(ctx)["receivables"].level is Level.NOT_ASSESSED
+    assert ctx[0].figures["receivables"] is None  # nothing is defaulted to zero
 
 
-@pytest.mark.skipif(
-    not SKILL_SCRIPT.exists(), reason="the local skill folder is not part of the repository"
-)
+@pytest.mark.skipif(not SKILL_SCRIPT.exists(), reason="the reference ratio script is missing")
 def test_ratios_match_the_skill_script_exactly(tmp_path: Path) -> None:
     figures = contexts(STRONG)[0].figures
     path = tmp_path / "figures.json"
@@ -158,37 +156,77 @@ def test_ratios_match_the_skill_script_exactly(tmp_path: Path) -> None:
 
 def test_a_strong_company_is_described_as_strong_and_stable() -> None:
     sections = rules.assess(contexts(STRONG))
-    assert sections["balance_sheet"].level is Level.STRONG
-    assert sections["gearing"].level is Level.STRONG
-    assert sections["liquidity"].level in (Level.STRONG, Level.SATISFACTORY)
-    assert (
-        sections["receivables"].level is Level.SATISFACTORY
-    )  # never "strong" without an aging schedule
+    assert list(sections) == ["liquidity", "profitability", "leverage", "cash_flow", "efficiency"]
+    assert sections["liquidity"].level is Level.STRONG
+    assert sections["profitability"].level is Level.STRONG
+    assert sections["leverage"].level is Level.STRONG
+    assert sections["cash_flow"].level is Level.SATISFACTORY  # free cash flow is 11% of revenue
     assert rules.consolidated(sections)[0] in (Level.STRONG, Level.SATISFACTORY)
-    assert all("not disclosed" in " ".join(s.flags) or not s.flags for s in sections.values())
+    assert all(s.trend == "Stable" for key, s in sections.items() if key != "efficiency")
 
 
-def test_a_distressed_company_is_weak_and_the_consolidated_finding_follows_the_policy() -> None:
+def test_efficiency_and_sector_are_shown_but_never_assessed() -> None:
+    sections = rules.assess(contexts(STRONG))
+    assert sections["efficiency"].level is Level.NOT_ASSESSED
+    assert "not connected" in sections["efficiency"].why
+    assert "efficiency" not in rules.CORE  # the policy never reads it
+
+
+def test_a_distressed_company_is_critical_and_the_consolidated_finding_follows_the_policy() -> None:
     sections = rules.assess(contexts(DISTRESSED))
-    assert sections["balance_sheet"].level is Level.WEAK  # negative equity
-    assert sections["liquidity"].level is Level.WEAK  # current ratio under 1
-    assert sections["gearing"].level is Level.WEAK
-    assert sections["cash_flow"].level is Level.WEAK
+    for key in rules.CORE:
+        assert sections[key].level is Level.WEAK, key  # critical in the framework's words
     level, why = rules.consolidated(sections)
     assert level is Level.WEAK and "4 of the 4" in why
-    assert "Negative equity (a shareholders' deficit)" in sections["balance_sheet"].flags
-    assert sections["liquidity"].trend == "Stable"  # weak the year before too
+    assert "Negative equity (a shareholders' deficit)" in sections["leverage"].flags
+    assert "Current ratio below 1.0" in sections["liquidity"].flags
+    assert "Net loss for the period" in sections["profitability"].flags
+    assert sections["liquidity"].trend == "Stable"  # critical the year before too
 
 
-def test_consolidated_is_weak_only_when_the_core_sections_are_weak_together() -> None:
+def test_the_framework_thresholds_set_the_levels() -> None:
+    assert rules._band_current(2.1) == 3 and rules._band_current(1.6) == 2
+    assert rules._band_current(1.2) == 1 and rules._band_current(0.9) == 0
+    assert rules._band_quick(1.3) == 3 and rules._band_quick(0.9) == 2
+    assert rules._band_quick(0.7) == 1 and rules._band_quick(0.5) == 0
+    assert rules._band_ocf_cl(0.6) == 3 and rules._band_ocf_cl(0.4) == 2
+    assert rules._band_ocf_cl(0.2) == 1 and rules._band_ocf_cl(0.1) == 0
+    assert rules._band_de(0.8) == 3 and rules._band_de(1.4) == 2
+    assert rules._band_de(2.0) == 1 and rules._band_de(3.0) == 0
+    assert rules._band_cover(5.0) == 3 and rules._band_cover(3.0) == 2
+    assert rules._band_cover(2.2) == 1 and rules._band_cover(1.5) == 0
+    assert rules._band_fcf(0.25) == 3 and rules._band_fcf(0.15) == 2
+    assert rules._band_fcf(0.06) == 1 and rules._band_fcf(-0.01) == 0
+    assert rules._band_conversion(10.0, 10.0, 1.0) == 2  # equal to net income is adequate
+    assert rules._band_conversion(11.0, 10.0, 1.1) == 3
+    assert rules._band_conversion(9.0, 10.0, 0.9) == 1
+    assert rules._band_conversion(7.0, 10.0, 0.7) == 0
+    assert rules._band_conversion(-1.0, 10.0, None) == 0
+    assert rules._band_conversion(None, 10.0, None) is None
+    assert rules._worst([3, 1, None]) is Level.NEEDS_ATTENTION  # the worst available metric decides
+    assert rules._worst([None]) is Level.NOT_ASSESSED
+    for fn in (rules._band_current, rules._band_quick, rules._band_ocf_cl):
+        assert fn(None) is None
+    for fn in (rules._band_de, rules._band_cover, rules._band_fcf):
+        assert fn(None) is None
+
+
+def test_consolidated_is_weak_only_when_the_core_dimensions_are_critical_together() -> None:
     sections = rules.assess(contexts(STRONG))
-    sections["balance_sheet"].level = Level.WEAK
     sections["liquidity"].level = Level.WEAK
+    sections["profitability"].level = Level.WEAK
     assert (
         rules.consolidated(sections)[0] is Level.SATISFACTORY
-    )  # two weak core sections are not enough
-    sections["gearing"].level = Level.WEAK
+    )  # two critical core dimensions are not enough
+    sections["leverage"].level = Level.WEAK
     assert rules.consolidated(sections)[0] is Level.WEAK
+    sections = rules.assess(contexts(STRONG))
+    for key in rules.CORE:
+        sections[key].level = Level.STRONG
+    assert rules.consolidated(sections)[0] is Level.STRONG
+    for key in rules.CORE:
+        sections[key].level = Level.NOT_ASSESSED
+    assert rules.consolidated(sections)[0] is Level.NOT_ASSESSED
 
 
 def test_a_narrowing_cushion_is_reported_as_weakening() -> None:
@@ -197,22 +235,51 @@ def test_a_narrowing_cushion_is_reported_as_weakening() -> None:
     sections = rules.assess(contexts(profile))
     assert sections["liquidity"].level is Level.SATISFACTORY
     assert sections["liquidity"].trend == "Weakening"
+    assert "Current ratio is lower than the year before" in sections["liquidity"].flags
 
 
-def test_receivables_building_faster_than_sales_needs_attention() -> None:
+def test_a_thin_margin_and_a_margin_fall_pull_profitability_down() -> None:
+    thin = dict(STRONG)
+    thin["NetIncomeLoss"] = [30, 35, 40]  # about 3.7% of revenue
+    assert rules.assess(contexts(thin))["profitability"].level is Level.NEEDS_ATTENTION
+    fall = dict(STRONG)
+    fall["NetIncomeLoss"] = [160, 160, 80]  # 15% down to 7.3%: more than 5 points
+    section = rules.assess(contexts(fall))["profitability"]
+    assert section.level is Level.NEEDS_ATTENTION
+    assert "Net margin fell by more than 5 percentage points" in section.flags
+
+
+def test_leverage_reads_debt_to_equity_and_interest_cover() -> None:
     profile = dict(STRONG)
-    profile["AccountsReceivableNetCurrent"] = [110, 115, 150]
-    sections = rules.assess(contexts(profile))
-    assert sections["receivables"].level is Level.NEEDS_ATTENTION
-    assert any("faster than revenue" in f for f in sections["receivables"].flags)
+    profile["LongTermDebtNoncurrent"] = [600, 600, 700]  # debt to equity 1.17: adequate
+    assert rules.assess(contexts(profile))["leverage"].level is Level.SATISFACTORY
+    profile["LongTermDebtNoncurrent"] = [1000, 1000, 1300]  # 2.17x equity: concerning
+    assert rules.assess(contexts(profile))["leverage"].level is Level.NEEDS_ATTENTION
+    profile["LongTermDebtNoncurrent"] = [1000, 1000, 2000]  # 3.3x equity: critical
+    section = rules.assess(contexts(profile))["leverage"]
+    assert section.level is Level.WEAK and "Debt to equity above 2.5" in section.flags
 
 
-def test_cash_flow_below_earnings_with_distributions_uncovered_needs_attention() -> None:
+def test_cash_flow_below_earnings_needs_attention() -> None:
     profile = dict(STRONG)
-    profile["NetCashProvidedByUsedInOperatingActivities"] = [140, 150, 80]
-    sections = rules.assess(contexts(profile))
-    assert sections["cash_flow"].level is Level.NEEDS_ATTENTION
-    assert any("below net income" in f for f in sections["cash_flow"].flags)
+    profile["NetCashProvidedByUsedInOperatingActivities"] = [140, 150, 112]  # 0.93 x net income
+    section = rules.assess(contexts(profile))["cash_flow"]
+    assert section.level is Level.NEEDS_ATTENTION
+    assert "Cash from operations below net income" in section.flags
+    profile["NetCashProvidedByUsedInOperatingActivities"] = [140, 150, 80]  # 0.67 x: critical
+    assert rules.assess(contexts(profile))["cash_flow"].level is Level.WEAK
+
+
+def test_missing_figures_make_a_dimension_not_assessed_never_zero() -> None:
+    profile = {
+        k: v
+        for k, v in STRONG.items()
+        if k not in ("LongTermDebtNoncurrent", "LongTermDebtCurrent")
+    }
+    assert rules.assess(contexts(profile))["leverage"].level is Level.NOT_ASSESSED
+    bare: dict[str, list[float | None]] = {"Assets": [1000, 1050, 1100]}
+    sections = rules.assess(contexts(bare))
+    assert {s.level for s in sections.values()} == {Level.NOT_ASSESSED}
 
 
 def test_assessments_are_described_in_words_only() -> None:
@@ -229,6 +296,7 @@ def test_assessments_are_described_in_words_only() -> None:
 
 def test_the_proposal_starts_at_the_whole_amount_and_each_gap_costs_a_fixed_share() -> None:
     sections = rules.assess(contexts(STRONG))
+    sections["cash_flow"].level = Level.STRONG  # no core dimension is short of strong
     fraction, factors = rules.propose_fraction(
         sections, adverse_search_complete=True, sector_outlook_assessed=True
     )
@@ -241,12 +309,25 @@ def test_the_proposal_starts_at_the_whole_amount_and_each_gap_costs_a_fixed_shar
     assert [f.code for f in factors] == ["missing_information"]
 
 
-def test_weak_sections_cost_more_and_the_proposal_never_goes_below_zero() -> None:
+def test_a_concerning_core_dimension_costs_a_share_but_efficiency_never_does() -> None:
+    sections = rules.assess(contexts(STRONG))  # cash flow is adequate, efficiency not assessed
+    fraction, _ = rules.propose_fraction(
+        sections, adverse_search_complete=True, sector_outlook_assessed=True
+    )
+    assert fraction == Decimal(1)  # adequate is not a reduction
+    sections["liquidity"].level = Level.NEEDS_ATTENTION
+    fraction, _ = rules.propose_fraction(
+        sections, adverse_search_complete=True, sector_outlook_assessed=True
+    )
+    assert fraction == Decimal("0.95")
+
+
+def test_critical_dimensions_cost_more_and_the_proposal_never_goes_below_zero() -> None:
     sections = rules.assess(contexts(DISTRESSED))
     fraction, factors = rules.propose_fraction(
         sections, adverse_search_complete=False, sector_outlook_assessed=False
     )
-    assert Decimal(0) <= fraction < Decimal("0.20")
+    assert Decimal(0) <= fraction < Decimal("0.50")
     assert {f.code for f in factors} == {"acceptable_not_strong", "missing_information"}
 
 

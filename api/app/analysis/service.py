@@ -21,15 +21,17 @@ from fastapi import Request
 
 from app.analysis import assess as rules
 from app.analysis.assess import Level, Section, money, pct, times
+from app.analysis.dimensions import dimension_metrics
 from app.analysis.facts import METRICS, YearFigures, extract, to_figures
 from app.analysis.ratios import compute
-from app.analysis.report import build_report
+from app.analysis.report import FINDING_WORD, build_report
 from app.auth.models import Principal
 from app.cases.schemas import CaseRecord
 from app.escalations.store import PostgresEscalationStore
 from app.evidence.rules import Relation
 from app.evidence.store import PostgresEvidenceStore
 from app.recommendation.analysis_report import OtherCheck
+from app.recommendation.policy import POLICY_VERSION
 from app.recommendation.schemas import (
     DraftImport,
     DraftOut,
@@ -209,36 +211,34 @@ class _Claims:
 
 
 def _fact_text(key: str, sec: dict[str, Any], f: dict[str, float | None], fy: str, cur: str) -> str:
-    bs, lq, gr = sec["balance_sheet"], sec["liquidity"], sec["gearing"]
-    rc, cf = sec["receivables"], sec["cash_flow"]
-    if key == "balance_sheet":
-        return (
-            f"At {fy} the equity was {money(bs['equity'], cur)}, {pct(bs['equity_to_assets'])} of total assets of "
-            f"{money(f.get('total_assets'), cur)}; goodwill and intangibles were {money(bs['goodwill_and_intangibles'], cur)}, "
-            f"{pct(bs['goodwill_and_intangibles_to_assets'])} of assets."
-        )
+    """The figures behind one dimension, stated plainly with the period they come from."""
+    m = dimension_metrics(sec, f, None)
     if key == "liquidity":
+        lq = m["liquidity"]
         return (
             f"At {fy} the current ratio was {times(lq['current_ratio'])} (current assets {money(f.get('current_assets'), cur)} "
             f"over current liabilities {money(f.get('current_liabilities'), cur)}) and the quick ratio {times(lq['quick_ratio'])}; "
-            f"working capital was {money(lq['working_capital'], cur)}."
+            f"working capital was {money(lq['working_capital'], cur)} and cash from operations was "
+            f"{times(lq['ocf_to_current_liabilities'])} current liabilities."
         )
-    if key == "gearing":
+    if key == "profitability":
+        pr = m["profitability"]
+        return (
+            f"For the year to {fy} revenue was {money(pr['revenue'], cur)}; net margin was {pct(pr['net_margin'])}, "
+            f"operating margin {pct(pr['operating_margin'])} and EBITDA margin {pct(pr['ebitda_margin'])}; "
+            f"return on average assets was {pct(pr['return_on_assets'])}."
+        )
+    if key == "leverage":
+        gr, lv = sec["gearing"], m["leverage"]
         return (
             f"At {fy} financial debt was {money(gr['financial_debt'], cur)} against cash and short-term investments of "
             f"{money(f.get('cash'), cur)} (net {'cash' if (gr['net_debt_before_leases'] or 0) <= 0 else 'debt'} of "
             f"{money(abs(gr['net_debt_before_leases'] or 0), cur)} before leases); lease liabilities were "
             f"{money(f.get('lease_liabilities'), cur)}; {money(f.get('debt_due_12m'), cur)} of debt falls due within 12 months; "
-            f"net debt including leases was {times(gr['net_debt_to_ebitda'])} EBITDA and interest cover {times(gr['interest_cover'])}."
+            f"debt to equity was {times(lv['debt_to_equity'])}, net debt including leases {times(gr['net_debt_to_ebitda'])} EBITDA "
+            f"and interest cover {times(gr['interest_cover'])}; equity was {pct(lv['equity_ratio'])} of assets."
         )
-    if key == "receivables":
-        return (
-            f"At {fy} receivables were {money(rc['receivables'], cur)} (prior year {money(f.get('prior_receivables'), cur)}), "
-            f"{rc['dso_days']:.1f} days of revenue; receivables absorbed {money(rc['cash_absorbed_by_receivables'], cur)} of cash. "
-            "No aging schedule or allowance is in the structured data."
-            if rc["dso_days"] is not None
-            else f"At {fy} receivables could not be assessed from the data."
-        )
+    cf = sec["cash_flow"]
     return (
         f"For the year to {fy} operating cash flow was {money(cf['operating_cash_flow'], cur)}, "
         f"{times(cf['ocf_to_net_income'])} net income; free cash flow was {money(cf['free_cash_flow'], cur)} against "
@@ -573,7 +573,7 @@ def analyse(
     for key, fact in fact_claims.items():
         sec = sections[key]
         claims.add(
-            f"{sec.title}: {sec.level.value.replace('_', ' ').capitalize()} ({sec.trend.lower()}). {sec.why}",
+            f"{sec.title}: {FINDING_WORD[sec.level]} ({sec.trend.lower()}). {sec.why}",
             classification="INTERPRETATION",
             material=True,
             category="FINANCIALS",
@@ -582,7 +582,7 @@ def analyse(
         )
     if fact_claims:
         claims.add(
-            f"Consolidated financial findings: {level.value.replace('_', ' ').capitalize()}. {why}",
+            f"Consolidated financial findings: {FINDING_WORD[level]}. {why}",
             classification="INTERPRETATION",
             material=True,
             category="FINANCIALS",
@@ -750,7 +750,8 @@ def analyse(
     gaps.append("Court records and regulators other than the OFAC sanctions list were not searched")
     gaps.append("Receivables aging and allowance for credit losses were not available as figures")
     gaps.extend(fin.gaps)
-    for section in sections.values():
+    for key in rules.CORE:
+        section = sections[key]
         if section.level is Level.NOT_ASSESSED:
             gaps.append(f"{section.title} could not be assessed: {section.why}")
 
@@ -768,7 +769,7 @@ def analyse(
 
     reasons = [
         Reason(
-            text=f"{sec.title}: {sec.level.value.replace('_', ' ').lower()}. {sec.why}"[:500],
+            text=f"{sec.title}: {FINDING_WORD[sec.level].lower()}. {sec.why}"[:500],
             evidence=[ref(f"{sec.title} for the year ended {fy} ({fin.label})")],
         )
         for sec in out.sections
@@ -794,9 +795,11 @@ def analyse(
             )
         )
     summary = (
-        f"Consolidated financial findings: {level.value.replace('_', ' ').lower()} ({why}) "
+        f"Consolidated financial findings: {FINDING_WORD[level].lower()} ({why}) "
         + "; ".join(
-            f"{s.title.lower()} {s.level.value.replace('_', ' ').lower()}" for s in out.sections
+            f"{s.title.lower()} {FINDING_WORD[s.level].lower()}"
+            for s in out.sections
+            if s.key in rules.CORE
         )
         + f". Proposed amount {money(float(proposed) / 1e6, currency)} of {money(float(case.exposure_amount) / 1e6, currency)} requested "
         "after the reductions listed. The adverse-news search, court records and sector outlook are not complete."
@@ -830,8 +833,8 @@ def analyse(
         source=SourceInfo(
             kind="analyzer_v1",
             model="rules engine (no AI model)",
-            skill_version=f"analyzer v{rules.ANALYZER_VERSION} (statement-assessment method)",
-            policy_version="1.0",
+            skill_version=f"analyzer v{rules.ANALYZER_VERSION} (analyst-framework dimensions)",
+            policy_version=POLICY_VERSION,
         ),
     )
     out.draft = import_draft(request, case.id, body, principal)

@@ -14,16 +14,16 @@ function renderSkillsPage() {
 }
 
 describe("financial statement assessment skill", () => {
-  it("shows the complete five-area method in its required order", () => {
+  it("shows the complete five-dimension method in its required order", () => {
     renderSkillsPage();
 
     const headings = screen.getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent);
     expect(headings).toEqual([
-      "Balance sheet strength",
       "Liquidity",
-      "Gearing",
-      "Receivables aging",
-      "Cash flow generation",
+      "Profitability",
+      "Leverage",
+      "Cash flow",
+      "Efficiency and sector",
     ]);
   });
 

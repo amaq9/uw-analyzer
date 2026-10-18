@@ -44,7 +44,7 @@ function List({ items, empty }: Readonly<{ items: string[]; empty: string }>) {
   );
 }
 
-/** Step 1 in full: scope, the five areas with their figures, the red-flag checklist, the closing view, other checks. */
+/** Step 1 in full: scope, the five dimensions with their figures, the red-flag checklist, the closing view, other checks. */
 export function AnalysisReportView({ currency, report }: Readonly<{ currency?: string | null; report: AnalysisReportData }>) {
   const t = (text: string) => shorten(text, currency);
   return (
@@ -140,7 +140,7 @@ export function AnalysisReportView({ currency, report }: Readonly<{ currency?: s
             <div className="ar-area-status">
               <StatusChip status={area.status} />
               <span className="ws-muted">
-                {area.feeds_draft ? `Analyzer finding: ${area.finding} · ${area.trend}` : `Context only · ${area.trend}`}
+                {area.feeds_draft ? `${area.finding} · ${area.trend}` : `Shown for context · ${area.finding}`}
               </span>
             </div>
           </header>
@@ -162,6 +162,7 @@ export function AnalysisReportView({ currency, report }: Readonly<{ currency?: s
                     <th>Period before</th>
                     <th>Two periods before</th>
                     <th>Change</th>
+                    <th>Reference range (indicative)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -174,6 +175,7 @@ export function AnalysisReportView({ currency, report }: Readonly<{ currency?: s
                       <td>{metric.prior}</td>
                       <td>{metric.earlier ?? "No earlier year"}</td>
                       <td>{CHANGE[metric.change]}</td>
+                      <td>{metric.reference || "–"}</td>
                     </tr>
                   ))}
                 </tbody>
