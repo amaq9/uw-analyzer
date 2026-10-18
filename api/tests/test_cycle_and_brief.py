@@ -423,3 +423,13 @@ def test_with_no_ratings_and_no_filing_the_brief_says_so() -> None:
 
 def test_no_brief_without_a_recommendation() -> None:
     assert report_for(figures_for(STRONG)).executive_brief is None
+
+
+def test_a_brief_stored_under_the_earlier_field_name_is_still_readable() -> None:
+    # Found live: a draft stored while the field was called decision_points broke the whole list when renamed.
+    from app.recommendation.analysis_report import ExecutiveBrief
+
+    old = {"headline": "H", "sections": [], "decision_points": ["Ask about collections."]}
+    assert ExecutiveBrief.model_validate(old).points_to_settle == ["Ask about collections."]
+    new = {"headline": "H", "sections": [], "points_to_settle": ["Ask."]}
+    assert ExecutiveBrief.model_validate(new).points_to_settle == ["Ask."]
