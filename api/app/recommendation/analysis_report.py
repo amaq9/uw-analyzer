@@ -42,6 +42,9 @@ class AreaReport(BaseModel):
     finding: Annotated[str, StringConstraints(max_length=40)]  # the analyzer's own word
     trend: Annotated[str, StringConstraints(max_length=60)]
     why: Line
+    # A short paragraph on why the dimension stands where it does: the weakest measure, what is
+    # better, what moved against the year before, and what it does to the proposed amount.
+    summary: Annotated[str, StringConstraints(max_length=1500)] | None = None
     flags: list[Line] = Field(default_factory=list, max_length=10)
     metrics: list[Metric] = Field(default_factory=list, max_length=14)
     # Context areas (profitability, efficiency) are shown for the underwriter but never change the
@@ -118,6 +121,50 @@ class Basis(BaseModel):
     method: Line
 
 
+class CycleRow(BaseModel):
+    """One line of the cash conversion cycle, for up to three periods."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    key: Literal["dso", "dio", "dpo", "ccc"]
+    label: Annotated[str, StringConstraints(max_length=80)]
+    current: Annotated[str, StringConstraints(max_length=60)]
+    prior: Annotated[str, StringConstraints(max_length=60)] | None = None
+    earlier: Annotated[str, StringConstraints(max_length=60)] | None = None
+    movement: Annotated[str, StringConstraints(max_length=120)]
+    direction: Literal["better", "worse", "same", "unknown"]
+
+
+class CashCycle(BaseModel):
+    """Days sales, inventory and payables outstanding, and the cash conversion cycle. Context."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    periods: list[Annotated[str, StringConstraints(max_length=20)]] = Field(max_length=3)
+    rows: list[CycleRow] = Field(max_length=4)
+    summary: Line
+    notes: list[Line] = Field(default_factory=list, max_length=8)
+
+
+class BriefSection(BaseModel):
+    """One paragraph of the executive summary, under a plain heading."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    heading: Annotated[str, StringConstraints(min_length=1, max_length=80)]
+    text: Annotated[str, StringConstraints(min_length=1, max_length=900)]
+
+
+class ExecutiveBrief(BaseModel):
+    """The one-page summary for the person who decides, built from the whole analysis."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    headline: Line
+    sections: list[BriefSection] = Field(max_length=12)
+    points_to_settle: list[Line] = Field(default_factory=list, max_length=8)
+
+
 class NoteQuote(BaseModel):
     """A sentence copied word for word from the filing."""
 
@@ -180,5 +227,7 @@ class AnalysisReport(BaseModel):
     definitions: list[Line] = Field(default_factory=list, max_length=20)
     # What the filing's notes and auditor's report say, when the printed filing was read.
     notes_review: NotesReview | None = None
+    cash_cycle: CashCycle | None = None
+    executive_brief: ExecutiveBrief | None = None
     other_checks: list[OtherCheck] = Field(default_factory=list, max_length=12)
     analyzer_version: Annotated[str, StringConstraints(max_length=20)]

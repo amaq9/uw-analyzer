@@ -15,8 +15,8 @@ export function SkillSpotlight() {
         </div>
         <h2 id="skill-spotlight-title">Financial Statement Assessment</h2>
         <p>
-          A five-dimension financial review built for trade credit evidence: liquidity, profitability,
-          leverage, cash flow, and efficiency and sector.
+          A five-dimension financial review built for trade credit evidence: profitability, liquidity,
+          balance sheet and leverage, cash flow, and efficiency and sector.
         </p>
       </div>
       <Link className="skill-spotlight-link" href="/skills">

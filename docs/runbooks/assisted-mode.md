@@ -20,7 +20,7 @@ same checked API as everything else. **It never records the decision.** You do t
    `plan`, `start`, `run` and `snapshot` plan and run the connectors (SEC EDGAR, GLEIF; see
    [research-worker.md](research-worker.md)) and save the exact material they fetched. `evidence`,
    `claim` and `link` record what it found; the server computes the verification status.
-3. Applies the five dimensions of the analyst framework (liquidity, profitability, leverage, cash flow,
+3. Applies the five dimensions of the analyst framework (profitability, liquidity, balance sheet and leverage, cash flow,
    efficiency and sector; ADR 0019) with the deterministic ratio code. If a figure such as a receivables
    aging schedule is not disclosed it says so rather than inferring one.
 4. Searches the web for sector outlook (market sentiment plus macroeconomic impact) and for adverse

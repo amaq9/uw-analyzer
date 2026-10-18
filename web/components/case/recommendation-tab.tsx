@@ -7,6 +7,7 @@ import { AnalysisReportView } from "@/components/case/analysis-report";
 import { PublishedRatings } from "@/components/case/published-ratings";
 import { DecisionForm, DecisionSummary } from "@/components/case/decision-form";
 import { loadDecision } from "@/components/case/decision-data";
+import { ExecutiveBriefCard } from "@/components/case/executive-brief";
 import { AnalysisFindings, DraftBasis, DraftHero, outcomeHeadline, StepHeading } from "@/components/case/draft-hero";
 import { type DraftRecord, type TabProps, can } from "@/components/case/types";
 import { useLoad } from "@/components/use-api";
@@ -113,6 +114,9 @@ export function RecommendationTab({
         </section>
       )}
       {latest && <DraftHero draft={latest} />}
+      {latest?.analysis?.executive_brief && (
+        <ExecutiveBriefCard brief={latest.analysis.executive_brief} currency={latest.requested_currency} />
+      )}
       {latest && <DraftBasis draft={latest} />}
 
       <StepHeading

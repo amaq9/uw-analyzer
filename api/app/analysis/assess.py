@@ -17,12 +17,16 @@ and for each piece of missing information. The server's policy then decides the 
 proposal."""
 
 from dataclasses import dataclass, field
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import Decimal
 from enum import StrEnum
 from typing import Any
 
 from app.analysis.dimensions import dimension_metrics
+from app.analysis.formats import money, pct, times
+from app.analysis.narrative import Measure, summarise
 from app.analysis.ratios import Figures
+
+__all__ = ["money", "pct", "times"]
 
 ANALYZER_VERSION = "2"
 
@@ -41,35 +45,15 @@ class Level(StrEnum):
 
 RANK = {Level.WEAK: 0, Level.NEEDS_ATTENTION: 1, Level.SATISFACTORY: 2, Level.STRONG: 3}
 BAND_LEVEL = {3: Level.STRONG, 2: Level.SATISFACTORY, 1: Level.NEEDS_ATTENTION, 0: Level.WEAK}
-SECTIONS = ("liquidity", "profitability", "leverage", "cash_flow", "efficiency")
+SECTIONS = ("profitability", "liquidity", "leverage", "cash_flow", "efficiency")
 TITLES = {
     "liquidity": "Liquidity",
     "profitability": "Profitability",
-    "leverage": "Leverage",
+    "leverage": "Balance sheet and leverage",
     "cash_flow": "Cash flow",
     "efficiency": "Efficiency and sector",
 }
-CORE = ("liquidity", "profitability", "leverage", "cash_flow")
-
-
-def money(millions: float | None, currency: str = "USD") -> str:
-    if millions is None:
-        return "not available"
-    sign = "-" if millions < 0 else ""
-    a = Decimal(str(abs(millions)))
-    if a >= 1000:
-        return f"{sign}{currency} {(a / 1000).quantize(Decimal('0.01'), ROUND_HALF_UP):,}bn"
-    if a < 10:
-        return f"{sign}{currency} {a.quantize(Decimal('0.01'), ROUND_HALF_UP)}m"
-    return f"{sign}{currency} {a.quantize(Decimal('1'), ROUND_HALF_UP):,}m"
-
-
-def times(x: float | None) -> str:
-    return "not calculable" if x is None else f"{x:.2f}x"
-
-
-def pct(x: float | None) -> str:
-    return "not calculable" if x is None else f"{x * 100:.1f}%"
+CORE = ("profitability", "liquidity", "leverage", "cash_flow")
 
 
 @dataclass
@@ -79,6 +63,9 @@ class Section:
     why: str
     trend: str = "No earlier year to compare"
     flags: list[str] = field(default_factory=list)
+    measures: list[Measure] = field(default_factory=list)  # what the finding was judged on
+    earlier_level: "Level | None" = None  # the finding one year back, for the trend
+    summary: str = ""  # a short paragraph on why the dimension stands where it does
 
     @property
     def title(self) -> str:
@@ -167,7 +154,42 @@ def _liquidity(c: YearContext, p: YearContext | None, cur: str) -> Section:
         why += f"; cash from operations is {times(ocf_cl)} of current liabilities (reference above 0.40)"
     if buffer is not None:
         why += f"; cash less debt due within 12 months is {money(buffer, cur)}"
-    return Section("liquidity", level, why + ".", flags=flags)
+    pm = {} if p is None else dimension_metrics(p.ratios, p.figures, p.prior_figures)["liquidity"]
+    measures = [
+        Measure(
+            "Current ratio",
+            cr,
+            prior_cr,
+            "times",
+            _band_current(cr),
+            "1.5 to 2.0 is adequate, above 2.0 strong, below 1.0 critical",
+        ),
+        Measure(
+            "Quick ratio",
+            quick,
+            pm.get("quick_ratio"),
+            "times",
+            _band_quick(quick),
+            "0.8 to 1.2 is adequate, above 1.2 strong, below 0.6 critical",
+        ),
+        Measure(
+            "Cash from operations over current liabilities",
+            ocf_cl,
+            pm.get("ocf_to_current_liabilities"),
+            "times",
+            _band_ocf_cl(ocf_cl),
+            "0.30 to 0.50 is adequate, above 0.50 strong, below 0.15 critical",
+        ),
+        Measure(
+            "Cash less debt due within 12 months",
+            buffer,
+            pm.get("cash_less_debt_due_12m"),
+            "money",
+            None,
+            "positive means cash covers the debt falling due",
+        ),
+    ]
+    return Section("liquidity", level, why + ".", flags=flags, measures=measures)
 
 
 def _profitability(c: YearContext, p: YearContext | None, cur: str) -> Section:
@@ -201,7 +223,49 @@ def _profitability(c: YearContext, p: YearContext | None, cur: str) -> Section:
     why += f"; EBITDA margin {pct(ebitda)} (reference 12 to 18%)"
     if m["growth"] is not None:
         why += f"; revenue changed {pct(m['growth'])} on the year before"
-    return Section("profitability", BAND_LEVEL[band], why + ".", flags=flags)
+    pm = (
+        {}
+        if p is None
+        else dimension_metrics(p.ratios, p.figures, p.prior_figures)["profitability"]
+    )
+    raw = 3 if net > 0.10 else 2 if net >= 0.05 else 1 if net >= 0.02 else 0
+    slipped = prior_net is not None and raw == 3 and net < prior_net - 0.005
+    fell = prior_net is not None and prior_net - net > 0.05
+    measures = [
+        Measure(
+            "Net margin",
+            net,
+            prior_net,
+            "pct",
+            raw,
+            "above 10% is strong, 5% to 10% adequate, below 2% critical",
+        ),
+        Measure(
+            "Change in net margin on the year before",
+            None if prior_net is None else net - prior_net,
+            None,
+            "points",
+            1 if fell else 2 if slipped else None,
+            "a fall of more than 5 points is concerning; a strong margin that slips is adequate",
+        ),
+        Measure(
+            "EBITDA margin",
+            ebitda,
+            pm.get("ebitda_margin"),
+            "pct",
+            1 if ebitda is not None and ebitda < 0.12 else None,
+            "below 12% is concerning; 12 to 18% is the reference",
+        ),
+        Measure(
+            "Operating margin",
+            m["operating_margin"],
+            pm.get("operating_margin"),
+            "pct",
+            None,
+            "shown for context",
+        ),
+    ]
+    return Section("profitability", BAND_LEVEL[band], why + ".", flags=flags, measures=measures)
 
 
 def _leverage(c: YearContext, p: YearContext | None, cur: str) -> Section:
@@ -246,7 +310,54 @@ def _leverage(c: YearContext, p: YearContext | None, cur: str) -> Section:
         "debt service coverage needs the debt service schedule, which is not in the figures"
     )
     text = "; ".join(parts)
-    return Section("leverage", level, text[:1].upper() + text[1:] + ".", flags=flags)
+    pm = {} if p is None else dimension_metrics(p.ratios, p.figures, p.prior_figures)["leverage"]
+    measures = [
+        Measure(
+            "Debt to equity",
+            de,
+            pm.get("debt_to_equity"),
+            "times",
+            _band_de(de),
+            "below 1.0 is strong, up to 1.5 adequate, up to 2.5 concerning, above 2.5 critical",
+            higher_is_better=False,
+        ),
+        Measure(
+            "Interest cover",
+            cover,
+            pm.get("interest_cover"),
+            "times",
+            _band_cover(cover),
+            "above 4.0 is strong, 2.5 to 4.0 adequate, below 2.0 critical",
+        ),
+        Measure(
+            "Net debt to EBITDA",
+            nd,
+            pm.get("net_debt_to_ebitda"),
+            "times",
+            1 if nd is not None and nd > 3.0 else None,
+            "above 3.0 is concerning",
+            higher_is_better=False,
+        ),
+        Measure(
+            "Equity",
+            equity,
+            pm.get("equity"),
+            "money",
+            0 if equity is not None and equity <= 0 else None,
+            "negative equity is critical",
+        ),
+        Measure(
+            "Equity as a share of assets",
+            m["equity_ratio"],
+            pm.get("equity_ratio"),
+            "pct",
+            None,
+            "above 40% is the reference",
+        ),
+    ]
+    return Section(
+        "leverage", level, text[:1].upper() + text[1:] + ".", flags=flags, measures=measures
+    )
 
 
 def _cash_flow(c: YearContext, p: YearContext | None, cur: str) -> Section:
@@ -287,7 +398,35 @@ def _cash_flow(c: YearContext, p: YearContext | None, cur: str) -> Section:
         why += f" or {pct(fcf_margin)} of revenue (reference above 10%)"
     if after is not None:
         why += f", {money(after, cur)} after dividends and buybacks"
-    return Section("cash_flow", level, why + ".", flags=flags)
+    pm = {} if p is None else dimension_metrics(p.ratios, p.figures, p.prior_figures)["cash_flow"]
+    measures = [
+        Measure(
+            "Cash from operations over net income",
+            conv,
+            pm.get("ocf_to_net_income"),
+            "times",
+            _band_conversion(ocf, ni, conv),
+            "above 1.0 is strong, 0.8 to 1.0 concerning, below 0.8 critical",
+        ),
+        Measure(
+            "Free cash flow as a share of revenue",
+            fcf_margin,
+            pm.get("fcf_margin"),
+            "pct",
+            _band_fcf(fcf_margin),
+            "above 20% is strong, 10% to 20% adequate, 0% to 10% concerning, below 0% critical",
+        ),
+        Measure("Cash from operations", ocf, prior_ocf, "money", None, "shown for context"),
+        Measure(
+            "Free cash flow after dividends and buybacks",
+            after,
+            pm.get("fcf_after_distributions"),
+            "money",
+            None,
+            "shown for context",
+        ),
+    ]
+    return Section("cash_flow", level, why + ".", flags=flags, measures=measures)
 
 
 def _efficiency(c: YearContext, p: YearContext | None, cur: str) -> Section:
@@ -327,6 +466,27 @@ def assess(years: list[YearContext], currency: str = "USD") -> dict[str, Section
                 continue
             delta = RANK[section.level] - RANK[earlier]
             section.trend = "Improving" if delta > 0 else "Weakening" if delta < 0 else "Stable"
+            section.earlier_level = earlier
+    for key, section in current.items():
+        if section.level is Level.NOT_ASSESSED:
+            section.summary = section.why
+            continue
+        cut = {Level.NEEDS_ATTENTION: NEEDS_ATTENTION_CUT, Level.WEAK: WEAK_CUT}.get(section.level)
+        section.summary = (
+            summarise(
+                title=section.title,
+                level=section.level.value,
+                trend=section.trend,
+                earlier_level=None
+                if section.earlier_level is None
+                else section.earlier_level.value,
+                measures=section.measures,
+                currency=currency,
+                cut_percent=None if cut is None else int(cut * 100),
+                core=key in CORE,
+            )
+            or section.why
+        )
     return current
 
 

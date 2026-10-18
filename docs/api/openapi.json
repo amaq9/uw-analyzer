@@ -413,6 +413,16 @@
           "basis": {
             "$ref": "#/components/schemas/Basis"
           },
+          "cash_cycle": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CashCycle"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "consolidated_finding": {
             "maxLength": 40,
             "title": "Consolidated Finding",
@@ -461,6 +471,16 @@
             "maxItems": 20,
             "title": "Definitions",
             "type": "array"
+          },
+          "executive_brief": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExecutiveBrief"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "executive_summary": {
             "maxLength": 600,
@@ -645,6 +665,18 @@
             ],
             "title": "Status",
             "type": "string"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "maxLength": 1500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
           },
           "title": {
             "maxLength": 80,
@@ -863,6 +895,30 @@
           "category"
         ],
         "title": "Body_upload_document_api_v1_cases__case_id__documents_post",
+        "type": "object"
+      },
+      "BriefSection": {
+        "additionalProperties": false,
+        "description": "One paragraph of the executive summary, under a plain heading.",
+        "properties": {
+          "heading": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Heading",
+            "type": "string"
+          },
+          "text": {
+            "maxLength": 900,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "heading",
+          "text"
+        ],
+        "title": "BriefSection",
         "type": "object"
       },
       "CallOut": {
@@ -1800,6 +1856,52 @@
         "title": "CaseUpdate",
         "type": "object"
       },
+      "CashCycle": {
+        "additionalProperties": false,
+        "description": "Days sales, inventory and payables outstanding, and the cash conversion cycle. Context.",
+        "properties": {
+          "notes": {
+            "items": {
+              "maxLength": 600,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 8,
+            "title": "Notes",
+            "type": "array"
+          },
+          "periods": {
+            "items": {
+              "maxLength": 20,
+              "type": "string"
+            },
+            "maxItems": 3,
+            "title": "Periods",
+            "type": "array"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/CycleRow"
+            },
+            "maxItems": 4,
+            "title": "Rows",
+            "type": "array"
+          },
+          "summary": {
+            "maxLength": 600,
+            "minLength": 1,
+            "title": "Summary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "periods",
+          "rows",
+          "summary"
+        ],
+        "title": "CashCycle",
+        "type": "object"
+      },
       "Category": {
         "enum": [
           "ENTITY_REGISTRY",
@@ -2208,6 +2310,80 @@
           "unavailable_sources"
         ],
         "title": "Counts",
+        "type": "object"
+      },
+      "CycleRow": {
+        "additionalProperties": false,
+        "description": "One line of the cash conversion cycle, for up to three periods.",
+        "properties": {
+          "current": {
+            "maxLength": 60,
+            "title": "Current",
+            "type": "string"
+          },
+          "direction": {
+            "enum": [
+              "better",
+              "worse",
+              "same",
+              "unknown"
+            ],
+            "title": "Direction",
+            "type": "string"
+          },
+          "earlier": {
+            "anyOf": [
+              {
+                "maxLength": 60,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Earlier"
+          },
+          "key": {
+            "enum": [
+              "dso",
+              "dio",
+              "dpo",
+              "ccc"
+            ],
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "maxLength": 80,
+            "title": "Label",
+            "type": "string"
+          },
+          "movement": {
+            "maxLength": 120,
+            "title": "Movement",
+            "type": "string"
+          },
+          "prior": {
+            "anyOf": [
+              {
+                "maxLength": 60,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prior"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "current",
+          "movement",
+          "direction"
+        ],
+        "title": "CycleRow",
         "type": "object"
       },
       "DecisionAction": {
@@ -3432,6 +3608,42 @@
         ],
         "title": "EvidenceType",
         "type": "string"
+      },
+      "ExecutiveBrief": {
+        "additionalProperties": false,
+        "description": "The one-page summary for the person who decides, built from the whole analysis.",
+        "properties": {
+          "headline": {
+            "maxLength": 600,
+            "minLength": 1,
+            "title": "Headline",
+            "type": "string"
+          },
+          "points_to_settle": {
+            "items": {
+              "maxLength": 600,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 8,
+            "title": "Points To Settle",
+            "type": "array"
+          },
+          "sections": {
+            "items": {
+              "$ref": "#/components/schemas/BriefSection"
+            },
+            "maxItems": 12,
+            "title": "Sections",
+            "type": "array"
+          }
+        },
+        "required": [
+          "headline",
+          "sections"
+        ],
+        "title": "ExecutiveBrief",
+        "type": "object"
       },
       "ExtractionOut": {
         "properties": {

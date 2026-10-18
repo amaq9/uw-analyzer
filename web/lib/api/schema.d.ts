@@ -935,6 +935,7 @@ export interface components {
             /** Areas */
             areas: components["schemas"]["AreaReport"][];
             basis: components["schemas"]["Basis"];
+            cash_cycle?: components["schemas"]["CashCycle"] | null;
             /** Consolidated Finding */
             consolidated_finding: string;
             /**
@@ -950,6 +951,7 @@ export interface components {
             debt_service_notes?: string[];
             /** Definitions */
             definitions?: string[];
+            executive_brief?: components["schemas"]["ExecutiveBrief"] | null;
             /** Executive Summary */
             executive_summary: string;
             /** Gaps */
@@ -996,6 +998,8 @@ export interface components {
              * @enum {string}
              */
             status: "OK" | "WEAK" | "DISTRESSED" | "NOT_ASSESSED";
+            /** Summary */
+            summary?: string | null;
             /** Title */
             title: string;
             /** Trend */
@@ -1071,6 +1075,16 @@ export interface components {
             category: components["schemas"]["DocumentCategory"];
             /** File */
             file: string;
+        };
+        /**
+         * BriefSection
+         * @description One paragraph of the executive summary, under a plain heading.
+         */
+        BriefSection: {
+            /** Heading */
+            heading: string;
+            /** Text */
+            text: string;
         };
         /**
          * CallOut
@@ -1321,6 +1335,20 @@ export interface components {
             website?: string | null;
         };
         /**
+         * CashCycle
+         * @description Days sales, inventory and payables outstanding, and the cash conversion cycle. Context.
+         */
+        CashCycle: {
+            /** Notes */
+            notes?: string[];
+            /** Periods */
+            periods: string[];
+            /** Rows */
+            rows: components["schemas"]["CycleRow"][];
+            /** Summary */
+            summary: string;
+        };
+        /**
          * Category
          * @enum {string}
          */
@@ -1472,6 +1500,32 @@ export interface components {
             verified_material_findings: number;
             /** Web Sources Recorded */
             web_sources_recorded: number;
+        };
+        /**
+         * CycleRow
+         * @description One line of the cash conversion cycle, for up to three periods.
+         */
+        CycleRow: {
+            /** Current */
+            current: string;
+            /**
+             * Direction
+             * @enum {string}
+             */
+            direction: "better" | "worse" | "same" | "unknown";
+            /** Earlier */
+            earlier?: string | null;
+            /**
+             * Key
+             * @enum {string}
+             */
+            key: "dso" | "dio" | "dpo" | "ccc";
+            /** Label */
+            label: string;
+            /** Movement */
+            movement: string;
+            /** Prior */
+            prior?: string | null;
         };
         /**
          * DecisionAction
@@ -1907,6 +1961,18 @@ export interface components {
          * @enum {string}
          */
         EvidenceType: "REGISTRY" | "FINANCIAL" | "LEGAL_REGULATORY" | "NEWS" | "MACRO_INDUSTRY" | "OTHER";
+        /**
+         * ExecutiveBrief
+         * @description The one-page summary for the person who decides, built from the whole analysis.
+         */
+        ExecutiveBrief: {
+            /** Headline */
+            headline: string;
+            /** Points To Settle */
+            points_to_settle?: string[];
+            /** Sections */
+            sections: components["schemas"]["BriefSection"][];
+        };
         /** ExtractionOut */
         ExtractionOut: {
             /** Currency Guess */

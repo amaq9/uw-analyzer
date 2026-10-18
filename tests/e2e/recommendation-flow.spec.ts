@@ -30,6 +30,7 @@ const area = (key: string, title: string, status: string, finding: string, feeds
   flags,
   metrics: [metric("Current ratio", "1.96x", "2.21x", "2.40x", "down", "1.5 to 2.0")],
   feeds_draft: feeds,
+  summary: `${title} is rated ${finding} because its weakest measure is below the reference. This lowers the UW Analyzer's proposed amount by 5% of the amount requested.`,
 });
 
 const analysis = {
@@ -39,20 +40,20 @@ const analysis = {
     currency: "USD",
     units: "Figures shown in millions of USD unless stated",
     audit_note: "Audit status is not stated.",
-    method: "Analyst framework: liquidity, profitability, leverage, cash flow, efficiency and sector",
+    method: "Analyst framework: profitability, liquidity, balance sheet and leverage, cash flow, efficiency and sector",
   },
   executive_summary:
-    "Consolidated financial findings: weak. The four core dimensions (liquidity, profitability, leverage, cash flow): 1 OK, 3 weak, 0 distressed.",
+    "Consolidated financial findings: weak. The four core dimensions (profitability, liquidity, balance sheet and leverage, cash flow): 1 OK, 3 weak, 0 distressed.",
   areas: [
-    area("liquidity", "Liquidity", "WEAK", "Concerning", true, ["Current ratio is lower than the year before"]),
     area("profitability", "Profitability", "WEAK", "Concerning"),
-    area("leverage", "Leverage", "OK", "Strong"),
+    area("liquidity", "Liquidity", "WEAK", "Concerning", true, ["Current ratio is lower than the year before"]),
+    area("leverage", "Balance sheet and leverage", "OK", "Strong"),
     area("cash_flow", "Cash flow", "WEAK", "Concerning"),
     area("efficiency", "Efficiency and sector", "NOT_ASSESSED", "Not assessed", false),
   ],
   consolidated_status: "WEAK",
   consolidated_finding: "Concerning",
-  consolidated_why: "The four core dimensions (liquidity, profitability, leverage, cash flow): 1 OK, 3 weak, 0 distressed.",
+  consolidated_why: "The four core dimensions (profitability, liquidity, balance sheet and leverage, cash flow): 1 OK, 3 weak, 0 distressed.",
   red_flags: [
     { text: "Cash from operations below net income, or negative", state: "TRIGGERED", detail: "Cash from operations USD 2.87bn against net income USD 3.11bn.", result: "Below threshold" },
     { text: "Negative shareholders' equity", state: "CLEAR", detail: "Equity is USD 14.87bn.", result: "Condition not met" },
@@ -68,6 +69,26 @@ const analysis = {
   ],
   stress_note: "Illustration only, not a forecast. Main rows: the cost of sales falls with sales. The last row is the extreme.",
   definitions: ["Net debt is financial debt plus lease liabilities, less cash and short-term investments."],
+  cash_cycle: {
+    periods: ["2026-05-31", "2025-05-31", "2024-05-31"],
+    summary: "The company collects from customers in 46.7 days (was 37.2 days). Cash is therefore tied up for 100.4 days.",
+    notes: [],
+    rows: [
+      { key: "dso", label: "Days sales outstanding (DSO)", current: "46.7 days", prior: "37.2 days", earlier: "31.5 days", movement: "Longer by 9.5 days (slower collection)", direction: "worse" },
+      { key: "dio", label: "Days inventory outstanding (DIO)", current: "103.4 days", prior: "103.1 days", earlier: "96.4 days", movement: "Longer by 0.3 days (slower stock turnover)", direction: "worse" },
+      { key: "dpo", label: "Days payables outstanding (DPO)", current: "49.6 days", prior: "47.9 days", earlier: "36.5 days", movement: "Longer by 1.7 days (paying suppliers later)", direction: "better" },
+      { key: "ccc", label: "Cash conversion cycle (CCC = DSO + DIO - DPO)", current: "100.4 days", prior: "92.4 days", earlier: "91.3 days", movement: "Longer by 8.0 days (more cash tied up)", direction: "worse" },
+    ],
+  },
+  executive_brief: {
+    headline: "Approve a reduced USD 3.75m, 75% of the USD 5.00m requested. Balance sheet and leverage is sound; profitability, liquidity and cash flow are under pressure.",
+    sections: [
+      { heading: "Recommendation", text: "Approve a reduced USD 3.75m, 75% of the USD 5.00m requested." },
+      { heading: "Financial position in numbers", text: "Revenue USD 46.40bn (up 0.2% on the year before); net margin 6.7%; interest cover 11.92x." },
+      { heading: "What the rating agencies say", text: "No published agency rating is recorded for this company." },
+    ],
+    points_to_settle: ["Cash from operations below net income, or negative: Cash from operations USD 2.87bn against net income USD 3.11bn."],
+  },
   notes_review: {
     source: "NIKE 10-K for the year ended 2026-05-31: notes and auditor's report",
     url: "https://www.sec.gov/Archives/edgar/data/320187/000032018726000088/nke.htm",
@@ -308,6 +329,22 @@ test.describe("the recommendation journey", () => {
     await expect(page.getByLabel("Status of each financial area")).toContainText("Consolidated financial findings");
     // Colour belongs to Step 1 only: nothing in Steps 2 and 3 uses a status chip.
     expect(await page.locator("#rec-step-2 ~ .rec-hero .st-chip, .rec-decide .st-chip, .rec-hero .st-chip").count()).toBe(0);
+  });
+
+  test("explains each area in a paragraph, shows the cash cycle, and leads Step 2 with an executive summary", async ({ page }) => {
+    await mockApi(page);
+    await signIn(page);
+    await openDraft(page);
+    const titles = await page.locator(".ar-area h3").allTextContents();
+    expect(titles.slice(0, 3)).toEqual(["Profitability", "Liquidity", "Balance sheet and leverage"]); // profitability first
+    await expect(page.getByText("Why this standing").first()).toBeVisible();
+    const cycle = page.getByLabel("Cash conversion cycle");
+    await expect(cycle.getByText("46.7 days").first()).toBeVisible();
+    await expect(cycle.getByText(/Longer by 9.5 days \(slower collection\)/)).toBeVisible();
+    const brief = page.getByLabel("Executive summary for the decision-maker");
+    await expect(brief.getByText(/Approve a reduced USD 3.75m, 75% of the USD 5.00m requested/).first()).toBeVisible();
+    await expect(brief.getByRole("heading", { name: "Points to settle first" })).toBeVisible();
+    await expect(brief.getByText("Financial position in numbers")).toBeVisible();
   });
 
   test("shows the prompts that need a look first and keeps the rest one click away", async ({ page }) => {

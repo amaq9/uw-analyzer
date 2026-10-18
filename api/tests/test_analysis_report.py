@@ -48,8 +48,8 @@ def report_for(figs: list[Figures]) -> AnalysisReport:
 def test_strong_and_distressed_figures_give_the_full_report() -> None:
     strong = report_for(figures_for(STRONG))
     assert [a.key for a in strong.areas] == [
-        "liquidity",
         "profitability",
+        "liquidity",
         "leverage",
         "cash_flow",
         "efficiency",
@@ -65,7 +65,7 @@ def test_strong_and_distressed_figures_give_the_full_report() -> None:
     assert strong.consolidated_status == "OK" and len(strong.red_flags) == 23
     assert strong.gaps == ["Gap A", "Gap B"]  # a repeated gap is listed once
     assert all(len(a.metrics) == len({m.label for m in a.metrics}) for a in strong.areas)
-    liquidity = strong.areas[0]
+    liquidity = strong.areas[1]
     assert liquidity.metrics[0].earlier != "No earlier year"  # three periods are shown
     assert liquidity.metrics[0].reference == "1.5 to 2.0"  # the framework's reference range
     assert "four core dimensions" in strong.consolidated_why
@@ -273,7 +273,7 @@ def test_the_headline_is_never_ok_above_a_dimension_that_is_not() -> None:
     thin = dict(STRONG)
     thin["NetIncomeLoss"] = [30, 35, 40]  # profitability becomes Concerning
     mixed = report_for(figures_for(thin))
-    assert [a.status for a in mixed.areas if a.feeds_draft] == ["OK", "WEAK", "OK", "OK"]
+    assert [a.status for a in mixed.areas if a.feeds_draft] == ["WEAK", "OK", "OK", "OK"]
     assert mixed.consolidated_status == "WEAK" and mixed.consolidated_finding == "Concerning"
     assert mixed.executive_summary.startswith("Consolidated financial findings: weak")
     strong = report_for(figures_for(STRONG))

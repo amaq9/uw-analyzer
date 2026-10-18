@@ -21,6 +21,7 @@ from fastapi import Request
 
 from app.analysis import assess as rules
 from app.analysis.assess import Level, Section, money, pct, times
+from app.analysis.brief import Recommendation
 from app.analysis.dimensions import dimension_metrics
 from app.analysis.facts import METRICS, YearFigures, extract, to_figures
 from app.analysis.notes import scan as scan_filing
@@ -34,7 +35,7 @@ from app.evidence.store import PostgresEvidenceStore
 from app.ratings.scale import AGENCY_NAMES
 from app.ratings.schemas import to_out as to_rating_out
 from app.recommendation.analysis_report import OtherCheck
-from app.recommendation.policy import POLICY_VERSION
+from app.recommendation.policy import POLICY_VERSION, PolicyInputError, derive
 from app.recommendation.schemas import (
     DraftImport,
     DraftOut,
@@ -996,6 +997,29 @@ def analyse(
             ),
         )
     )
+    recommendation: Recommendation | None = None
+    try:  # the same pure policy the server applies when the draft is stored
+        derived = derive(
+            case_status=case.status,
+            requested=case.exposure_amount,
+            ai_proposed=proposed,
+            financial_findings_weak=level is Level.WEAK,
+            verified_findings=(),
+        )
+        recommendation = Recommendation(
+            outcome=derived.outcome.value,
+            band=derived.band.value,
+            amount=None
+            if derived.recommended_amount is None
+            else float(derived.recommended_amount),
+            requested=float(case.exposure_amount),
+            proposed=float(proposed),
+            currency=currency,
+            factors=[(f.code, f.explanation, float(f.cut)) for f in factors],
+            rules=[r.value for r in derived.rules],
+        )
+    except PolicyInputError:
+        recommendation = None
     analysis_report = build_report(
         sections=sections,
         order=rules.SECTIONS,
@@ -1013,6 +1037,8 @@ def analyse(
         as_of=datetime.now(UTC).date(),
         definitions=fin.definitions,
         notes=notes_review,
+        recommendation=recommendation,
+        company=case.legal_name or "the company",
     )
     summary = (
         f"Consolidated financial findings: {STATUS_WORD[analysis_report.consolidated_status]}. "

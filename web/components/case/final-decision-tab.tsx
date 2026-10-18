@@ -124,7 +124,17 @@ export function FinalDecisionTab({ caseId, record }: Props) {
 
         <section>
           <h3>Why the UW Analyzer said this</h3>
-          <p>{shorten(draft.summary, currency)}</p>
+          <p>{draft.analysis?.executive_brief?.headline ?? shorten(draft.summary, currency)}</p>
+          {(draft.analysis?.executive_brief?.points_to_settle ?? []).length > 0 && (
+            <>
+              <h4>Points to settle first</h4>
+              <ol className="final-list">
+                {(draft.analysis?.executive_brief?.points_to_settle ?? []).slice(0, 5).map((point) => (
+                  <li key={point}>{point}</li>
+                ))}
+              </ol>
+            </>
+          )}
           <ol className="final-list">
             {draft.reasons.map((reason, index) => (
               <li key={`${index}-${reason.text}`}>

@@ -74,6 +74,64 @@ function FlagTable({ flags, t }: Readonly<{ flags: AnalysisReportData["red_flags
   );
 }
 
+const DIRECTION = {
+  better: { word: "better for cash", className: "is-better" },
+  worse: { word: "worse for cash", className: "is-worse" },
+  same: { word: "no change", className: "is-same" },
+  unknown: { word: "", className: "is-same" },
+} as const;
+
+/** Days sales, inventory and payables outstanding and the cash conversion cycle, with how each moved. */
+function CashCycleSection({ cycle }: Readonly<{ cycle: AnalysisReportData["cash_cycle"] | null }>) {
+  if (!cycle) return null;
+  const periods = cycle.periods ?? [];
+  return (
+    <section aria-label="Cash conversion cycle" className="ws-card" id="ar-cash-cycle">
+      <p className="eyebrow">Working capital</p>
+      <h3>Cash conversion cycle</h3>
+      <p className="ar-summary-para-text">{cycle.summary}</p>
+      <div className="ws-table-wrap">
+        <table className="ws-table ar-metrics">
+          <thead>
+            <tr>
+              <th>Measure</th>
+              <th>This period</th>
+              <th>Period before</th>
+              <th>Two periods before</th>
+              <th>Movement on the year before</th>
+            </tr>
+          </thead>
+          <tbody>
+            {cycle.rows.map((row) => (
+              <tr className={row.key === "ccc" ? "cc-total" : undefined} key={row.key}>
+                <td>{row.label}</td>
+                <td>
+                  <strong>{row.current}</strong>
+                </td>
+                <td>{row.prior ?? "No earlier year"}</td>
+                <td>{row.earlier ?? "No earlier year"}</td>
+                <td>
+                  {row.movement}
+                  {DIRECTION[row.direction].word && (
+                    <strong className={`cc-direction ${DIRECTION[row.direction].className}`}> · {DIRECTION[row.direction].word}</strong>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {periods.length > 0 && <p className="ws-muted">Year-end balances for the periods ending {periods.join(", ")}.</p>}
+      {(cycle.notes ?? []).length > 0 && <List empty="" items={cycle.notes ?? []} />}
+      <p className="ws-muted">
+        Days sales outstanding is receivables over revenue; days inventory outstanding is inventory over cost of sales; days
+        payables outstanding is trade payables over cost of sales; the cycle is sales days plus inventory days less payables days.
+        Shown for context: it does not change the recommended amount.
+      </p>
+    </section>
+  );
+}
+
 const NOTE_STATE = {
   CONCERN: { word: "Concern stated", className: "is-concern" },
   NO_CONCERN: { word: "No concern stated", className: "is-clear" },
@@ -179,7 +237,7 @@ export function AnalysisReportView({ currency, report }: Readonly<{ currency?: s
       </section>
 
       <section className="ws-card ar-summary">
-        <p className="eyebrow">Executive summary</p>
+        <p className="eyebrow">Financial summary</p>
         <p className="ar-summary-text">{t(report.executive_summary)}</p>
       </section>
 
@@ -245,6 +303,12 @@ export function AnalysisReportView({ currency, report }: Readonly<{ currency?: s
               </span>
             </div>
           </header>
+          {area.summary && (
+            <div className="ar-summary-para">
+              <p className="eyebrow">Why this standing</p>
+              <p>{area.summary}</p>
+            </div>
+          )}
           <p className="ar-why">{t(area.why)}</p>
           {(area.flags ?? []).length > 0 && (
             <ul className="ar-flags">
@@ -285,6 +349,8 @@ export function AnalysisReportView({ currency, report }: Readonly<{ currency?: s
           )}
         </section>
       ))}
+
+      <CashCycleSection cycle={report.cash_cycle ?? null} />
 
       <section className="ws-card">
         <p className="eyebrow">Red-flag checklist</p>

@@ -38,7 +38,7 @@ const report: AnalysisReportData = {
   ],
   consolidated_status: "WEAK",
   consolidated_finding: "Satisfactory",
-  consolidated_why: "The four core dimensions (liquidity, profitability, leverage, cash flow): 2 OK, 1 weak, 1 distressed.",
+  consolidated_why: "The four core dimensions (profitability, liquidity, balance sheet and leverage, cash flow): 2 OK, 1 weak, 1 distressed.",
   key_concerns: ["Leverage: distressed. Debt to equity is high.", "Not known: Receivables aging."],
   red_flags: [
     { text: "Negative shareholders' equity", state: "CLEAR", detail: "Equity is CAD 9m.", result: "Condition not met" },
@@ -79,7 +79,7 @@ describe("Step 1 analysis report", () => {
 
   it("opens with an executive summary and lists the key concerns in order", () => {
     render(<AnalysisReportView currency="CAD" report={report} />);
-    expect(screen.getByText("Executive summary")).toBeInTheDocument();
+    expect(screen.getByText("Financial summary")).toBeInTheDocument();
     expect(screen.getByText(/The four core dimensions: 1 OK/)).toBeInTheDocument();
     const concerns = screen.getByText("What matters most, in order").closest("section") as HTMLElement;
     const items = within(concerns).getAllByRole("listitem");
@@ -238,5 +238,51 @@ describe("Step 1 notes, definitions and threshold wording", () => {
     expect(screen.getByText("Not above threshold")).toHaveClass("is-clear");
     expect(screen.getByText("Above threshold")).toHaveClass("is-triggered");
     expect(screen.getByText(/Show the other 1 prompts \(not above or below the threshold, or not assessable\)/)).toBeInTheDocument();
+  });
+});
+
+
+describe("Step 1 paragraphs and the cash conversion cycle", () => {
+  const cycle: NonNullable<AnalysisReportData["cash_cycle"]> = {
+    periods: ["2026-05-31", "2025-05-31", "2024-05-31"],
+    summary: "The company collects from customers in 46.7 days (was 37.2 days). Cash is therefore tied up for 100.4 days.",
+    notes: ["Inventory is taken from the finished-goods figure (total inventory is not tagged)."],
+    rows: [
+      { key: "dso", label: "Days sales outstanding (DSO)", current: "46.7 days", prior: "37.2 days", earlier: "31.5 days", movement: "Longer by 9.5 days (slower collection)", direction: "worse" },
+      { key: "dio", label: "Days inventory outstanding (DIO)", current: "No inventory reported", prior: "No inventory reported", earlier: null, movement: "Not applicable: no inventory", direction: "unknown" },
+      { key: "dpo", label: "Days payables outstanding (DPO)", current: "49.6 days", prior: "47.9 days", earlier: "36.5 days", movement: "Longer by 1.7 days (paying suppliers later)", direction: "better" },
+      { key: "ccc", label: "Cash conversion cycle (CCC = DSO + DIO - DPO)", current: "-2.9 days", prior: "-10.7 days", earlier: null, movement: "Longer by 7.8 days (more cash tied up)", direction: "worse" },
+    ],
+  };
+
+  it("explains each financial area's standing in a short paragraph", () => {
+    const withSummary = {
+      ...report,
+      areas: report.areas.map((a, i) => (i === 0 ? { ...a, summary: "Liquidity is rated Concerning because cash from operations is 0.23x of current liabilities." } : a)),
+    };
+    render(<AnalysisReportView currency="CAD" report={withSummary} />);
+    expect(screen.getByText("Why this standing")).toBeInTheDocument();
+    expect(screen.getByText(/rated Concerning because cash from operations is 0.23x/)).toBeInTheDocument();
+  });
+
+  it("shows the cash conversion cycle with each measure, its movement and a blank DIO that says why", () => {
+    render(<AnalysisReportView currency="CAD" report={{ ...report, cash_cycle: cycle }} />);
+    const section = screen.getByLabelText("Cash conversion cycle");
+    expect(within(section).getByRole("heading", { name: "Cash conversion cycle" })).toBeInTheDocument();
+    expect(within(section).getByText("46.7 days")).toBeInTheDocument();
+    expect(within(section).getAllByText("No inventory reported").length).toBeGreaterThanOrEqual(1);
+    expect(within(section).getByText("Not applicable: no inventory")).toBeInTheDocument();
+    expect(within(section).getByText(/Longer by 9.5 days \(slower collection\)/)).toBeInTheDocument();
+    const worse = within(section).getAllByText(/worse for cash/, { selector: "strong" });
+    expect(worse).toHaveLength(2); // days sales and the cycle itself
+    expect(worse[0]).toHaveClass("is-worse");
+    expect(within(section).getByText(/better for cash/, { selector: "strong" })).toHaveClass("is-better");
+    expect(within(section).getByText(/finished-goods figure/)).toBeInTheDocument();
+    expect(within(section).getByText(/does not change the recommended amount/)).toBeInTheDocument();
+  });
+
+  it("shows no cash conversion section when there is nothing to calculate", () => {
+    render(<AnalysisReportView currency="CAD" report={{ ...report, cash_cycle: null }} />);
+    expect(screen.queryByLabelText("Cash conversion cycle")).not.toBeInTheDocument();
   });
 });
