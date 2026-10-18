@@ -1339,14 +1339,34 @@ export interface components {
          * @description Days sales, inventory and payables outstanding, and the cash conversion cycle. Context.
          */
         CashCycle: {
+            /**
+             * Finding
+             * @default Not assessed
+             */
+            finding: string;
+            /** Flags */
+            flags?: string[];
             /** Notes */
             notes?: string[];
             /** Periods */
             periods: string[];
             /** Rows */
             rows: components["schemas"]["CycleRow"][];
+            /** Standing */
+            standing?: string | null;
+            /**
+             * Status
+             * @default NOT_ASSESSED
+             * @enum {string}
+             */
+            status: "OK" | "WEAK" | "DISTRESSED" | "NOT_ASSESSED";
             /** Summary */
             summary: string;
+            /**
+             * Trend
+             * @default No earlier year to compare
+             */
+            trend: string;
         };
         /**
          * Category

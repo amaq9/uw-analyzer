@@ -19,9 +19,9 @@ describe("financial statement assessment skill", () => {
 
     const headings = screen.getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent);
     expect(headings).toEqual([
-      "Liquidity",
       "Profitability",
-      "Leverage",
+      "Liquidity",
+      "Balance sheet and leverage",
       "Cash flow",
       "Efficiency and sector",
     ]);

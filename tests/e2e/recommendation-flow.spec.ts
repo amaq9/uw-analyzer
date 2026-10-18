@@ -73,6 +73,11 @@ const analysis = {
     periods: ["2026-05-31", "2025-05-31", "2024-05-31"],
     summary: "The company collects from customers in 46.7 days (was 37.2 days). Cash is therefore tied up for 100.4 days.",
     notes: [],
+    status: "WEAK",
+    finding: "Concerning",
+    trend: "Weakening",
+    flags: ["Change in the cash conversion cycle: +8.0 days"],
+    standing: "The cash conversion cycle is rated Concerning (shown as Weak) because it is judged by its weakest measure. What to do: Ask for the receivables ageing. This is context only: it does not change the recommended amount.",
     rows: [
       { key: "dso", label: "Days sales outstanding (DSO)", current: "46.7 days", prior: "37.2 days", earlier: "31.5 days", movement: "Longer by 9.5 days (slower collection)", direction: "worse" },
       { key: "dio", label: "Days inventory outstanding (DIO)", current: "103.4 days", prior: "103.1 days", earlier: "96.4 days", movement: "Longer by 0.3 days (slower stock turnover)", direction: "worse" },
@@ -340,6 +345,8 @@ test.describe("the recommendation journey", () => {
     await expect(page.getByText("Why this standing").first()).toBeVisible();
     const cycle = page.getByLabel("Cash conversion cycle");
     await expect(cycle.getByText("46.7 days").first()).toBeVisible();
+    await expect(cycle.locator(".st-chip")).toContainText("Weak"); // rated like the other financial areas
+    await expect(cycle.getByText(/What to do: Ask for the receivables ageing/)).toBeVisible();
     await expect(cycle.getByText(/Longer by 9.5 days \(slower collection\)/)).toBeVisible();
     const brief = page.getByLabel("Executive summary for the decision-maker");
     await expect(brief.getByText(/Approve a reduced USD 3.75m, 75% of the USD 5.00m requested/).first()).toBeVisible();

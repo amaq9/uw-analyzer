@@ -276,7 +276,13 @@ def test_the_report_carries_the_cycle_and_defines_its_terms() -> None:
 
 
 def rating(
-    agency: str, grade: str, outlook: str, change: str, source: str, ig: bool = True
+    agency: str,
+    grade: str,
+    outlook: str,
+    change: str,
+    source: str,
+    ig: bool = True,
+    reason: str | None = None,
 ) -> PublishedRatingOut:
     now = dt.datetime(2026, 10, 18, tzinfo=dt.UTC)
     return PublishedRatingOut(
@@ -289,7 +295,7 @@ def rating(
         under_review=False,
         change=change,  # type: ignore[arg-type]
         last_action_on=dt.date(2026, 10, 5),
-        rationale=None,
+        rationale=reason,
         source_url=source,
         retrieved_at=now,
         quote="q",
@@ -406,7 +412,7 @@ def test_agency_ratings_are_in_the_brief_with_their_outlook_and_source_quality()
     assert brief is not None
     text = next(s for s in brief.sections if s.heading == "What the rating agencies say").text
     assert "Moody's A2 (negative outlook" in text and "S&P A (downgraded, negative outlook" in text
-    assert "secondary sources" in text and "do not change the amount" in text
+    assert "a secondary source" in text and "do not change the amount" in text
     assert "rating agencies have turned cautious" in brief.headline
     assert any("Confirm the agency ratings" in p for p in brief.points_to_settle)
 
@@ -433,3 +439,193 @@ def test_a_brief_stored_under_the_earlier_field_name_is_still_readable() -> None
     assert ExecutiveBrief.model_validate(old).points_to_settle == ["Ask about collections."]
     new = {"headline": "H", "sections": [], "points_to_settle": ["Ask."]}
     assert ExecutiveBrief.model_validate(new).points_to_settle == ["Ask."]
+
+
+# --- the cycle is rated like the financial dimensions ------------------------------------------------
+
+
+def lengthened(by_days: float) -> list[Figures]:
+    """This period's cycle is `by_days` longer than the year before, through slower collection."""
+    before = cycle_year()
+    extra = by_days / 365 * 1000  # extra receivables, on revenue of 1,000
+    return [cycle_year(receivables=100.0 + extra), before, before]
+
+
+def test_a_cycle_that_lengthened_by_eight_days_is_weak_with_reasons_and_a_recommendation() -> None:
+    cc = build_cash_cycle(lengthened(8.0), PERIODS, [])
+    assert cc is not None
+    assert (cc.status, cc.finding) == ("WEAK", "Concerning")
+    assert cc.standing is not None
+    assert cc.standing.startswith(
+        "The cash conversion cycle is rated Concerning (shown as Weak) because it is judged by its weakest measure"
+    )
+    assert "change in the cash conversion cycle is +8.0 days, which is concerning" in cc.standing
+    assert "What to do: Customers are paying more slowly" in cc.standing
+    assert "receivables ageing" in cc.standing
+    assert cc.standing.endswith("This is context only: it does not change the recommended amount.")
+    assert any(f.startswith("Change in the cash conversion cycle: +8.0 days") for f in cc.flags)
+
+
+def test_a_shorter_or_flat_cycle_is_ok_and_a_much_longer_one_is_distressed() -> None:
+    better = build_cash_cycle(
+        [cycle_year(receivables=60.0), cycle_year(), cycle_year()], PERIODS, []
+    )
+    flat = build_cash_cycle([cycle_year(), cycle_year(), cycle_year()], PERIODS, [])
+    worse = build_cash_cycle(lengthened(20.0), PERIODS, [])
+    assert better is not None and flat is not None and worse is not None
+    assert (better.status, better.finding) == ("OK", "Strong")
+    assert (flat.status, flat.finding) == ("OK", "Strong")
+    slightly = build_cash_cycle(lengthened(3.0), PERIODS, [])
+    assert slightly is not None and (slightly.status, slightly.finding) == ("OK", "Adequate")
+    assert flat.standing is not None and "What to do" not in flat.standing
+    assert (worse.status, worse.finding) == ("DISTRESSED", "Critical")
+
+
+def test_the_trend_compares_the_rating_with_the_year_before() -> None:
+    # This year +8 days (concerning); the year before +1 day (strong): weakening.
+    figs = [
+        cycle_year(receivables=121.9),
+        cycle_year(receivables=100.0),
+        cycle_year(receivables=97.3),
+    ]
+    cc = build_cash_cycle(figs, PERIODS, [])
+    assert cc is not None and cc.trend == "Weakening" and cc.standing is not None
+    assert "moved from strong to concerning" in cc.standing
+    assert build_cash_cycle(figs[:2], PERIODS, []) is not None
+    assert build_cash_cycle(figs[:2], PERIODS, []).trend == "No earlier year to compare"  # type: ignore[union-attr]
+
+
+def test_a_single_period_or_missing_inputs_leave_the_cycle_unrated_and_say_why() -> None:
+    one = build_cash_cycle([cycle_year()], PERIODS, [])
+    assert one is not None and one.status == "NOT_ASSESSED" and one.finding == "Not assessed"
+    assert one.standing is not None and "not rated" in one.standing
+    no_payables = build_cash_cycle(
+        [cycle_year(payables=None), cycle_year(payables=None)], PERIODS, []
+    )
+    assert no_payables is not None and no_payables.status == "NOT_ASSESSED"
+
+
+def test_a_company_with_no_inventory_is_still_rated_on_collection_and_payment() -> None:
+    figs = [
+        cycle_year(inventory=None, receivables=120.0),
+        cycle_year(inventory=None),
+        cycle_year(inventory=None),
+    ]
+    cc = build_cash_cycle(figs, PERIODS, [])
+    assert cc is not None and cc.status == "WEAK"
+    assert (
+        cc.standing is not None
+        and "inventory outstanding is" not in cc.standing.split("Other measures")[0]
+    )
+    assert not any("inventory" in f.lower() for f in cc.flags)
+
+
+def test_slower_stock_and_much_later_supplier_payments_get_their_own_recommendations() -> None:
+    slower_stock = [cycle_year(inventory=150.0 + 60 / 365 * 600), cycle_year(), cycle_year()]
+    cc = build_cash_cycle(slower_stock, PERIODS, [])
+    assert cc is not None and cc.standing is not None and "aged stock" in cc.standing
+    stretched = [cycle_year(payables=80.0 + 20 / 365 * 600), cycle_year(), cycle_year()]
+    cc2 = build_cash_cycle(stretched, PERIODS, [])
+    assert cc2 is not None and cc2.standing is not None and "stretching suppliers" in cc2.standing
+    tightened = [cycle_year(payables=80.0 - 15 / 365 * 600), cycle_year(), cycle_year()]
+    cc3 = build_cash_cycle(tightened, PERIODS, [])
+    assert cc3 is not None and cc3.standing is not None and "tightened their terms" in cc3.standing
+
+
+def test_a_weak_cycle_reaches_the_key_concerns() -> None:
+    figs = figures_for(STRONG)
+    for i, f in enumerate(figs):
+        f["payables"], f["cost_of_revenue"] = 100.0, (f.get("revenue") or 0) * 0.6
+        f["receivables"] = (f.get("revenue") or 0) * (
+            0.10 + 0.04 * (2 - i)
+        )  # collection slows each year
+    report = report_for(figs)
+    assert report.cash_cycle is not None and report.cash_cycle.status in ("WEAK", "DISTRESSED")
+    assert any(c.startswith("Cash conversion cycle:") for c in report.key_concerns)
+
+
+# --- the agencies' own reasons reach the recommendation ----------------------------------------------
+
+
+def test_the_agencies_stated_reasons_are_in_the_brief_even_from_a_secondary_source() -> None:
+    ratings = [
+        rating(
+            "MOODYS",
+            "A2",
+            "NEGATIVE",
+            "NOT_STATED",
+            "https://www.investinglive.com/news/moodys-nike",
+            reason="Moody's affirmed the A2 rating and revised the outlook to negative, citing a turnaround taking longer than expected.",
+        ),
+        rating(
+            "SP",
+            "A",
+            "NEGATIVE",
+            "DOWNGRADE",
+            "https://www.spglobal.com/ratings/en/research/articles/nike",
+            reason="S&P lowered the outlook on weaker margins and tariff costs.",
+        ),
+    ]
+    brief = briefed(approve_reduced(), ratings).executive_brief
+    assert brief is not None
+    text = next(s for s in brief.sections if s.heading == "What the rating agencies say").text
+    assert (
+        "Its stated reason, as reported by investinglive.com, a secondary source: Moody's affirmed the A2 rating"
+        in text
+    )
+    assert "citing a turnaround taking longer than expected" in text
+    assert (
+        "Its stated reason, as reported by the agency's own site: S&P lowered the outlook on weaker margins"
+        in text
+    )
+    assert "Confirm the ratings and the reasons on the agencies' own sites." in text
+    assert "do not change the amount" in text
+    assert " came from" not in text  # the source-quality note is not repeated
+
+
+def test_a_rating_with_no_recorded_reason_says_so_and_a_long_reason_is_cut_at_a_sentence() -> None:
+    long_reason = "The outlook moved to negative. " + "More detail follows here. " * 40
+    ratings = [
+        rating(
+            "MOODYS", "A2", "NEGATIVE", "NOT_STATED", "https://example.org/a", reason=long_reason
+        ),
+        rating("SP", "A", "NEGATIVE", "DOWNGRADE", "https://example.org/b"),
+    ]
+    brief = briefed(approve_reduced(), ratings).executive_brief
+    assert brief is not None
+    text = next(s for s in brief.sections if s.heading == "What the rating agencies say").text
+    assert "No reason was recorded (source: example.org, a secondary source)." in text
+    assert "The outlook moved to negative." in text and "…" not in text.split("S&P")[0][-5:]
+    assert len(text) <= 1800
+
+
+def test_the_brief_rates_the_cycle_in_its_own_section() -> None:
+    figs = figures_for(DISTRESSED)
+    for i, f in enumerate(figs):
+        f["payables"], f["cost_of_revenue"] = 100.0, (f.get("revenue") or 0) * 0.6
+        f["receivables"] = (f.get("revenue") or 0) * (0.10 + 0.04 * (2 - i))
+    from app.analysis.report import build_report
+
+    contexts = [rules.YearContext(ratios=compute(f), figures=f) for f in figs]
+    sections = rules.assess(contexts, "USD")
+    report = build_report(
+        sections=sections,
+        order=rules.SECTIONS,
+        consolidated=rules.consolidated(sections),
+        ratio_sets=[c.ratios for c in contexts],
+        figure_sets=figs,
+        periods=PERIODS,
+        currency="USD",
+        statements_label="t",
+        audit_note="n",
+        other_checks=[],
+        gaps=[],
+        analyzer_version="2",
+        recommendation=approve_reduced(),
+        company="Acme Corp",
+    )
+    brief = report.executive_brief
+    assert brief is not None
+    cc = next(s for s in brief.sections if s.heading == "Cash conversion cycle").text
+    assert cc.startswith("Rated ") and "collects from customers" in cc
+    assert any(p.startswith("Cash conversion cycle:") for p in brief.points_to_settle)

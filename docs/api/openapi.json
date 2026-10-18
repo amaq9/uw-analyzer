@@ -908,7 +908,7 @@
             "type": "string"
           },
           "text": {
-            "maxLength": 900,
+            "maxLength": 1800,
             "minLength": 1,
             "title": "Text",
             "type": "string"
@@ -1860,6 +1860,22 @@
         "additionalProperties": false,
         "description": "Days sales, inventory and payables outstanding, and the cash conversion cycle. Context.",
         "properties": {
+          "finding": {
+            "default": "Not assessed",
+            "maxLength": 40,
+            "title": "Finding",
+            "type": "string"
+          },
+          "flags": {
+            "items": {
+              "maxLength": 600,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 6,
+            "title": "Flags",
+            "type": "array"
+          },
           "notes": {
             "items": {
               "maxLength": 600,
@@ -1887,10 +1903,39 @@
             "title": "Rows",
             "type": "array"
           },
+          "standing": {
+            "anyOf": [
+              {
+                "maxLength": 1800,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standing"
+          },
+          "status": {
+            "default": "NOT_ASSESSED",
+            "enum": [
+              "OK",
+              "WEAK",
+              "DISTRESSED",
+              "NOT_ASSESSED"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
           "summary": {
             "maxLength": 600,
             "minLength": 1,
             "title": "Summary",
+            "type": "string"
+          },
+          "trend": {
+            "default": "No earlier year to compare",
+            "maxLength": 60,
+            "title": "Trend",
             "type": "string"
           }
         },

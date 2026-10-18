@@ -11,6 +11,7 @@ recommendation only: the underwriter's recorded decision is the decision (P-09).
 import re
 from dataclasses import dataclass
 from typing import Any
+from urllib.parse import urlsplit
 
 from app.analysis.formats import money, pct, times
 from app.ratings.scale import AGENCY_NAMES
@@ -102,7 +103,19 @@ def _financial(nums: dict[str, Any], cur: str) -> str:
     return " ".join(parts)
 
 
+def _clip(text: str, limit: int) -> str:
+    """Cut at a sentence end where possible, never mid-word."""
+    text = " ".join(text.split())
+    if len(text) <= limit:
+        return text
+    cut = text[:limit]
+    end = max(cut.rfind(". "), cut.rfind("; "))
+    return (cut[: end + 1] if end > limit // 2 else cut.rsplit(" ", 1)[0] + "…").rstrip()
+
+
 def _ratings(report: AnalysisReport) -> str:
+    """Each agency's grade, outlook and, in its own reported words, why. A rating taken from the press still
+    carries the agency's stated reasons: they are the substance a decision-maker needs, with their source named."""
     if not report.published_ratings:
         return "No published agency rating is recorded for this company, so there is no external view to weigh."
     bits = []
@@ -120,25 +133,31 @@ def _ratings(report: AnalysisReport) -> str:
         extra.append(f"{r.outlook.lower()} outlook")
         if r.under_review:
             extra.append("under review")
-        bits.append(
-            f"{AGENCY_NAMES[r.agency]} {r.grade} ({', '.join(extra)}, last action {action})"
+        host = (urlsplit(r.source_url).hostname or "its source").removeprefix("www.")
+        where = (
+            "the agency's own site"
+            if r.source_kind == "AGENCY_SITE"
+            else f"{host}, a secondary source"
         )
-    grade = (
-        "investment grade"
-        if all(r.investment_grade for r in report.published_ratings)
-        else "including a speculative grade"
-    )
-    text = (
-        "; ".join(bits) + f". All are {grade}."
-        if grade == "investment grade"
-        else "; ".join(bits) + f". {grade.capitalize()}."
-    )
-    secondary = [r for r in report.published_ratings if r.source_kind != "AGENCY_SITE"]
-    if secondary:
-        text += " They were taken from secondary sources and should be confirmed on the agencies' own sites."
-    text += (
-        " Ratings are the agencies' opinions, shown for information; they do not change the amount."
-    )
+        reason = _clip(r.rationale, 330) if r.rationale else None
+        line = f"{AGENCY_NAMES[r.agency]} {r.grade} ({', '.join(extra)}, last action {action})."
+        line += (
+            f" Its stated reason, as reported by {where}: {reason}"
+            if reason
+            else f" No reason was recorded (source: {where})."
+        )
+        bits.append(line)
+    text = " ".join(bits)
+    if report.ratings_reconciliation:
+        # The comparison with the financial picture, without its trailing note on source quality.
+        compare = report.ratings_reconciliation.split(" came from a secondary source")[0].split(
+            " came from secondary sources"
+        )[0]
+        if " came from" not in compare and compare.strip():
+            text += " Against the financials: " + compare.strip().rstrip(".") + "."
+    if any(r.source_kind != "AGENCY_SITE" for r in report.published_ratings):
+        text += " Confirm the ratings and the reasons on the agencies' own sites."
+    text += " The agencies' views are shown for information and do not change the amount."
     return text
 
 
@@ -247,6 +266,14 @@ def _points(report: AnalysisReport) -> list[str]:
     for f in report.red_flags:
         if f.state == "TRIGGERED":
             points.append(f"{f.text}: {f.detail}")
+    if (
+        cc is not None
+        and cc.status in ("WEAK", "DISTRESSED")
+        and cc.standing
+        and "What to do: " in cc.standing
+    ):
+        first = cc.standing.split("What to do: ", 1)[1].split(". ")[0]
+        points.insert(2 if len(points) > 2 else len(points), f"Cash conversion cycle: {first}.")
     return [p[:600] for p in points][:8]
 
 
@@ -299,11 +326,23 @@ def build_brief(
         BriefSection(heading="Financial position in numbers", text=_financial(nums, cur)[:900]),
     ]
     if report.cash_cycle is not None:
+        cc = report.cash_cycle
+        word = {
+            "OK": "OK",
+            "WEAK": "weak",
+            "DISTRESSED": "distressed",
+            "NOT_ASSESSED": "not rated",
+        }[cc.status]
         sections.append(
-            BriefSection(heading="Cash conversion cycle", text=report.cash_cycle.summary[:600])
+            BriefSection(
+                heading="Cash conversion cycle",
+                text=(f"Rated {word} ({cc.finding.lower()}, {cc.trend.lower()}). {cc.summary}")[
+                    :900
+                ],
+            )
         )
     sections.append(
-        BriefSection(heading="What the rating agencies say", text=_ratings(report)[:900])
+        BriefSection(heading="What the rating agencies say", text=_ratings(report)[:1700])
     )
     sections.append(
         BriefSection(heading="Screening and external checks", text=_screening(report)[:900])

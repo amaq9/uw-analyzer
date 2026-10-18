@@ -29,3 +29,23 @@
 ## Contract
 Additive: `AreaReport.summary`, `AnalysisReport.cash_cycle`, `AnalysisReport.executive_brief` (field
 `points_to_settle`, named to stay clear of the decision-wording contract test).
+
+## Addendum, 2026-10-19 (Product Owner quality review of the first build)
+5. **The cash conversion cycle is rated like the financial dimensions.** It carries the same signal (OK, weak,
+   distressed, not rated), a left-edge colour, a "Why this standing, and what to do" paragraph and flags. The skill
+   lists a deteriorating cycle as a cash-flow risk indicator, so it is judged on **movement against the year
+   before**, by the weakest of: the change in the cycle, in days sales outstanding, in days inventory outstanding
+   (not for a company with no inventory), and a large change in days payables (more than 15 days later may mean
+   suppliers are stretched; more than 10 days sooner, that suppliers tightened terms). For the cycle, sales and
+   inventory days: no longer (a day at most) is strong, up to 5 days longer adequate, more than 5 concerning, more
+   than 15 critical. The recommendations are specific to what moved (ask for the receivables ageing; ask what is behind
+   a stock build-up; ask whether suppliers are being stretched or have tightened). **Context only**: the policy
+   reads the four core dimensions, so it never changes the amount. Making it a fifth core dimension would need a
+   policy change and is not part of this decision.
+6. **The agencies' stated reasons are in the executive summary.** For each agency the summary gives the grade,
+   outlook, date, whether it was a downgrade, and the agency's own reason for the rating and outlook (as recorded
+   with the rating), naming where it was reported. A rating taken from the press still carries the agency's reasons,
+   labelled as from a secondary source with a prompt to confirm on the agency's own site. A rating recorded without a
+   reason says so.
+7. **The five dimensions on the Skills page** read in the required order: Profitability, Liquidity, Balance sheet and
+   leverage, Cash flow, Efficiency and sector.
