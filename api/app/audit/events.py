@@ -52,6 +52,7 @@ class Action(StrEnum):
     SNAPSHOT_READ = "snapshot.read"
     ANALYSIS_RUN = "analysis.run"
     STATEMENT_CONFIRMED = "statement.confirmed"
+    PUBLISHED_RATING_RECORDED = "published_rating.recorded"
     SOURCE_UPDATED = "source.updated"
 
 

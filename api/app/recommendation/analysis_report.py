@@ -13,6 +13,8 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
+from app.ratings.schemas import PublishedRatingOut
+
 Line = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=600)]
 Status = Literal["OK", "WEAK", "DISTRESSED", "NOT_ASSESSED"]
 
@@ -104,6 +106,10 @@ class AnalysisReport(BaseModel):
     stress: list[StressRow] = Field(default_factory=list, max_length=4)
     stress_note: Line | None = None
     key_concerns: list[Line] = Field(default_factory=list, max_length=15)
+    # Agency opinions recorded on the case when this draft was prepared. Information only: they
+    # never change the outcome or the amount (ADR 0020).
+    published_ratings: list[PublishedRatingOut] = Field(default_factory=list, max_length=3)
+    ratings_reconciliation: Line | None = None
     strengths: list[Line] = Field(default_factory=list, max_length=12)
     weaknesses: list[Line] = Field(default_factory=list, max_length=12)
     watch: list[Line] = Field(default_factory=list, max_length=20)

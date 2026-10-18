@@ -21,8 +21,13 @@ BANNED_WORDS = (
 # Names (paths, schema properties, permissions) allowed to contain a banned word.
 ALLOWED_PATHS = {
     "/api/v1/cases/{case_id}/draft-recommendations/{draft_id}/decision",
+    "/api/v1/cases/{case_id}/published-ratings",  # an agency's own opinion, with its source (ADR 0020)
 }
-ALLOWED_PROPERTIES = {"decline_findings"}  # the verified findings that mean decline (policy 2e2)
+ALLOWED_PROPERTIES = {
+    "decline_findings",  # the verified findings that mean decline (policy 2e2)
+    "published_ratings",  # agency opinions recorded with their source, information only (ADR 0020)
+    "ratings_reconciliation",  # the plain-words comparison with the financial analysis (ADR 0020)
+}
 ALLOWED_PERMISSIONS = {"decision:record"}  # ADR 0005 item 9
 # Enum values may read as an outcome only in these designated schemas.
 ALLOWED_OUTCOME_SCHEMAS = {"Outcome", "Band"}

@@ -486,6 +486,27 @@
             "title": "Other Checks",
             "type": "array"
           },
+          "published_ratings": {
+            "items": {
+              "$ref": "#/components/schemas/PublishedRatingOut"
+            },
+            "maxItems": 3,
+            "title": "Published Ratings",
+            "type": "array"
+          },
+          "ratings_reconciliation": {
+            "anyOf": [
+              {
+                "maxLength": 600,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ratings Reconciliation"
+          },
           "red_flags": {
             "items": {
               "$ref": "#/components/schemas/FlagCheck"
@@ -3993,6 +4014,231 @@
           "content"
         ],
         "title": "Preview",
+        "type": "object"
+      },
+      "PublishedRatingIn": {
+        "additionalProperties": false,
+        "properties": {
+          "agency": {
+            "enum": [
+              "MOODYS",
+              "SP",
+              "FITCH"
+            ],
+            "title": "Agency",
+            "type": "string"
+          },
+          "change": {
+            "default": "NOT_STATED",
+            "enum": [
+              "UPGRADE",
+              "DOWNGRADE",
+              "AFFIRMED",
+              "NEW",
+              "NOT_STATED"
+            ],
+            "title": "Change",
+            "type": "string"
+          },
+          "grade": {
+            "maxLength": 10,
+            "minLength": 1,
+            "title": "Grade",
+            "type": "string"
+          },
+          "last_action_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Action On"
+          },
+          "outlook": {
+            "default": "NOT_STATED",
+            "enum": [
+              "STABLE",
+              "POSITIVE",
+              "NEGATIVE",
+              "DEVELOPING",
+              "NOT_STATED"
+            ],
+            "title": "Outlook",
+            "type": "string"
+          },
+          "quote": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Quote",
+            "type": "string"
+          },
+          "rationale": {
+            "anyOf": [
+              {
+                "maxLength": 600,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rationale"
+          },
+          "retrieved_at": {
+            "format": "date-time",
+            "title": "Retrieved At",
+            "type": "string"
+          },
+          "source_url": {
+            "maxLength": 500,
+            "title": "Source Url",
+            "type": "string"
+          },
+          "under_review": {
+            "default": false,
+            "title": "Under Review",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "agency",
+          "grade",
+          "source_url",
+          "retrieved_at",
+          "quote"
+        ],
+        "title": "PublishedRatingIn",
+        "type": "object"
+      },
+      "PublishedRatingOut": {
+        "properties": {
+          "agency": {
+            "enum": [
+              "MOODYS",
+              "SP",
+              "FITCH"
+            ],
+            "title": "Agency",
+            "type": "string"
+          },
+          "case_id": {
+            "format": "uuid",
+            "title": "Case Id",
+            "type": "string"
+          },
+          "change": {
+            "enum": [
+              "UPGRADE",
+              "DOWNGRADE",
+              "AFFIRMED",
+              "NEW",
+              "NOT_STATED"
+            ],
+            "title": "Change",
+            "type": "string"
+          },
+          "grade": {
+            "title": "Grade",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "investment_grade": {
+            "title": "Investment Grade",
+            "type": "boolean"
+          },
+          "last_action_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Action On"
+          },
+          "notice": {
+            "default": "An agency's published opinion, recorded with its source. It is not this product's rating and does not change the draft.",
+            "title": "Notice",
+            "type": "string"
+          },
+          "outlook": {
+            "enum": [
+              "STABLE",
+              "POSITIVE",
+              "NEGATIVE",
+              "DEVELOPING",
+              "NOT_STATED"
+            ],
+            "title": "Outlook",
+            "type": "string"
+          },
+          "quote": {
+            "title": "Quote",
+            "type": "string"
+          },
+          "rationale": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rationale"
+          },
+          "recorded_at": {
+            "format": "date-time",
+            "title": "Recorded At",
+            "type": "string"
+          },
+          "recorded_by": {
+            "title": "Recorded By",
+            "type": "string"
+          },
+          "retrieved_at": {
+            "format": "date-time",
+            "title": "Retrieved At",
+            "type": "string"
+          },
+          "source_url": {
+            "title": "Source Url",
+            "type": "string"
+          },
+          "under_review": {
+            "title": "Under Review",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "case_id",
+          "agency",
+          "grade",
+          "investment_grade",
+          "outlook",
+          "under_review",
+          "change",
+          "last_action_on",
+          "rationale",
+          "source_url",
+          "retrieved_at",
+          "quote",
+          "recorded_by",
+          "recorded_at"
+        ],
+        "title": "PublishedRatingOut",
         "type": "object"
       },
       "Readiness": {
@@ -8240,6 +8486,186 @@
         "summary": "Get Evidence",
         "tags": [
           "evidence"
+        ]
+      }
+    },
+    "/api/v1/cases/{case_id}/published-ratings": {
+      "get": {
+        "description": "The latest opinion of each agency, or every record newest first (`latest=false`).",
+        "operationId": "list_published_ratings_api_v1_cases__case_id__published_ratings_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "latest",
+            "required": false,
+            "schema": {
+              "default": true,
+              "title": "Latest",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PublishedRatingOut"
+                  },
+                  "title": "Response List Published Ratings Api V1 Cases  Case Id  Published Ratings Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the token is invalid."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Signed in but not permitted."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found (or belongs to another tenant)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request was malformed."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Published Ratings",
+        "tags": [
+          "published-ratings"
+        ]
+      },
+      "post": {
+        "description": "Record an agency's published opinion with where it was read, when, and the quoted words.",
+        "operationId": "record_published_rating_api_v1_cases__case_id__published_ratings_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublishedRatingIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublishedRatingOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not signed in, or the token is invalid."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Signed in but not permitted."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not found (or belongs to another tenant)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "The request was malformed."
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Record Published Rating",
+        "tags": [
+          "published-ratings"
         ]
       }
     },

@@ -169,7 +169,7 @@ def test_a_strong_company_gets_a_full_draft_with_findings_and_reasons(
     ]
     assert "not a forecast" in report["stress_note"]
     assert report["consolidated_status"] == "OK"
-    assert len(report["red_flags"]) == 19
+    assert len(report["red_flags"]) == 23
     assert {f["state"] for f in report["red_flags"]} <= {"TRIGGERED", "CLEAR", "NOT_ASSESSABLE"}
     assert report["red_flags"][-1]["state"] == "NOT_ASSESSABLE"  # needs the printed statements
     liquidity = next(a for a in report["areas"] if a["key"] == "liquidity")
