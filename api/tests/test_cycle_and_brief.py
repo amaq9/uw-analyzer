@@ -700,3 +700,15 @@ def test_a_second_year_of_slower_collection_is_called_out() -> None:
     cc = build_cash_cycle(figs, PERIODS, [])
     assert cc is not None and cc.standing is not None
     assert "has lengthened two years running (36.5 to 43.8 to 52.9 days)" in cc.standing
+
+
+def test_a_supersedes_note_and_the_duplicate_confirm_sentence_are_dropped() -> None:
+    reason = "Moody's revised the outlook to negative. This supersedes the earlier record of 17 Nov 2025."
+    brief = briefed(
+        approve_reduced(),
+        [rating("MOODYS", "A2", "NEGATIVE", "NOT_STATED", "https://example.org/a", reason=reason)],
+    ).executive_brief
+    assert brief is not None
+    text = next(s for s in brief.sections if s.heading == "What the rating agencies say").text
+    assert "supersedes" not in text
+    assert text.count("Confirm ") == 1  # one prompt to confirm on the agencies' own sites
