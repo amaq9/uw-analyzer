@@ -20,10 +20,16 @@ from app.recommendation.analysis_report import (
     Basis,
     FlagCheck,
     Metric,
+    NoteFinding,
+    NotesReview,
     OtherCheck,
     Status,
     StressRow,
 )
+
+GOING_CONCERN_CHECK = "Going-concern language, covenant breach, auditor change or qualification"
+CUSTOMER_CHECK = "Largest customers above 50% of revenue"
+COVENANT_CHECK = "Covenant violations or near-misses"
 
 STATUS_OF: dict[Level, Status] = {
     Level.STRONG: "OK",
@@ -459,36 +465,195 @@ def debt_service_block(
     return metrics, notes
 
 
+def _tax_rate(f: Figures) -> float | None:
+    """The effective tax rate the company actually paid on its profit, or None when it cannot be worked out."""
+    pretax, net = f.get("pretax_income"), f.get("net_income")
+    if pretax is None or net is None or pretax <= 0:
+        return None
+    rate = (pretax - net) / pretax
+    return min(max(rate, 0.0), 0.40)
+
+
+STANDARD_DEFINITIONS = [
+    "EBIT is operating profit before interest and tax. EBITDA is EBIT plus depreciation and amortisation.",
+    "Net debt is financial debt plus lease liabilities, less cash and short-term investments. A negative figure is net cash.",
+    "Debt to equity is financial debt plus lease liabilities, divided by shareholders' equity.",
+    "Interest cover is EBIT divided by interest expense. The quick ratio is current assets less inventory, divided by current liabilities.",
+    "Free cash flow is cash from operations less capital expenditure. Net margin is net income divided by revenue.",
+]
+
+
 def stress_block(
     ratio_sets: list[dict[str, dict[str, Any]]], figs: list[Figures], currency: str
 ) -> tuple[list[StressRow], str | None]:
-    """Revenue falls and costs do not. A transparent illustration of how thin the cushion is, not a forecast."""
+    """What happens to operating profit, interest cover and operating cash flow if revenue falls.
+
+    Main case: the cost of sales falls with sales, so only the gross profit on the lost revenue is lost and
+    operating expenses stay (a standard analyst downside). Extreme case: no cost falls at all, so the whole of
+    the lost revenue is lost profit. Tax is allowed to fall with profit only while the stressed profit stays
+    positive. Working capital release and management action are ignored. Arithmetic, not a forecast."""
     f = figs[0]
     rev = f.get("revenue")
     ebit = f.get("operating_income") if f.get("operating_income") is not None else f.get("ebit")
     interest = f.get("interest_expense")
     ocf = ratio_sets[0]["cash_flow"]["operating_cash_flow"]
+    gross = f.get("gross_profit")
     if rev is None or rev <= 0 or ebit is None:
         return [], None
+    margin = None if gross is None else gross / rev
+    rate = _tax_rate(f)
+    pretax = f.get("pretax_income")
 
-    def row(label: str, drop: float) -> StressRow:
-        hit = rev * drop
-        earnings = ebit - hit
+    def row(label: str, drop: float, flow_through: float) -> StressRow:
+        """`flow_through` is the share of the lost revenue that is lost as profit (0 to 1)."""
+        loss = rev * drop * flow_through
+        earnings = ebit - loss
+        cash: float | None = None
+        if ocf is not None:
+            relief = 0.0
+            if rate is not None and pretax is not None:
+                relief = rate * (
+                    pretax - max(pretax - loss, 0.0)
+                )  # tax falls only while profit stays positive
+            cash = ocf - loss + relief
         return StressRow(
             scenario=label,
             earnings=money(earnings, currency),
             interest_cover=times(
                 None if interest is None or interest <= 0 else earnings / interest
             ),
-            cash_from_operations=money(None if ocf is None else ocf - hit, currency),
+            cash_from_operations=money(cash, currency),
         )
 
-    rows = [row("As reported", 0.0), row("Revenue down 10%", 0.10), row("Revenue down 20%", 0.20)]
+    if margin is not None and 0 < margin <= 1:
+        rows = [
+            row("As reported", 0.0, 1.0),
+            row("Revenue down 10%, cost of sales falls with sales", 0.10, margin),
+            row("Revenue down 20%, cost of sales falls with sales", 0.20, margin),
+            row("Revenue down 10%, no cost saving at all (extreme)", 0.10, 1.0),
+        ]
+        break_even = ebit / (rev * margin) if ebit > 0 else 0.0
+        extra = (
+            f" Gross margin is {pct(margin)}; operating profit reaches zero if revenue falls about {break_even * 100:.1f}%."
+            if ebit > 0
+            else " Operating profit is already at or below zero."
+        )
+        basis = (
+            "Main rows: the cost of sales falls with sales and operating expenses stay the same."
+            + extra
+            + " The last row is the extreme: no cost falls at all, so the whole of the lost revenue is lost profit."
+        )
+    else:
+        rows = [
+            row("As reported", 0.0, 1.0),
+            row("Revenue down 10%, no cost saving at all (extreme)", 0.10, 1.0),
+            row("Revenue down 20%, no cost saving at all (extreme)", 0.20, 1.0),
+        ]
+        basis = (
+            "Gross profit is not available, so only the extreme case is shown: no cost falls when revenue falls, so "
+            "the whole of the lost revenue is lost profit."
+        )
+    tax = (
+        f" Tax is assumed to fall with profit at the {pct(rate)} the company paid, only while profit stays positive."
+        if rate is not None
+        else " Tax relief is not assumed."
+    )
     note = (
-        "Illustration only. It assumes costs do not fall when revenue falls (the worst case) and ignores tax, "
-        "working capital and management action. It is not a forecast. Earnings here means operating profit (EBIT)."
+        "Illustration only, not a forecast. "
+        + basis
+        + tax
+        + " Working capital release and management action are ignored. Earnings here means operating profit (EBIT)."
     )
     return rows, note
+
+
+def _first_quote(finding: NoteFinding) -> str:
+    return f" “{finding.quotes[0].text[:220]}”" if finding.quotes else ""
+
+
+def notes_flags(
+    review: NotesReview | None, largest_customer: float | None = None
+) -> dict[str, FlagCheck]:
+    """The three checklist items that only the printed filing can answer, from what it says.
+    Without the filing they stay not assessable. A topic the filing does not discuss is never read as clear."""
+    if review is None:
+        return {}
+    by = {f.topic: f for f in review.findings}
+
+    def get(topic: str) -> NoteFinding | None:
+        return by.get(topic)
+
+    out: dict[str, FlagCheck] = {}
+    gc, op, ch, cov = (
+        get("GOING_CONCERN"),
+        get("AUDITOR_OPINION"),
+        get("AUDITOR_CHANGE"),
+        get("COVENANTS"),
+    )
+    hits = [f for f in (gc, op, ch, cov) if f is not None and f.state == "CONCERN"]
+    if hits:
+        out[GOING_CONCERN_CHECK] = FlagCheck(
+            text=GOING_CONCERN_CHECK,
+            state="TRIGGERED",
+            detail=(
+                "In the filing: "
+                + " ".join(f"{f.title}: {f.summary}" for f in hits)
+                + _first_quote(hits[0])
+            )[:600],
+        )
+    elif gc is not None and op is not None and op.state != "NOT_FOUND":
+        parts = [
+            f"{f.title}: {f.summary}"
+            for f in (gc, op, ch)
+            if f is not None and f.state != "NOT_FOUND"
+        ]
+        out[GOING_CONCERN_CHECK] = FlagCheck(
+            text=GOING_CONCERN_CHECK,
+            state="CLEAR",
+            detail=("Read in the filing. " + " ".join(parts))[:600],
+        )
+    else:
+        out[GOING_CONCERN_CHECK] = FlagCheck(
+            text=GOING_CONCERN_CHECK,
+            state="NOT_ASSESSABLE",
+            detail="The filing was read but the auditor's report was not found in its text, so this could not be settled.",
+        )
+
+    cust = get("CUSTOMER_CONCENTRATION")
+    if cust is not None and cust.state == "CONCERN":
+        out[CUSTOMER_CHECK] = FlagCheck(
+            text=CUSTOMER_CHECK, state="TRIGGERED", detail=(cust.summary + _first_quote(cust))[:600]
+        )
+    elif cust is not None and cust.state in ("NO_CONCERN", "INFO"):
+        out[CUSTOMER_CHECK] = FlagCheck(
+            text=CUSTOMER_CHECK, state="CLEAR", detail=(cust.summary + _first_quote(cust))[:600]
+        )
+    else:
+        out[CUSTOMER_CHECK] = FlagCheck(
+            text=CUSTOMER_CHECK,
+            state="NOT_ASSESSABLE",
+            detail="The filing does not state a customer concentration, so it could not be checked.",
+        )
+
+    if cov is not None and cov.state == "CONCERN":
+        out[COVENANT_CHECK] = FlagCheck(
+            text=COVENANT_CHECK, state="TRIGGERED", detail=(cov.summary + _first_quote(cov))[:600]
+        )
+    elif cov is not None and cov.state == "NO_CONCERN":
+        out[COVENANT_CHECK] = FlagCheck(
+            text=COVENANT_CHECK,
+            state="CLEAR",
+            detail=(cov.summary + " The size of the headroom is not stated." + _first_quote(cov))[
+                :600
+            ],
+        )
+    else:
+        out[COVENANT_CHECK] = FlagCheck(
+            text=COVENANT_CHECK,
+            state="NOT_ASSESSABLE",
+            detail="The filing gives no statement that the covenants were met or breached, so this could not be checked.",
+        )
+    return out
 
 
 def rating_flags(ratings: list[PublishedRatingOut], as_of: date) -> list[FlagCheck]:
@@ -615,12 +780,22 @@ def reconcile(core: list[AreaReport], ratings: list[PublishedRatingOut]) -> str:
     return text
 
 
-def _concerns(areas: list[AreaReport], checks: list[FlagCheck], gaps: list[str]) -> list[str]:
+def _concerns(
+    areas: list[AreaReport],
+    checks: list[FlagCheck],
+    gaps: list[str],
+    notes: NotesReview | None = None,
+) -> list[str]:
     """Most important first: distressed areas, then flags to look at, then weak areas, then missing information."""
     out: list[str] = []
     out += [f"{a.title}: {a.finding.lower()}. {a.why}" for a in areas if a.status == "DISTRESSED"]
     out += [f"{c.text}: {c.detail}" for c in checks if c.state == "TRIGGERED"]
     out += [f"{a.title}: {a.finding.lower()}. {a.why}" for a in areas if a.status == "WEAK"]
+    out += [
+        f"In the filing: {f.title}: {f.summary}"
+        for f in (notes.findings if notes else [])
+        if f.state == "CONCERN"
+    ]
     out += [f"Not known: {g}" for g in gaps[:3]]
     return list(dict.fromkeys(out))
 
@@ -698,6 +873,8 @@ def build_report(
     analyzer_version: str,
     ratings: list[PublishedRatingOut] | None = None,
     as_of: date | None = None,
+    definitions: list[str] | None = None,
+    notes: NotesReview | None = None,
 ) -> AnalysisReport:
     ratios, figures = ratio_sets[0], figure_sets[0]
     prior_figures = figure_sets[1] if len(figure_sets) > 1 else None
@@ -723,6 +900,8 @@ def build_report(
         *extra_flags(ratio_sets, figure_sets, currency),
         *rating_flags(ratings or [], as_of or date.today()),
     ]
+    from_notes = notes_flags(notes)
+    checks = [from_notes.get(c.text, c) for c in checks]
     strengths = [
         f"{s.title}: {finding_word(s.level).lower()}. {s.why}"
         for s in sections.values()
@@ -739,6 +918,7 @@ def build_report(
     why = _consolidated_why(core)
     headline = _headline_status(level, core)
     unique_gaps = list(dict.fromkeys(gaps))
+    all_definitions = list(dict.fromkeys(STANDARD_DEFINITIONS + (definitions or [])))
     ds_metrics, ds_notes = debt_service_block(ratio_sets, figure_sets, currency)
     stress, stress_note = stress_block(ratio_sets, figure_sets, currency)
     return AnalysisReport(
@@ -763,13 +943,15 @@ def build_report(
         debt_service_notes=[n[:600] for n in ds_notes],
         stress=stress,
         stress_note=stress_note,
-        key_concerns=[c[:600] for c in _concerns(areas, checks, unique_gaps)][:15],
+        key_concerns=[c[:600] for c in _concerns(areas, checks, unique_gaps, notes)][:15],
         published_ratings=ratings or [],
         ratings_reconciliation=reconcile(core, ratings or [])[:600],
         strengths=[s[:600] for s in strengths],
         weaknesses=[w[:600] for w in weaknesses],
         watch=[w[:600] for w in _watch(sections, ratios, checks)],
         gaps=[g[:600] for g in unique_gaps],
+        definitions=[d[:600] for d in all_definitions][:20],
+        notes_review=notes,
         other_checks=other_checks,
         analyzer_version=analyzer_version,
     )

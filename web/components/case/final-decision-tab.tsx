@@ -6,10 +6,11 @@ import type { DraftRecord, TabProps } from "@/components/case/types";
 import { useLoad } from "@/components/use-api";
 import { api, type CaseRecord } from "@/lib/api/client";
 import { dateTime, money, readable, shorten } from "@/lib/format";
+import { splitGaps } from "@/lib/gaps";
 
 type Props = TabProps & { record: CaseRecord };
 
-/** One printable page: the underwriter's recorded decision, set beside the draft it answers. */
+/** One printable page: the underwriter's recorded decision, set beside the UW Analyzer recommendation it answers. */
 export function FinalDecisionTab({ caseId, record }: Props) {
   const base = `/api/v1/cases/${encodeURIComponent(caseId)}/draft-recommendations`;
   const drafts = useLoad((t, signal) => api<DraftRecord[]>(t, "GET", base, undefined, signal), [caseId]);
@@ -29,8 +30,8 @@ export function FinalDecisionTab({ caseId, record }: Props) {
         <h3>No decision has been recorded yet</h3>
         <p>
           {draft
-            ? "Open the Draft recommendation tab and complete Step 3, Your decision. The one-page report appears here as soon as you record it."
-            : "Prepare a draft on the Draft recommendation tab first, then record your decision there."}
+            ? "Open the UW Analyzer recommendation tab and complete Step 3, Your decision. The one-page report appears here as soon as you record it."
+            : "Ask the UW Analyzer for a recommendation on its tab first, then record your decision there."}
         </p>
       </section>
     );
@@ -43,8 +44,18 @@ export function FinalDecisionTab({ caseId, record }: Props) {
       ? `Approve ${money(decided.final_amount, decided.currency)}`
       : decided.final_outcome === "DECLINE"
         ? "Decline"
-        : "No outcome recorded (draft set aside)";
-  const gaps = [...new Set(draft.information_gaps)];
+        : "No outcome recorded (recommendation set aside)";
+  const gaps = splitGaps(draft.information_gaps).gaps;
+  const analyzer =
+    draft.outcome === "APPROVE" ? `${outcomeHeadline(draft)}: ${money(draft.recommended_amount, currency)}` : outcomeHeadline(draft);
+  const sameOutcome = decided.final_outcome !== null && decided.final_outcome === draft.outcome;
+  const verdict = decided.agrees
+    ? "The actual decision matches the UW Analyzer recommendation."
+    : decided.final_outcome === null
+      ? "The UW Analyzer recommendation was set aside. No outcome was recorded."
+      : sameOutcome
+        ? `Same outcome, different amount: the UW Analyzer recommended ${money(draft.recommended_amount, currency)} and the actual decision is ${money(decided.final_amount, currency)}.`
+        : "The actual decision differs from the UW Analyzer recommendation.";
 
   return (
     <div className="ws-stack">
@@ -67,13 +78,23 @@ export function FinalDecisionTab({ caseId, record }: Props) {
           <TestPill />
         </header>
 
-        <section className="final-decision">
-          <span>Underwriter decision</span>
-          <strong>{final}</strong>
-          <p>
-            {readable(decided.action)} by <b>{decided.decided_by}</b> on {dateTime(decided.decided_at)}.{" "}
-            {decided.agrees ? "Matches the draft." : "Differs from the draft."}
-          </p>
+        <section aria-label="UW Analyzer versus actual decision" className="final-compare">
+          <h3>UW Analyzer versus actual decision</h3>
+          <div className="final-compare-cols">
+            <div>
+              <span>UW Analyzer recommended</span>
+              <strong>{analyzer}</strong>
+              <small>Recommendation only. Version {draft.version}, policy v{draft.policy_version}.</small>
+            </div>
+            <div className="is-actual">
+              <span>Actual decision</span>
+              <strong>{final}</strong>
+              <small>
+                {readable(decided.action)} by <b>{decided.decided_by}</b> on {dateTime(decided.decided_at)}.
+              </small>
+            </div>
+          </div>
+          <p className="final-verdict">{verdict}</p>
           {decided.reason && <p className="final-reason">Reason given: {decided.reason}</p>}
         </section>
 
@@ -83,7 +104,7 @@ export function FinalDecisionTab({ caseId, record }: Props) {
             <dd>{money(draft.requested_amount, currency)}</dd>
           </div>
           <div>
-            <dt>Draft recommendation (not a decision)</dt>
+            <dt>UW Analyzer recommendation (not a decision)</dt>
             <dd>
               {outcomeHeadline(draft)}
               {draft.outcome === "APPROVE" ? `: ${money(draft.recommended_amount, currency)}` : ""}
@@ -94,7 +115,7 @@ export function FinalDecisionTab({ caseId, record }: Props) {
             <dd>{draft.ai_proposed_amount ? money(draft.ai_proposed_amount, currency) : "No amount"}</dd>
           </div>
           <div>
-            <dt>Draft version, policy</dt>
+            <dt>Recommendation version, policy</dt>
             <dd>
               v{draft.version}, policy v{draft.policy_version}
             </dd>
@@ -102,7 +123,7 @@ export function FinalDecisionTab({ caseId, record }: Props) {
         </dl>
 
         <section>
-          <h3>Why the draft said this</h3>
+          <h3>Why the UW Analyzer said this</h3>
           <p>{shorten(draft.summary, currency)}</p>
           <ol className="final-list">
             {draft.reasons.map((reason, index) => (

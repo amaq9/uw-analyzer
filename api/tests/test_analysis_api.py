@@ -13,6 +13,7 @@ from fastapi.testclient import TestClient
 from app.research.public_connectors import SecEdgarConnector
 from app.research.screening_connectors import OfacSdnConnector
 from app.research.snapshots import SnapshotStore
+from tests.filing_fixtures import filing_html
 from tests.test_analyzer_rules import DISTRESSED, STRONG, facts_json
 from tests.test_cases_api import audit, headers, make_case
 from tests.test_public_connectors import FakeFetcher, MemoryStorage
@@ -38,15 +39,34 @@ def connectors(
     profile: dict[str, Any],
     sdn: list[str] | None = None,
     with_ofac: bool = False,
+    filing: bytes | None = None,
 ) -> list[Any]:
     tickers = {"0": {"cik_str": 111, "ticker": "ACME", "title": "Acme Corp"}}
+    submissions: dict[str, Any] = {"filings": {}}
+    routes: dict[str, bytes | Exception] = {}
+    if filing is not None:
+        submissions = {
+            "filings": {
+                "recent": {
+                    "form": ["10-K"],
+                    "accessionNumber": ["0000000000-26-000001"],
+                    "primaryDocument": ["acme-20260531.htm"],
+                    "filingDate": ["2026-07-15"],
+                    "reportDate": ["2026-05-31"],
+                }
+            }
+        }
+        routes[
+            "https://www.sec.gov/Archives/edgar/data/111/000000000026000001/acme-20260531.htm"
+        ] = filing
     sec_fetcher = FakeFetcher(
         {
             "https://www.sec.gov/files/company_tickers.json": json.dumps(tickers).encode(),
-            "https://data.sec.gov/submissions/CIK0000000111.json": b'{"filings": {}}',
+            "https://data.sec.gov/submissions/CIK0000000111.json": json.dumps(submissions).encode(),
             "https://data.sec.gov/api/xbrl/companyfacts/CIK0000000111.json": json.dumps(
                 facts_json(profile)
             ).encode(),
+            **routes,
         }
     )
     out: list[Any] = [SecEdgarConnector(sec_fetcher, SnapshotStore(storage))]
@@ -69,6 +89,7 @@ def prepared_case(
     ofac: bool = False,
     sdn: list[str] | None = None,
     exposure: str | None = "1000000",
+    filing: bytes | None = None,
 ) -> tuple[str, dict[str, str]]:
     register(
         client, app, tenant, key="sec-edgar", source_type="financial_filings", jurisdictions=["US"]
@@ -99,7 +120,7 @@ def prepared_case(
         f"/api/v1/cases/{case['id']}/research-runs", json={"jurisdictions": ["US"]}, headers=h
     ).json()
     start(client, case["id"], run["id"], h)
-    drain(executor(app, *connectors(storage, profile, sdn, ofac))[0])
+    drain(executor(app, *connectors(storage, profile, sdn, ofac, filing))[0])
     return case["id"], h
 
 
@@ -137,7 +158,7 @@ def test_a_strong_company_gets_a_full_draft_with_findings_and_reasons(
         "1000000"
     )  # policy: 80% or more is the full amount
     assert draft["source"]["kind"] == "analyzer_v1" and draft["notice"].startswith(
-        "Draft recommendation"
+        "UW Analyzer recommendation"
     )
     assert any("sector" in g.lower() for g in draft["information_gaps"])
     assert draft["limitations"]
@@ -162,11 +183,9 @@ def test_a_strong_company_gets_a_full_draft_with_findings_and_reasons(
     assert all("earlier" in m for a in report["areas"] for m in a["metrics"])
     assert report["executive_summary"].startswith("Consolidated financial findings")
     assert report["debt_service"] and report["debt_service_notes"]
-    assert [r["scenario"] for r in report["stress"]] == [
-        "As reported",
-        "Revenue down 10%",
-        "Revenue down 20%",
-    ]
+    scenarios = [r["scenario"] for r in report["stress"]]
+    assert scenarios[0] == "As reported" and scenarios[-1].endswith("(extreme)")
+    assert all(s.startswith("Revenue down") for s in scenarios[1:])
     assert "not a forecast" in report["stress_note"]
     assert report["consolidated_status"] == "OK"
     assert len(report["red_flags"]) == 23
@@ -185,9 +204,15 @@ def test_a_strong_company_gets_a_full_draft_with_findings_and_reasons(
     )
     assert report["executive_summary"].startswith("Consolidated financial findings: OK.")
     # Names a person recognises, never internal keys.
-    notes = [g for g in draft["information_gaps"] if g.startswith("Figure derived")]
-    assert notes and all("_" not in g.split(" is ")[0] for g in notes)
-    assert any(g.startswith("Figure derived: EBITDA is") for g in notes)
+    # Definitions are method, not gaps (found in the Product Owner's review): they have their own list.
+    assert not [g for g in draft["information_gaps"] if "derived" in g or " here is " in g]
+    assert not [g for g in report["gaps"] if "derived" in g or " here is " in g]
+    assert all("_" not in d.split(" is ")[0] for d in report["definitions"])
+    assert any(
+        d.startswith("EBITDA is EBIT plus") or d.startswith("EBIT is operating profit")
+        for d in report["definitions"]
+    )
+    assert any(d.startswith("Net debt is") for d in report["definitions"])
     assert report["strengths"] and report["watch"] and report["gaps"]
     assert {c["title"] for c in report["other_checks"]} >= {"Sector outlook", "Payment behaviour"}
     stored = client.get(
@@ -324,3 +349,88 @@ def test_the_analysis_contract_has_no_score_rating_or_decision_fields() -> None:
     from tests.p09 import offending_names
 
     assert offending_names(build_spec()) == []
+
+
+def test_without_the_printed_filing_the_notes_checks_stay_not_assessable_and_say_why(
+    client: TestClient, db_app: FastAPI, tenant: str, storage: MemoryStorage
+) -> None:
+    case_id, h = prepared_case(client, db_app, tenant, storage, STRONG)
+    report = analyse(client, case_id, h).json()["draft"]["analysis"]
+    assert report["notes_review"] is None
+    assert any("printed 10-K" in g and "was not read" in g for g in report["gaps"])
+    by_text = {f["text"]: f for f in report["red_flags"]}
+    for text in (
+        "Going-concern language, covenant breach, auditor change or qualification",
+        "Largest customers above 50% of revenue",
+        "Covenant violations or near-misses",
+    ):
+        assert by_text[text]["state"] == "NOT_ASSESSABLE"
+        assert by_text[text]["result"] == "Not assessable"
+    check = next(c for c in report["other_checks"] if c["title"] == "Notes and auditor's report")
+    assert check["state"] == "NOT_SEARCHED"
+
+
+def test_the_printed_filing_is_read_quoted_and_recorded_as_evidence(
+    client: TestClient, db_app: FastAPI, tenant: str, storage: MemoryStorage
+) -> None:
+    case_id, h = prepared_case(
+        client, db_app, tenant, storage, STRONG, filing=filing_html(covenants="breach")
+    )
+    out = analyse(client, case_id, h).json()
+    report = out["draft"]["analysis"]
+    notes = report["notes_review"]
+    assert notes["url"].startswith("https://www.sec.gov/Archives/edgar/data/111/")
+    assert notes["filed"] == "2026-07-15" and notes["characters"] > 20_000
+    states = {f["topic"]: f["state"] for f in notes["findings"]}
+    assert states["COVENANTS"] == "CONCERN" and states["AUDITOR_OPINION"] == "NO_CONCERN"
+    assert not any("printed 10-K" in g for g in report["gaps"])
+    by_text = {f["text"]: f for f in report["red_flags"]}
+    assert by_text["Covenant violations or near-misses"]["state"] == "TRIGGERED"
+    going = by_text["Going-concern language, covenant breach, auditor change or qualification"]
+    assert going["state"] == "TRIGGERED"
+    customers = by_text["Largest customers above 50% of revenue"]
+    assert customers["state"] == "CLEAR" and customers["result"] == "Not above threshold"
+    assert any(c.startswith("In the filing: Loan covenants") for c in report["key_concerns"])
+    assert any(r["text"].startswith("Notes and auditor's report") for r in out["draft"]["reasons"])
+    # The finding is a claim backed by evidence that links to the public filing.
+    claims = client.get(f"/api/v1/cases/{case_id}/claims", headers=h).json()
+    prefix = "In its 10-K the company's filing on loan covenants"
+    covenant = next(c for c in claims if c["text"].startswith(prefix))
+    assert covenant["adverse"] and covenant["classification"] == "FACT"
+    link = covenant["links"][0]["evidence"]
+    assert link["url"] == notes["url"] and link["source_class"] == "OFFICIAL"
+    assert covenant["verification"]["status"] in ("VERIFIED", "PARTIALLY_VERIFIED")
+    # The figures' evidence also links to the filing, so a person can open the source.
+    figures = next(c for c in claims if c["text"].startswith("At 2026-05-31 the current ratio"))
+    assert figures["links"][0]["evidence"]["url"].startswith(
+        "https://www.sec.gov/Archives/edgar/data/111/"
+    )
+
+
+def test_an_assessment_shows_the_facts_it_rests_on_and_does_not_call_itself_a_judgement(
+    client: TestClient, db_app: FastAPI, tenant: str, storage: MemoryStorage
+) -> None:
+    case_id, h = prepared_case(client, db_app, tenant, storage, STRONG)
+    analyse(client, case_id, h)
+    claims = client.get(f"/api/v1/cases/{case_id}/claims", headers=h).json()
+    by_id = {c["id"]: c for c in claims}
+    assessments = [
+        c for c in claims if c["classification"] == "INTERPRETATION" and c["basis_claim_ids"]
+    ]
+    assert assessments
+    for claim in assessments:
+        reasons = " ".join(claim["verification"]["reasons"])
+        assert "judgement" not in reasons and "worked out by the written rules" in reasons
+        basis = [by_id[i] for i in claim["basis_claim_ids"]]
+        assert all(b["links"] for b in basis)  # the facts carry the linked evidence
+
+
+def test_running_the_analysis_again_does_not_duplicate_claims(
+    client: TestClient, db_app: FastAPI, tenant: str, storage: MemoryStorage
+) -> None:
+    case_id, h = prepared_case(client, db_app, tenant, storage, STRONG)
+    analyse(client, case_id, h)
+    before = client.get(f"/api/v1/cases/{case_id}/claims", headers=h).json()
+    analyse(client, case_id, h)
+    after = client.get(f"/api/v1/cases/{case_id}/claims", headers=h).json()
+    assert {c["id"] for c in after} == {c["id"] for c in before}

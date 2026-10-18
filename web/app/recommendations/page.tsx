@@ -3,7 +3,7 @@ import { RecommendationsOverview } from "@/components/recommendations-overview";
 import { Sidebar } from "@/components/sidebar";
 import { Topbar } from "@/components/topbar";
 
-export const metadata: Metadata = { title: "Draft recommendations" };
+export const metadata: Metadata = { title: "UW Analyzer recommendations" };
 
 export default function RecommendationsPage() {
   return (

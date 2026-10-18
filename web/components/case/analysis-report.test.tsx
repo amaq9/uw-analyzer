@@ -41,9 +41,9 @@ const report: AnalysisReportData = {
   consolidated_why: "The four core dimensions (liquidity, profitability, leverage, cash flow): 2 OK, 1 weak, 1 distressed.",
   key_concerns: ["Leverage: distressed. Debt to equity is high.", "Not known: Receivables aging."],
   red_flags: [
-    { text: "Negative shareholders' equity", state: "CLEAR", detail: "Equity is CAD 9m." },
-    { text: "Net debt to EBITDA above 3.0x", state: "TRIGGERED", detail: "Net debt is 3.40x EBITDA." },
-    { text: "Going-concern language", state: "NOT_ASSESSABLE", detail: "Needs the printed statements." },
+    { text: "Negative shareholders' equity", state: "CLEAR", detail: "Equity is CAD 9m.", result: "Condition not met" },
+    { text: "Net debt to EBITDA above 3.0x", state: "TRIGGERED", detail: "Net debt is 3.40x EBITDA.", result: "Above threshold" },
+    { text: "Going-concern language", state: "NOT_ASSESSABLE", detail: "Needs the printed statements.", result: "Not assessable" },
   ],
   debt_service: [
     { label: "Cash from operations over current liabilities", current: "0.31x", prior: "0.44x", earlier: "0.50x", change: "down", reference: "" },
@@ -94,7 +94,7 @@ describe("Step 1 analysis report", () => {
     const liquidity = document.getElementById("ar-liquidity") as HTMLElement;
     expect(within(liquidity).getByText(/Concerning · Weakening/)).toBeInTheDocument();
     const glance = screen.getByLabelText("Status of each financial area");
-    expect(within(glance).getAllByText(/does not change the draft amount/i)).toHaveLength(1);
+    expect(within(glance).getAllByText(/does not change the recommended amount/i)).toHaveLength(1);
     const efficiency = document.getElementById("ar-efficiency") as HTMLElement;
     expect(within(efficiency).getByText(/Shown for context/)).toBeInTheDocument();
   });
@@ -140,8 +140,8 @@ describe("Step 1 analysis report", () => {
   it("lists the red-flag checklist as prompts, with the checks that could not be made", () => {
     render(<AnalysisReportView currency="CAD" report={report} />);
     expect(screen.getByText("3 prompts for the underwriter's attention")).toBeInTheDocument();
-    expect(screen.getByText("Look closer")).toBeInTheDocument();
-    expect(screen.getByText("Clear")).toBeInTheDocument();
+    expect(screen.getByText("Above threshold")).toBeInTheDocument();
+    expect(screen.getByText("Condition not met")).toBeInTheDocument();
     expect(screen.getByText("Not assessable")).toBeInTheDocument();
     expect(screen.getByText(/prompts, not pass or fail tests/i)).toBeInTheDocument();
   });
@@ -161,5 +161,81 @@ describe("Step 1 analysis report", () => {
     }
     expect(screen.getByText("Sector outlook")).toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(/CAD CAD/);
+  });
+});
+
+
+describe("Step 1 notes, definitions and threshold wording", () => {
+  const notes: NonNullable<AnalysisReportData["notes_review"]> = {
+    source: "Acme 10-K for the year ended 2026-05-31, filed 2026-07-15",
+    url: "https://www.sec.gov/Archives/edgar/data/111/000000000026000001/acme.htm",
+    filed: "2026-07-15",
+    sha256: "a".repeat(64),
+    characters: 123456,
+    summary: "Concerns stated in the filing: loan covenants. Read the quotes.",
+    findings: [
+      {
+        topic: "COVENANTS",
+        title: "Loan covenants",
+        state: "CONCERN",
+        summary: "The filing states a covenant breach, waiver or default.",
+        quotes: [{ text: "The Company was not in compliance with the leverage covenant.", where: null }],
+      },
+      {
+        topic: "GOING_CONCERN",
+        title: "Going concern",
+        state: "NO_CONCERN",
+        summary: "Searched the whole filing: no going-concern warning was found.",
+        quotes: [],
+      },
+    ],
+  };
+
+  it("shows what the filing's notes say, in its own words, with a link to the filing", () => {
+    render(<AnalysisReportView currency="CAD" report={{ ...report, notes_review: notes }} />);
+    const section = screen.getByLabelText("Notes and auditor's report");
+    expect(within(section).getByRole("heading", { name: "What the filing says" })).toBeInTheDocument();
+    expect(within(section).getByText("Concern stated")).toBeInTheDocument();
+    expect(within(section).getByText("No concern stated")).toBeInTheDocument();
+    expect(within(section).getByText(/not in compliance with the leverage covenant/)).toBeInTheDocument();
+    expect(within(section).getByRole("link", { name: "Open the filing" })).toHaveAttribute("href", notes.url);
+    expect(within(section).getByText(/never changes the recommended amount/i)).toBeInTheDocument();
+  });
+
+  it("says plainly when the printed filing was not read, and what to do", () => {
+    render(<AnalysisReportView currency="CAD" report={{ ...report, notes_review: null }} />);
+    const section = screen.getByLabelText("Notes and auditor's report");
+    expect(within(section).getByText("The printed 10-K was not read in this run")).toBeInTheDocument();
+    expect(within(section).getByText(/Run the research again/)).toBeInTheDocument();
+  });
+
+  it("keeps definitions out of the gaps and shows them under their own heading", () => {
+    render(
+      <AnalysisReportView
+        currency="CAD"
+        report={{
+          ...report,
+          gaps: ["Receivables aging was not available.", "Figure derived: EBIT is pre-tax income less net interest income"],
+          definitions: ["Net debt is financial debt plus leases, less cash."],
+        }}
+      />,
+    );
+    const defined = screen.getByLabelText("How the figures were defined");
+    expect(within(defined).getByText("Net debt is financial debt plus leases, less cash.")).toBeInTheDocument();
+    expect(within(defined).getByText("EBIT is pre-tax income less net interest income")).toBeInTheDocument();
+    const gaps = screen.getByText("Gaps").closest("div") as HTMLElement;
+    expect(within(gaps).getByText("Receivables aging was not available.")).toBeInTheDocument();
+    expect(within(gaps).queryByText(/Figure derived/)).not.toBeInTheDocument();
+  });
+
+  it("words each check by its result, with red when past the line and green when not", () => {
+    const flags = [
+      { text: "Debt to equity above 2.5", state: "CLEAR", detail: "Debt to equity is 0.74x.", result: "Not above threshold" },
+      { text: "Net debt to EBITDA above 3.0x", state: "TRIGGERED", detail: "Net debt is 3.40x EBITDA.", result: "Above threshold" },
+    ] as AnalysisReportData["red_flags"];
+    render(<AnalysisReportView currency="CAD" report={{ ...report, red_flags: flags }} />);
+    expect(screen.getByText("Not above threshold")).toHaveClass("is-clear");
+    expect(screen.getByText("Above threshold")).toHaveClass("is-triggered");
+    expect(screen.getByText(/Show the other 1 prompts \(not above or below the threshold, or not assessable\)/)).toBeInTheDocument();
   });
 });

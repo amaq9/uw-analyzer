@@ -31,7 +31,7 @@ async function loadRows(token: string, signal: AbortSignal): Promise<Row[]> {
 }
 
 function status(row: Row) {
-  if (!row.draft) return "No draft yet";
+  if (!row.draft) return "No recommendation yet";
   return row.decision ? "Decided by you" : "Waiting for your decision";
 }
 
@@ -42,12 +42,12 @@ export function RecommendationsOverview() {
   const waiting = data.filter((row) => row.draft && !row.decision).length;
 
   return (
-    <Gate error={rows.error} loading={rows.loading} name="Draft recommendations" signedIn={Boolean(session)}>
+    <Gate error={rows.error} loading={rows.loading} name="UW Analyzer recommendations" signedIn={Boolean(session)}>
       <section className="ws">
         <header className="ws-header">
           <div>
-            <p className="eyebrow">Step 2 and 3 · Draft and decision</p>
-            <h1>Draft recommendations</h1>
+            <p className="eyebrow">Step 2 and 3 · UW Analyzer and decision</p>
+            <h1>UW Analyzer recommendations</h1>
             <p className="ws-muted">
               Every draft is a recommendation for the underwriter, not a decision. Only your recorded decision is.
             </p>
@@ -58,8 +58,8 @@ export function RecommendationsOverview() {
         <section className="ws-card">
           <p>
             {waiting > 0
-              ? `${waiting} draft${waiting === 1 ? " is" : "s are"} waiting for your decision.`
-              : "No draft is waiting for your decision."}
+              ? `${waiting} recommendation${waiting === 1 ? " is" : "s are"} waiting for your decision.`
+              : "No recommendation is waiting for your decision."}
           </p>
           {data.length === 0 ? (
             <p className="ws-muted">
@@ -72,7 +72,7 @@ export function RecommendationsOverview() {
                   <tr>
                     <th>Case</th>
                     <th>Requested</th>
-                    <th>Draft said</th>
+                    <th>UW Analyzer said</th>
                     <th>Where it stands</th>
                     <th />
                   </tr>
@@ -100,7 +100,7 @@ export function RecommendationsOverview() {
                       <td>{status(row)}</td>
                       <td>
                         <Link className="ws-link" href={`/cases/${row.record.id}?tab=recommendation`}>
-                          {row.draft ? "Open the draft" : "Open the case"}
+                          {row.draft ? "Open the recommendation" : "Open the case"}
                         </Link>
                       </td>
                     </tr>

@@ -16,7 +16,7 @@ import { dateTime, money } from "@/lib/format";
 function Steps({ hasDraft, decided }: Readonly<{ hasDraft: boolean; decided: boolean }>) {
   const steps = [
     { id: "rec-step-1", label: "Research and analysis", state: hasDraft ? "done" : "current" },
-    { id: "rec-step-2", label: "Draft recommendation", state: !hasDraft ? "next" : decided ? "done" : "current" },
+    { id: "rec-step-2", label: "UW Analyzer recommendation", state: !hasDraft ? "next" : decided ? "done" : "current" },
     { id: "rec-step-3", label: "Your decision", state: decided ? "done" : hasDraft ? "current" : "next" },
   ];
   return (
@@ -75,7 +75,7 @@ export function RecommendationTab({
       {latest?.analysis && <AnalysisReportView currency={latest.requested_currency} report={latest.analysis} />}
       {latest && !latest.analysis && (
         <p className="ws-note">
-          This draft was prepared before the detailed analysis existed. Run the analysis again to see the full Step 1 here.
+          This recommendation was prepared before the detailed analysis existed. Run the analysis again to see the full Step 1 here.
         </p>
       )}
       <PublishedRatings
@@ -88,26 +88,26 @@ export function RecommendationTab({
 
       {drafts.error && (
         <p className="ws-error" role="alert">
-          The drafts could not be loaded. {drafts.error.message}
+          The recommendations could not be loaded. {drafts.error.message}
         </p>
       )}
 
       <StepHeading
         id="rec-step-2"
-        note="The approved policy turns the findings into a draft outcome and amount. It is a recommendation only."
+        note="The approved policy turns the findings into the UW Analyzer's outcome and amount. It is a recommendation only."
         number={2}
-        title="Draft recommendation"
+        title="UW Analyzer recommendation"
       />
       {drafts.loading && !drafts.data && (
         <section aria-live="polite" className="ws-card">
-          <p className="ws-muted">Loading the drafts of this case…</p>
+          <p className="ws-muted">Loading the recommendations of this case…</p>
         </section>
       )}
       {!latest && !drafts.loading && !drafts.error && (
         <section className="ws-card rec-empty">
-          <h3>No draft has been prepared yet</h3>
+          <h3>No UW Analyzer recommendation has been prepared yet</h3>
           <p>
-            Run the analysis in Step 1 once the research has finished. A draft needs a confirmed company, no open review
+            Run the analysis in Step 1 once the research has finished. A recommendation needs a confirmed company, no open review
             items, and finished research and financial analysis. If any is missing, the analysis says which.
           </p>
         </section>
@@ -117,13 +117,13 @@ export function RecommendationTab({
 
       <StepHeading
         id="rec-step-3"
-        note="Only your recorded decision is the decision. Adopt the draft, change it, or reject it."
+        note="Only your recorded decision is the decision. Adopt the UW Analyzer recommendation, change it, or reject it."
         number={3}
         title="Your decision"
       />
       {!latest && !drafts.loading && !drafts.error && (
         <section className="ws-card">
-          <p>Available once a draft has been prepared.</p>
+          <p>Available once the UW Analyzer has prepared a recommendation.</p>
         </section>
       )}
       {latest && decision.data && <DecisionSummary decision={decision.data} draft={latest} />}
@@ -158,7 +158,7 @@ export function RecommendationTab({
 
       {list.length > 1 && (
         <section className="ws-card">
-          <p className="eyebrow">Earlier drafts of this case</p>
+          <p className="eyebrow">Earlier recommendations of this case</p>
           <ul className="ws-list">
             {list.slice(1).map((draft) => (
               <li key={draft.id}>
@@ -166,7 +166,7 @@ export function RecommendationTab({
                   Version {draft.version} · {dateTime(draft.created_at)}
                 </Link>
                 <small className="ws-muted">
-                  Draft said: {outcomeHeadline(draft)}
+                  UW Analyzer said: {outcomeHeadline(draft)}
                   {draft.outcome === "APPROVE" ? ` (${money(draft.recommended_amount, draft.requested_currency)})` : ""}
                 </small>
               </li>

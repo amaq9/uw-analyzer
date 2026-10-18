@@ -23,6 +23,7 @@ from app.analysis import assess as rules
 from app.analysis.assess import Level, Section, money, pct, times
 from app.analysis.dimensions import dimension_metrics
 from app.analysis.facts import METRICS, YearFigures, extract, to_figures
+from app.analysis.notes import scan as scan_filing
 from app.analysis.ratios import compute
 from app.analysis.report import FINDING_WORD, STATUS_WORD, build_report
 from app.auth.models import Principal
@@ -60,6 +61,16 @@ ORIGINS = {
 }
 
 
+# Notes topics that become claims in the evidence record (the others are only shown in the report).
+_NOTE_CLAIMS = {
+    "GOING_CONCERN",
+    "AUDITOR_OPINION",
+    "AUDITOR_CHANGE",
+    "COVENANTS",
+    "CUSTOMER_CONCENTRATION",
+    "INTERNAL_CONTROL",
+}
+
 _FIGURE_NAMES = {
     "cash": "Cash",
     "ebit": "EBIT",
@@ -69,10 +80,17 @@ _FIGURE_NAMES = {
 }
 
 
+def _filing_url(cik: Any, accession: str | None) -> str | None:
+    """The public SEC page of the filing the figures come from, so a person can open the source."""
+    if not accession or not re.fullmatch(r"\d{10}-\d{2}-\d{6}", accession):
+        return None
+    return f"https://www.sec.gov/Archives/edgar/data/{int(cik)}/{accession.replace('-', '')}/"
+
+
 def _derived_notes(derived: dict[str, str]) -> list[str]:
     """Plain notes on figures that were derived, with names a person recognises."""
     return [
-        f"Figure derived: {_FIGURE_NAMES.get(key, key.replace('_', ' '))} is {text}"
+        f"{_FIGURE_NAMES.get(key, key.replace('_', ' '))} here is {text}."
         for key, text in derived.items()
     ]
 
@@ -150,9 +168,14 @@ def _evidence(
     excerpt: str,
     published_on: date | None = None,
     event_on: date | None = None,
+    url: str | None = None,
 ) -> tuple[Any, bool]:
     for existing in store.list_evidence(case.id, case.tenant_id):
-        if existing.connector_call_id == call.id and existing.title == title:
+        if (
+            existing.connector_call_id == call.id
+            and existing.title == title
+            and existing.url == url
+        ):
             return existing, False
     source = sources.get(call.source_id)
     assert source is not None  # noqa: S101 - a logged call always names a registered source
@@ -169,7 +192,7 @@ def _evidence(
             "document_id": None,
             "title": title,
             "origin": ORIGINS.get(call.source_key, call.source_key),
-            "url": None,
+            "url": url,
             "published_on": published_on,
             "event_on": event_on or call.ended_at.date(),
             "accessed_at": call.ended_at,
@@ -207,7 +230,14 @@ class _Claims:
         basis: list[uuid.UUID] | None = None,
     ) -> Any:
         if text in self.known:
-            return self.known[text]
+            claim = self.known[text]
+            linked = {link.evidence_id for link in self.store.links_of(claim.id)}
+            for e in evidence or []:  # a re-run can bring better evidence: link it, never replace
+                if e.id not in linked:
+                    self.store.add_link(
+                        claim.id, e.id, Relation.SUPPORTS, None, self.principal.subject
+                    )
+            return claim
         claim = self.store.add_claim(
             {
                 "tenant_id": self.case.tenant_id,
@@ -274,6 +304,10 @@ class _Financials:
     label: str
     reference: Any  # (quote) -> EvidenceRef
     gaps: list[str]
+    definitions: list[str] = field(default_factory=list)
+    notes: Any = None  # a notes.Scan of the printed 10-K, when it was retrieved and read
+    notes_evidence: Any = None
+    notes_url: str | None = None
 
 
 def _from_sec(
@@ -319,15 +353,83 @@ def _from_sec(
         ),
         published_on=latest.filed,
         event_on=latest.period_end,
+        url=_filing_url(manifest["cik"], latest.accession),
     )
     url = SEC_URL.format(cik=manifest["cik"])
 
     def reference(quote: str) -> EvidenceRef:
         return EvidenceRef(kind="web", url=url, retrieved_at=sec_call.ended_at, quote=quote)
 
-    gaps = ["The printed 10-K text, notes and auditor's report were not read"]
-    gaps += _derived_notes(latest.derived)
-    return _Financials(years, figures, ev, int(made), "SEC XBRL company facts", reference, gaps)
+    gaps: list[str] = []
+    scanned: Any = None
+    notes_ev: Any = None
+    created = int(made)
+    annual = manifest.get("annual_report") or {}
+    filing = next((f for f in manifest["files"] if f["label"] == "annual_report"), None)
+    if filing is None:
+        why = (
+            "it could not be retrieved (" + str(annual.get("reason", "unknown")) + ")"
+            if annual.get("status") in ("NOT_RETRIEVED", "NOT_FOUND")
+            else "this research run did not fetch it; run the research again to retrieve it"
+        )
+        gaps.append(f"The printed 10-K (notes and auditor's report) was not read: {why}")
+    elif annual.get("accession") != latest.accession:
+        gaps.append(
+            "The printed 10-K retrieved is for a different filing than the figures "
+            f"({annual.get('accession')} against {latest.accession}), so its notes were not used"
+        )
+    else:
+        try:
+            scanned = scan_filing(
+                _read(storage, filing["ref"]),
+                label=(
+                    f"{case.legal_name} 10-K for the year ended {annual.get('period') or fy}, "
+                    f"filed {annual.get('filed')} (accession {annual.get('accession')}): "
+                    "notes to the financial statements and auditor's report"
+                ),
+                url=filing["url"],
+                filed=annual.get("filed") or None,
+            )
+        except (AnalysisUnavailable, ValueError):
+            gaps.append(
+                "The printed 10-K was retrieved but could not be read (its stored copy failed its check)"
+            )
+        if scanned is not None:
+            notes_ev, made_notes = _evidence(
+                evidence_store,
+                sources,
+                case,
+                principal,
+                sec_call,
+                evidence_type="FINANCIAL",
+                title=(
+                    f"{case.legal_name} 10-K text, year ended {annual.get('period') or fy}: notes and auditor's "
+                    f"report (accession {annual.get('accession')})"
+                ),
+                excerpt=scanned.review.summary
+                + " Topics: "
+                + "; ".join(
+                    f"{f.title} ({f.state.replace('_', ' ').lower()})"
+                    for f in scanned.review.findings
+                ),
+                published_on=latest.filed,
+                event_on=latest.period_end,
+                url=filing["url"],
+            )
+            created += int(made_notes)
+    return _Financials(
+        years,
+        figures,
+        ev,
+        created,
+        "SEC XBRL company facts",
+        reference,
+        gaps,
+        _derived_notes(latest.derived),
+        notes=scanned,
+        notes_evidence=notes_ev,
+        notes_url=filing["url"] if scanned is not None and filing else None,
+    )
 
 
 def _from_uploaded(
@@ -422,9 +524,15 @@ def _from_uploaded(
             + ") and were supplied by the company, so they count as weaker evidence"
         ),
     ]
-    gaps += _derived_notes(latest.derived)
     return _Financials(
-        years, figures, existing, created, f"uploaded statement {filename}", reference, gaps
+        years,
+        figures,
+        existing,
+        created,
+        f"uploaded statement {filename}",
+        reference,
+        gaps,
+        _derived_notes(latest.derived),
     )
 
 
@@ -608,6 +716,25 @@ def analyse(
             relevance="Consolidated financial findings",
             basis=[c.id for c in fact_claims.values()],
         )
+
+    # --- the printed 10-K: notes and auditor's report --------------------------------------------
+    notes_review = fin.notes.review if fin.notes is not None else None
+    if notes_review is not None:
+        for finding in notes_review.findings:
+            if finding.state not in ("CONCERN", "NO_CONCERN") or finding.topic not in _NOTE_CLAIMS:
+                continue
+            quote = f" The filing reads: “{finding.quotes[0].text}”" if finding.quotes else ""
+            claims.add(
+                f"In its 10-K the company's filing on {finding.title.lower()}: {finding.summary}{quote}"[
+                    :900
+                ],
+                classification="FACT",
+                material=True,
+                adverse=finding.state == "CONCERN",
+                category="FINANCIALS",
+                relevance=finding.title,
+                evidence=[fin.notes_evidence],
+            )
 
     # --- other research areas -------------------------------------------------------------------
     gaps: list[str] = []
@@ -813,6 +940,39 @@ def analyse(
                 ],
             )
         )
+    if notes_review is not None:
+        notes_quote = next(
+            (
+                f.quotes[0].text
+                for f in notes_review.findings
+                if f.topic == "AUDITOR_OPINION" and f.quotes
+            ),
+            notes_review.summary,
+        )
+        reasons.append(
+            Reason(
+                text=f"Notes and auditor's report (the printed 10-K): {notes_review.summary}"[:500],
+                evidence=[
+                    EvidenceRef(
+                        kind="web",
+                        url=fin.notes_url,
+                        retrieved_at=by_source["sec-edgar"].ended_at,
+                        quote=notes_quote[:300],
+                    )
+                ],
+            )
+        )
+    other_checks.append(
+        OtherCheck(
+            title="Notes and auditor's report",
+            state="FOUND" if notes_review is not None else "NOT_SEARCHED",
+            detail=(
+                notes_review.summary
+                if notes_review is not None
+                else "The printed 10-K was not read in this run; see the gaps."
+            )[:600],
+        )
+    )
     audit_note = next(
         (g for g in fin.gaps if "audited" in g.lower()), "Audit status is not stated."
     )
@@ -851,6 +1011,8 @@ def analyse(
         analyzer_version=rules.ANALYZER_VERSION,
         ratings=ratings,
         as_of=datetime.now(UTC).date(),
+        definitions=fin.definitions,
+        notes=notes_review,
     )
     summary = (
         f"Consolidated financial findings: {STATUS_WORD[analysis_report.consolidated_status]}. "
@@ -881,7 +1043,9 @@ def analyse(
     )
     out.draft = import_draft(request, case.id, body, principal)
     out.status = "DRAFT_PREPARED"
-    out.message = "A draft recommendation was prepared for the underwriter. It is not a decision."
+    out.message = (
+        "The UW Analyzer prepared a recommendation for the underwriter. It is not a decision."
+    )
     return out
 
 

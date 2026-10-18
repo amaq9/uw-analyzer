@@ -3508,6 +3508,61 @@ textarea {
   background: var(--mint);
 }
 
+.final-compare {
+  display: grid;
+  gap: 8px;
+  padding: 14px 18px;
+  border: 2px solid var(--teal);
+  border-radius: 10px;
+  background: var(--mint);
+}
+
+.final-compare h3 {
+  margin: 0;
+}
+
+.final-compare-cols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.final-compare-cols > div {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.final-compare-cols > div.is-actual {
+  border-color: var(--teal);
+}
+
+.final-compare-cols span {
+  color: var(--ink-soft);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.final-compare-cols strong {
+  font-family: var(--font-serif);
+  font-size: 22px;
+}
+
+.final-verdict {
+  margin: 0;
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .final-compare-cols {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .final-decision span,
 .final-grid dt {
   color: var(--ink-soft);
@@ -3819,7 +3874,7 @@ a.ar-tile:hover {
 }
 
 .ar-flag-state.is-triggered {
-  color: var(--st-weak);
+  color: var(--st-distressed);
 }
 
 .ar-flag-state.is-clear {
@@ -3916,6 +3971,24 @@ a.ar-tile:hover {
   color: var(--teal);
   font-weight: 700;
   cursor: pointer;
+}
+
+.ar-note-state {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.ar-note-state.is-concern {
+  color: var(--st-distressed);
+}
+
+.ar-note-state.is-clear {
+  color: var(--st-ok);
+}
+
+.ar-note-state.is-info,
+.ar-note-state.is-none {
+  color: var(--st-na);
 }
 
 .ar-flag-none {

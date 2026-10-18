@@ -40,7 +40,7 @@ const draft = {
 describe("draft recommendation design", () => {
   it("labels the draft as not a decision and as a test product, with the amount against the request", () => {
     render(<DraftHero draft={draft} />);
-    expect(screen.getByText("Draft recommendation for the underwriter. Not a decision.")).toBeInTheDocument();
+    expect(screen.getByText("UW Analyzer recommendation for the underwriter. Not a decision.")).toBeInTheDocument();
     expect(screen.getByText("Test product")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Approve a reduced amount" })).toBeInTheDocument();
     expect(screen.getByRole("img", { name: /60 percent of the amount requested/i })).toBeInTheDocument();
@@ -72,11 +72,18 @@ describe("draft recommendation design", () => {
   it("shows a repeated information gap once, with no duplicate-key error", () => {
     const errors: unknown[][] = [];
     const spy = vi.spyOn(console, "error").mockImplementation((...args) => void errors.push(args));
-    const gap = "Figure derived: ebitda is EBIT plus depreciation and amortisation";
+    const gap = "Court records were not searched";
     render(<DraftBasis draft={{ ...draft, information_gaps: [gap, gap] } as DraftRecord} />);
     expect(screen.getAllByText(gap)).toHaveLength(1); // a repeated gap is shown once
     spy.mockRestore();
     expect(errors).toEqual([]);
+  });
+
+  it("does not list how a figure was defined as missing information", () => {
+    const note = "Figure derived: EBITDA is EBIT plus depreciation and amortisation";
+    render(<DraftBasis draft={{ ...draft, information_gaps: [note, "No aging report."] } as DraftRecord} />);
+    expect(screen.queryByText(note)).not.toBeInTheDocument();
+    expect(screen.getByText("No aging report.")).toBeInTheDocument();
   });
 
   it("blocks a changed amount above the amount requested", () => {
@@ -107,9 +114,9 @@ describe("draft recommendation design", () => {
       decided_at: "2026-10-12T09:00:00Z",
     } as unknown as DecisionRecord;
     render(<DecisionSummary decision={decision} draft={draft} />);
-    expect(screen.getByText("The draft said")).toBeInTheDocument();
-    expect(screen.getByText("Your decision")).toBeInTheDocument();
-    expect(screen.getByText("Your decision differs from the draft.")).toBeInTheDocument();
+    expect(screen.getByText("The UW Analyzer said")).toBeInTheDocument();
+    expect(screen.getByText("Actual decision")).toBeInTheDocument();
+    expect(screen.getByText("Your decision differs from the UW Analyzer recommendation.")).toBeInTheDocument();
     expect(screen.getByText(/Weak outlook\./)).toBeInTheDocument();
   });
 });

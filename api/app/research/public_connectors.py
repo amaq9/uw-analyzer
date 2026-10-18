@@ -19,6 +19,7 @@ from app.research.connectors import (
     ConnectorRequest,
     ConnectorResult,
     PermanentConnectorError,
+    RetryableConnectorError,
 )
 from app.research.fetch import Fetcher
 from app.research.snapshots import SnapshotStore
@@ -49,9 +50,41 @@ def _json(body: bytes) -> Any:
         ) from None
 
 
+_ACCESSION = re.compile(r"^\d{10}-\d{2}-\d{6}$")
+_DOCUMENT = re.compile(r"^[A-Za-z0-9_.\-]+\.html?$")
+
+
+def latest_annual_report(submissions: Any, cik: str) -> dict[str, str] | None:
+    """The newest 10-K in the filing list: accession, main document, dates and public address."""
+    recent = (submissions or {}).get("filings", {}).get("recent", {})
+    forms, numbers = recent.get("form", []), recent.get("accessionNumber", [])
+    documents, filed = recent.get("primaryDocument", []), recent.get("filingDate", [])
+    periods = recent.get("reportDate", [])
+    best: dict[str, str] | None = None
+    for i, form in enumerate(forms):
+        if form != "10-K" or i >= len(numbers) or i >= len(documents):
+            continue
+        accession, document = str(numbers[i]), str(documents[i])
+        if not _ACCESSION.match(accession) or not _DOCUMENT.match(document):
+            continue  # never build an address from something unexpected
+        row = {
+            "accession": accession,
+            "document": document,
+            "filed": str(filed[i]) if i < len(filed) else "",
+            "period": str(periods[i]) if i < len(periods) else "",
+            "url": (
+                f"https://www.sec.gov/Archives/edgar/data/{int(cik)}/"
+                f"{accession.replace('-', '')}/{document}"
+            ),
+        }
+        if best is None or row["filed"] > best["filed"]:
+            best = row
+    return best
+
+
 class SecEdgarConnector:
     key = "sec-edgar"
-    version = "1"
+    version = "2"
     _HOSTS = frozenset({"www.sec.gov", "data.sec.gov"})
 
     def __init__(self, fetcher: Fetcher, snapshots: SnapshotStore) -> None:
@@ -92,15 +125,46 @@ class SecEdgarConnector:
         cik, title = next(iter(matches.items()))
         return f"{cik:010d}", title
 
+    def _annual_report(
+        self,
+        request: ConnectorRequest,
+        cik: str,
+        submissions: Any,
+        files: list[dict[str, Any]],
+    ) -> dict[str, str]:
+        """Also keep the printed 10-K (notes and auditor's report). It never fails the retrieval:
+        the reported figures are the main result, so a miss is recorded and the analysis says so."""
+        found = latest_annual_report(submissions, cik)
+        if found is None:
+            return {"status": "NOT_FOUND", "reason": "No 10-K was found in the filing list."}
+        try:
+            got = self._fetcher.get(found["url"], allowed_hosts=self._HOSTS)
+        except (PermanentConnectorError, RetryableConnectorError) as exc:
+            return {**found, "status": "NOT_RETRIEVED", "reason": str(exc)[:200]}
+        snap = self._snapshots.save(request.tenant_id, request.case_id, got.body)
+        files.append(
+            {
+                "label": "annual_report",
+                "url": found["url"],
+                "ref": snap.ref,
+                "sha256": snap.sha256,
+                "bytes": snap.size,
+            }
+        )
+        return {**found, "status": "RETRIEVED"}
+
     def execute(self, request: ConnectorRequest) -> ConnectorResult:
         cik, matched = self._find_cik(request)
-        files = []
+        files: list[dict[str, Any]] = []
+        submissions: Any = None
         for label, url in (
             ("submissions", f"https://data.sec.gov/submissions/CIK{cik}.json"),
             ("companyfacts", f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json"),
         ):
             got = self._fetcher.get(url, allowed_hosts=self._HOSTS)
-            _json(got.body)  # refuse anything that is not the JSON we expect
+            parsed = _json(got.body)  # refuse anything that is not the JSON we expect
+            if label == "submissions":
+                submissions = parsed
             snap = self._snapshots.save(request.tenant_id, request.case_id, got.body)
             files.append(
                 {
@@ -111,6 +175,7 @@ class SecEdgarConnector:
                     "bytes": snap.size,
                 }
             )
+        annual_report = self._annual_report(request, cik, submissions, files)
         manifest = {
             "source": self.key,
             "connector_version": self.version,
@@ -118,6 +183,7 @@ class SecEdgarConnector:
             "cik": cik,
             "matched_on": matched,
             "files": files,
+            "annual_report": annual_report,
         }
         snap = self._snapshots.save(
             request.tenant_id, request.case_id, json.dumps(manifest, indent=2).encode()

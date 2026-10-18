@@ -73,7 +73,7 @@ describe("published credit ratings", () => {
     show();
     expect(await screen.findAllByText("No published rating recorded")).toHaveLength(3);
     expect(screen.getByText(/not this product.s rating/i)).toBeInTheDocument();
-    expect(screen.getByText(/do\s+not change the draft recommendation/i)).toBeInTheDocument();
+    expect(screen.getByText(/do\s+not change the UW Analyzer recommendation/i)).toBeInTheDocument();
   });
 
   it("shows a recorded rating in words with its source, and uses no status colour", async () => {

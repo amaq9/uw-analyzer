@@ -79,7 +79,9 @@ describe("final decision report", () => {
     renderTab();
     expect(await screen.findByLabelText("Final decision report")).toBeInTheDocument();
     expect(screen.getByText("Approve CAD 750,000")).toBeInTheDocument();
-    expect(screen.getByText("Underwriter decision")).toBeInTheDocument();
+    expect(screen.getByLabelText("UW Analyzer versus actual decision")).toBeInTheDocument();
+    expect(screen.getByText("Actual decision")).toBeInTheDocument();
+    expect(screen.getByText("UW Analyzer recommended")).toBeInTheDocument();
     expect(screen.getByText("Test product")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /print or save as pdf/i })).toBeInTheDocument();
     expect(screen.getAllByText("Gap A")).toHaveLength(1);

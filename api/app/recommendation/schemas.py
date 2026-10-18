@@ -22,7 +22,7 @@ from pydantic import (
 from app.recommendation.analysis_report import AnalysisReport
 from app.recommendation.policy import KNOWN_POLICY_VERSIONS, POLICY_VERSION, Band, Outcome
 
-NOTICE = "Draft recommendation for the underwriter. Not a decision."
+NOTICE = "UW Analyzer recommendation for the underwriter. Not a decision."
 PAYMENT_LIMITATION = "Payment behaviour was not assessed (data not used in this product)."
 _HTTPS = re.compile(r"^https://[^\s/]+\S*$")
 

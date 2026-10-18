@@ -122,7 +122,10 @@ def verify(claim: ClaimFacts) -> Verdict:
     if claim.classification in (Classification.INTERPRETATION, Classification.INFERENCE):
         return Verdict(
             VerificationStatus.NOT_APPLICABLE,
-            ["This is a judgement, not a fact. It is supported by the facts it is based on."],
+            [
+                "This is an assessment worked out by the written rules from the facts it rests on, "
+                "not a separate fact. Its support is those facts, shown with it."
+            ],
         )
 
     reliable = [e for e in claim.supporting if e.reliable]

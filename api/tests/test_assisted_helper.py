@@ -39,7 +39,7 @@ def test_read_and_submit_through_the_helper(
     draft = tmp_path / "draft.json"
     draft.write_text(json.dumps(payload("900000")), encoding="utf-8")
     assert assisted.main(["submit", case_id, str(draft)]) == 0
-    assert "Draft recommendation for the underwriter" in capsys.readouterr().out
+    assert "UW Analyzer recommendation for the underwriter" in capsys.readouterr().out
 
     draft.write_text(json.dumps(payload("900000", surprise=1)), encoding="utf-8")
     assert assisted.main(["submit", case_id, str(draft)]) == 1

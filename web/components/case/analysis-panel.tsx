@@ -40,15 +40,15 @@ export function AnalysisPanel({
 
   return (
     <section className="ws-card">
-      <h3>{hasDraft ? "Analyse again for a new draft version" : "Prepare a draft recommendation from the research"}</h3>
+      <h3>{hasDraft ? "Analyse again for a new recommendation version" : "Prepare the UW Analyzer recommendation from the research"}</h3>
       <p>
         The analyzer reads the finished research (the exact copies fetched from the public sources), assesses the five
-        dimensions (liquidity, profitability, leverage, cash flow, efficiency and sector) and the other research areas, and prepares a draft recommendation for you. It records every finding
+        dimensions (liquidity, profitability, leverage, cash flow, efficiency and sector) and the other research areas, and prepares the UW Analyzer recommendation for you. It records every finding
         it relies on. It does not decide anything; you decide below.
       </p>
       {canRun ? (
         <button className="ws-button primary" disabled={action.busy} onClick={run} type="button">
-          {action.busy ? "Analysing…" : hasDraft ? "Analyse the research again and prepare a new draft" : "Analyse the research and prepare a draft"}
+          {action.busy ? "Analysing…" : hasDraft ? "Analyse the research again and prepare a new recommendation" : "Analyse the research and prepare the recommendation"}
         </button>
       ) : (
         <p className="ws-muted">Your role cannot run the analysis.</p>

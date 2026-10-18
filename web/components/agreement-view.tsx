@@ -20,7 +20,7 @@ export function AgreementView() {
           <header className="ws-header">
             <div>
               <p className="eyebrow">Test measure</p>
-              <h1>Draft against decision</h1>
+              <h1>UW Analyzer versus actual decision</h1>
               <p className="ws-muted">{data.notice}</p>
             </div>
           </header>
@@ -29,7 +29,7 @@ export function AgreementView() {
             <h3>Totals</h3>
             <dl className="ws-facts">
               <div>
-                <dt>Drafts decided on</dt>
+                <dt>Recommendations decided on</dt>
                 <dd>{data.totals.decided}</dd>
               </div>
               <div>
@@ -60,17 +60,17 @@ export function AgreementView() {
           </section>
 
           <section className="ws-card">
-            <h3>Each decided draft</h3>
+            <h3>Each decided recommendation</h3>
             {data.rows.length === 0 ? (
-              <p>No decision has been recorded yet. Record one on a case&apos;s Draft recommendation tab.</p>
+              <p>No decision has been recorded yet. Record one on a case&apos;s UW Analyzer recommendation tab.</p>
             ) : (
               <div className="ws-table-wrap">
                 <table className="ws-table">
                   <thead>
                     <tr>
                       <th>Case</th>
-                      <th>Draft said</th>
-                      <th>Your decision</th>
+                      <th>UW Analyzer said</th>
+                      <th>Actual decision</th>
                       <th>Match</th>
                       <th>Reason given</th>
                       <th>When</th>
@@ -83,7 +83,7 @@ export function AgreementView() {
                           <Link className="ws-link" href={`/cases/${row.case_id}`}>
                             Open case
                           </Link>
-                          <small className="ws-muted"> draft v{row.draft_version}</small>
+                          <small className="ws-muted"> recommendation v{row.draft_version}</small>
                         </td>
                         <td>
                           {readable(row.draft_outcome)}
