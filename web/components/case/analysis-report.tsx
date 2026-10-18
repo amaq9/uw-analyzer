@@ -338,7 +338,7 @@ export function AnalysisReportView({ currency, report }: Readonly<{ currency?: s
           <List empty="" items={report.debt_service_notes ?? []} />
           {(report.stress ?? []).length > 0 && (
             <>
-              <h4>If revenue fell and costs did not</h4>
+              <h4>If revenue falls</h4>
               <div className="ws-table-wrap">
                 <table className="ws-table ar-metrics">
                   <thead>

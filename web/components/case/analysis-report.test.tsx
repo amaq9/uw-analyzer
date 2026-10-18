@@ -149,6 +149,7 @@ describe("Step 1 analysis report", () => {
   it("shows the debt-service block and a sensitivity that says it is not a forecast", () => {
     render(<AnalysisReportView currency="CAD" report={report} />);
     expect(screen.getByText("Can cash carry the debt falling due?")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "If revenue falls" })).toBeInTheDocument();
     expect(screen.getByText("Revenue down 10%")).toBeInTheDocument();
     expect(screen.getByText(/not a forecast/i)).toBeInTheDocument();
     expect(screen.getByText(/debt maturity ladder is not in the figures/i)).toBeInTheDocument();

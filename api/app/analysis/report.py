@@ -459,8 +459,9 @@ def debt_service_block(
             "(a common reference point is 0.40x)."
         )
     notes.append(
-        "The debt maturity ladder, undrawn committed facilities, covenant headroom and refinancing options "
-        "are not in the figures, so the ability to refinance could not be assessed."
+        "The debt maturity ladder, covenant headroom and refinancing options are not in the figures, so the "
+        "ability to refinance could not be assessed in numbers. The filing's own description of facilities "
+        "and covenants, where it was read, is under Notes and auditor's report."
     )
     return metrics, notes
 
