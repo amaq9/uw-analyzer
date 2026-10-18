@@ -160,3 +160,47 @@ def test_the_checklist_items_only_the_filing_can_answer(
 
 def test_without_the_filing_the_checks_stay_not_assessable() -> None:
     assert notes_flags(None) == {}
+
+
+REAL_STYLE = (
+    "<html><body>"
+    + "<p>The Company designs and sells products to customers around the world every year.</p>"
+    * 400
+    + "<p>Under these facilities, we have agreed to various covenants.</p>"
+    "<p>As of May 31, 2026, we were in full compliance with each of these covenants, and we believe it is "
+    "unlikely we will fail to meet any of these covenants in the foreseeable future.</p>"
+    "<p>As of and for the periods ended May 31, 2026 and 2025, no amounts were outstanding under any of the "
+    "Company's committed credit facilities.</p>"
+    "<p>This facility replaced the prior $1 billion 364-day credit facility agreement, which matured on March 6, 2026.</p>"
+    "<p>Amended and Restated Covenant Not to Compete and Non-Disclosure Agreement between the Company and an officer.</p>"
+    "<p>The Company maintains an allowance for expected losses resulting from the inability of its customers to pay.</p>"
+    "<p>During fiscal 2026, our three largest customers accounted for approximately 29% of sales.</p>"
+    "<p>Item 9. Changes in and Disagreements with Accountants on Accounting and Financial Disclosure</p>"
+    "<p>There has been no change of accountants nor any disagreements with accountants on any matter.</p>"
+    "<p>Item 9A. Controls and Procedures</p></body></html>"
+).encode()
+
+
+def test_wording_found_in_a_real_filing_is_read_correctly() -> None:
+    # Found by running the reader on a real 10-K: "May" the month is not the word "may", "any of" is not
+    # hypothetical, "in full compliance" is a compliance statement, and "no change of accountants" means none.
+    result = scan(REAL_STYLE, label="x", url=None, filed=None)
+    by = {f.topic: f for f in result.review.findings}
+    assert (
+        by["COVENANTS"].state == "NO_CONCERN"
+        and "full compliance" in by["COVENANTS"].quotes[0].text
+    )
+    assert all("Not to Compete" not in q.text for q in by["COVENANTS"].quotes)
+    assert by["AUDITOR_CHANGE"].state == "NO_CONCERN"
+    facility = by["CREDIT_FACILITIES"]
+    assert facility.state == "INFO" and "no amounts were outstanding" in facility.quotes[0].text
+    assert all("replaced the prior" not in q.text for q in facility.quotes)
+    assert by["ALLOWANCE"].state == "INFO" and "states no amount" in by["ALLOWANCE"].summary
+    assert "29%" in by["CUSTOMER_CONCENTRATION"].summary
+
+
+def test_a_filing_declaring_ascii_but_carrying_windows_1252_text_is_read() -> None:
+    body = "<html><body><p>See Note 16 – Commitments and Contingencies for more detail here.</p></body></html>".encode(
+        "cp1252"
+    )
+    assert "Note 16 – Commitments" in text_of(body)

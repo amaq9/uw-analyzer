@@ -33,7 +33,7 @@ _TAG = re.compile(r"<[^>]+>")
 _SPACE = re.compile(r"[ \t\r\f\v  ​]+")
 _SENTENCE_END = re.compile(r"(?<=[.!?])[\"”’)]?\s+(?=[A-Z“\"(])")
 _MODAL = re.compile(
-    r"\b(could|may|might|would|should|if|whether|potential(ly)?|possible|any of)\b", re.I
+    r"\b(could|might|would|should|if|whether|potential(ly)?|possible)\b|\bmay\b(?!\s+\d)", re.I
 )
 _NEGATED = re.compile(
     r"\b(no|not|never|without|absence of|did not|does not|do not|none|neither|nor)\b", re.I
@@ -42,7 +42,12 @@ _NEGATED = re.compile(
 
 def text_of(body: bytes) -> str:
     """Plain text of an HTML filing. Hidden XBRL headers and scripts are dropped; cells keep a gap."""
-    raw = body.decode("utf-8", errors="replace")
+    try:
+        raw = body.decode("utf-8")
+    except (
+        UnicodeDecodeError
+    ):  # some filings declare ASCII but carry Windows-1252 dashes and quotes
+        raw = body.decode("cp1252", errors="replace")
     raw = _HIDDEN.sub(" ", raw)
     raw = _DROP.sub(" ", raw)
     raw = _BLOCK.sub("\n", raw)
@@ -176,7 +181,9 @@ def _auditor_change(text: str) -> _Topic:
     if segment is None:
         return _Topic("AUDITOR_CHANGE", title, "NOT_FOUND", "Item 9 was not found in the text.")
     first = segment.strip().split("\n")[0]
-    if re.match(r"^\W*(none|not applicable)\b", first, re.I):
+    if re.match(r"^\W*(none|not applicable)\b", first, re.I) or re.search(
+        r"\bno change of accountants\b|there (has|have) been no change", first, re.I
+    ):
         return _Topic(
             "AUDITOR_CHANGE", title, "NO_CONCERN",
             "Item 9 (changes in and disagreements with accountants) says there were none.",
@@ -204,7 +211,11 @@ _COV_ADVERSE = re.compile(
 
 def _covenants(sents: list[str]) -> _Topic:
     title = "Loan covenants"
-    cov = [s for s in sents if re.search(r"covenant", s, re.I)]
+    cov = [
+        s
+        for s in sents
+        if re.search(r"covenant", s, re.I) and not re.search(r"covenants? not to compete", s, re.I)
+    ]
     adverse = [
         s
         for s in cov
@@ -221,7 +232,7 @@ def _covenants(sents: list[str]) -> _Topic:
     positive = [
         s
         for s in cov
-        if re.search(r"in compliance|complied|compliance with (all|each|the)", s, re.I)
+        if re.search(r"in (full )?compliance|complied|compliance with (all|each|the)", s, re.I)
         and not _MODAL.search(s)
         and not re.search(r"not in compliance|non-?compliance", s, re.I)
     ]
@@ -232,10 +243,14 @@ def _covenants(sents: list[str]) -> _Topic:
             _quotes(positive),
         )  # fmt: skip
     if cov:
+        stated = [s for s in cov if not _MODAL.search(s)]
         return _Topic(
             "COVENANTS", title, "INFO",
-            "Covenants are mentioned, but the filing gives no statement of compliance or breach.",
-            _quotes(cov),
+            "Covenants are described, but the filing gives no statement of compliance or breach."
+            if stated
+            else "Covenants appear only in risk-factor language about what could happen; the filing gives "
+            "no statement of compliance or breach.",
+            _quotes(stated or cov),
         )  # fmt: skip
     return _Topic(
         "COVENANTS", title, "NOT_FOUND",
@@ -280,7 +295,7 @@ def _customers(sents: list[str]) -> tuple[_Topic, float | None, bool]:
         return (
             _Topic(
                 "CUSTOMER_CONCENTRATION", title, state,
-                f"The filing states a customer share of up to {top[0]:g}%.",
+                f"The filing gives the largest customers' share as up to {top[0]:g}% (the quote says what it is a share of).",
                 _quotes([s for _, s in shares]),
             ),
             top[0],
@@ -308,18 +323,22 @@ def _customers(sents: list[str]) -> tuple[_Topic, float | None, bool]:
 
 def _facilities(sents: list[str]) -> _Topic:
     title = "Committed credit facilities and borrowing"
+    about = re.compile(
+        r"(revolving )?credit (facilit(y|ies)|agreements?)|commercial paper|committed (credit|facilit)",
+        re.I,
+    )
+    drawn = re.compile(r"no (amounts|borrowings)|nothing (was )?outstanding|undrawn", re.I)
     found = [
         s
         for s in sents
-        if re.search(
-            r"(revolving )?credit (facility|agreement)|commercial paper|committed (credit|facilit)",
-            s,
-            re.I,
-        )
-        and re.search(r"\$\s?\d|billion|million", s, re.I)
+        if about.search(s)
+        and (re.search(r"\$\s?\d|billion|million", s, re.I) or drawn.search(s))
         and re.search(r"no (amounts|borrowings)|undrawn|outstanding|available|matur", s, re.I)
         and not _MODAL.search(s)
+        and not re.search(r"replaced the prior|matured on", s, re.I)
     ]
+    found = [re.sub(r"\$\s+(?=\d)", "$", s) for s in found]
+    found.sort(key=lambda s: 0 if drawn.search(s) else 1)  # what is undrawn first
     if found:
         return _Topic(
             "CREDIT_FACILITIES", title, "INFO",
@@ -388,17 +407,34 @@ def _legal(text: str) -> _Topic:
 
 def _allowance(sents: list[str]) -> _Topic:
     title = "Allowance for credit losses on receivables"
+    named = re.compile(
+        r"allowance for (expected |credit )?(credit )?(losses|doubtful accounts|uncollectible accounts)",
+        re.I,
+    )
     found = [
-        s
-        for s in sents
-        if re.search(r"allowance for (credit losses|doubtful accounts)", s, re.I)
-        and re.search(r"\$\s?\d", s)
-        and not _MODAL.search(s)
+        s for s in sents if named.search(s) and re.search(r"\$\s?\d", s) and not _MODAL.search(s)
     ]
     if found:
         return _Topic(
             "ALLOWANCE", title, "INFO",
             "The filing states the allowance for credit losses.", _quotes(found, limit=1)
+        )  # fmt: skip
+    described = [
+        s
+        for s in sents
+        if re.search(
+            r"maintains an allowance|allowance for (expected|credit|doubtful|uncollectible)",
+            s,
+            re.I,
+        )
+        and len(s) > 60
+        and not _MODAL.search(s)
+    ]
+    if described:
+        return _Topic(
+            "ALLOWANCE", title, "INFO",
+            "The filing describes an allowance but states no amount in its text (it may be in a table).",
+            _quotes(described, limit=1),
         )  # fmt: skip
     return _Topic(
         "ALLOWANCE", title, "NOT_FOUND", "No allowance for credit losses was stated in the text."
