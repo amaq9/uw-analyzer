@@ -9,7 +9,7 @@ report only): OK, WEAK or DISTRESSED, or NOT_ASSESSED when the data is missing. 
 word beside a colour, never the colour alone. The status is derived on the server from the
 analyzer's finding (strong or satisfactory = OK, needs attention = WEAK, weak = DISTRESSED)."""
 
-from typing import Annotated, Literal, Self
+from typing import Annotated, Any, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
@@ -163,6 +163,16 @@ class ExecutiveBrief(BaseModel):
     headline: Line
     sections: list[BriefSection] = Field(max_length=12)
     points_to_settle: list[Line] = Field(default_factory=list, max_length=8)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _earlier_field_name(cls, data: Any) -> Any:
+        """A draft stored before the field was renamed must stay readable (drafts never change)."""
+        if isinstance(data, dict) and "decision_points" in data:
+            data = dict(data)
+            data.setdefault("points_to_settle", data.pop("decision_points"))
+            data.pop("decision_points", None)
+        return data
 
 
 class NoteQuote(BaseModel):
