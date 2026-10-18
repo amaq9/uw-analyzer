@@ -600,11 +600,18 @@ def reconcile(core: list[AreaReport], ratings: list[PublishedRatingOut]) -> str:
         text += " An agency shows a negative outlook or has a rating under review."
     secondary = [r for r in ratings if r.source_kind != "AGENCY_SITE"]
     if secondary:
-        names = ", ".join(f"{AGENCY_NAMES[r.agency]} {r.grade}" for r in secondary)
-        text += (
-            f" {names} came from a secondary source, not the agency's own website. "
-            "Confirm it on the agency's site, which is the main source."
-        )
+        labels = [f"{AGENCY_NAMES[r.agency]} {r.grade}" for r in secondary]
+        names = labels[0] if len(labels) == 1 else ", ".join(labels[:-1]) + " and " + labels[-1]
+        if len(labels) == 1:
+            text += (
+                f" {names} came from a secondary source, not the agency's own website. "
+                "Confirm it on the agency's site, which is the main source."
+            )
+        else:
+            text += (
+                f" {names} came from secondary sources, not the agencies' own websites. "
+                "Confirm them on the agencies' sites, which are the main sources."
+            )
     return text
 
 
