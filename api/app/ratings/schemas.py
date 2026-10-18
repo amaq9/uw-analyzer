@@ -18,7 +18,7 @@ from pydantic import (
     model_validator,
 )
 
-from app.ratings.scale import Agency, is_investment_grade, normalise_grade
+from app.ratings.scale import Agency, is_agency_site, is_investment_grade, normalise_grade
 
 _HTTPS = re.compile(r"^https://[^\s/]+\S*$")
 Text = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
@@ -88,6 +88,15 @@ class PublishedRatingOut(BaseModel):
     recorded_by: str
     recorded_at: datetime
     notice: str = NOTICE
+    # Always derived from the address, never taken from input: the agency's own website is the main
+    # source, anything else is a secondary source.
+    source_kind: Literal["AGENCY_SITE", "OTHER"] = "OTHER"
+
+    @model_validator(mode="after")
+    def _derive_source_kind(self) -> Self:
+        own = is_agency_site(self.agency, self.source_url)
+        self.source_kind = "AGENCY_SITE" if own else "OTHER"
+        return self
 
 
 class PublishedRatingRecord(BaseModel):

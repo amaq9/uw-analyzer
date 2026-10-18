@@ -7,6 +7,7 @@ import type { components } from "@/lib/api/schema";
 import { ActionError, useAction, useLoad } from "@/components/use-api";
 import { api } from "@/lib/api/client";
 import { dateOnly, dateTime, readable } from "@/lib/format";
+import { AGENCY_SITES, isAgencySite } from "@/lib/ratings";
 
 type Rating = components["schemas"]["PublishedRatingOut"];
 type Agency = Rating["agency"];
@@ -91,6 +92,18 @@ function RecordForm({
         Copy what the agency published, and where you read it. A rating needs its source address, the time you read it and the
         agency&apos;s own words. Nothing is inferred. The product does not search for ratings by itself.
       </p>
+      <p className="pr-main-sources">
+        <strong>Main sources:</strong> the agencies&apos; own websites. Look the company up there and copy the page address:{" "}
+        {(["SP", "MOODYS", "FITCH"] as const).map((id, index) => (
+          <span key={id}>
+            {index > 0 && ", "}
+            <a href={AGENCY_SITES[id].home} rel="noreferrer" target="_blank">
+              {AGENCY_SITES[id].name} ({AGENCY_SITES[id].label})
+            </a>
+          </span>
+        ))}
+        . Press and other sites are accepted but are recorded as a secondary source.
+      </p>
       <form className="ws-form" onSubmit={submit}>
         <label className="ws-field">
           Agency
@@ -141,6 +154,12 @@ function RecordForm({
         <label className="ws-field">
           Source address (https)
           <input onChange={(event) => setSourceUrl(event.target.value)} placeholder="https://…" value={sourceUrl} />
+          {sourceUrl.trim() && !isAgencySite(agency, sourceUrl) && (
+            <small className="pr-secondary-note">
+              This address is not on {AGENCY_SITES[agency].label}, the main source for {AGENCY_SITES[agency].name}. It will be
+              recorded as a secondary source.
+            </small>
+          )}
         </label>
         <label className="ws-field">
           When you read it
@@ -205,14 +224,28 @@ export function PublishedRatings({
               if (!rating) {
                 return (
                   <tr key={id}>
-                    <td>{name}</td>
+                    <td>
+                      {name}
+                      <small className="ws-muted">
+                        <a href={AGENCY_SITES[id].home} rel="noreferrer" target="_blank">
+                          Look up on {AGENCY_SITES[id].label}
+                        </a>
+                      </small>
+                    </td>
                     <td colSpan={4}>No published rating recorded</td>
                   </tr>
                 );
               }
               return (
                 <tr key={id}>
-                  <td>{name}</td>
+                  <td>
+                    {name}
+                    <small className="ws-muted">
+                      <a href={AGENCY_SITES[id].home} rel="noreferrer" target="_blank">
+                        Look up on {AGENCY_SITES[id].label}
+                      </a>
+                    </small>
+                  </td>
                   <td>
                     <strong>{rating.grade}</strong>
                     <small className="ws-muted">{rating.investment_grade ? "Investment grade" : "Below investment grade"}</small>
@@ -228,6 +261,11 @@ export function PublishedRatings({
                   <td>
                     {rating.rationale && <span>{rating.rationale} </span>}
                     <blockquote className="ws-quote">“{rating.quote}”</blockquote>
+                    <small className={rating.source_kind === "AGENCY_SITE" ? "pr-source-main" : "pr-source-secondary"}>
+                      {rating.source_kind === "AGENCY_SITE"
+                        ? "Source: the agency's own website (main source)."
+                        : `Secondary source (press or another site). Confirm it on ${AGENCY_SITES[id].label}.`}
+                    </small>
                     <small className="ws-muted">
                       Read {dateTime(rating.retrieved_at)} by {rating.recorded_by}.{" "}
                       <a href={rating.source_url} rel="noreferrer" target="_blank">

@@ -4212,6 +4212,15 @@
             "title": "Retrieved At",
             "type": "string"
           },
+          "source_kind": {
+            "default": "OTHER",
+            "enum": [
+              "AGENCY_SITE",
+              "OTHER"
+            ],
+            "title": "Source Kind",
+            "type": "string"
+          },
           "source_url": {
             "title": "Source Url",
             "type": "string"

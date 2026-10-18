@@ -825,7 +825,11 @@ def analyse(
             state="FOUND" if ratings else "NOT_SEARCHED",
             detail=(
                 "Recorded: "
-                + ", ".join(f"{AGENCY_NAMES[r.agency]} {r.grade}" for r in ratings)
+                + ", ".join(
+                    f"{AGENCY_NAMES[r.agency]} {r.grade}"
+                    + ("" if r.source_kind == "AGENCY_SITE" else " (secondary source)")
+                    for r in ratings
+                )
                 + ". Information only."
                 if ratings
                 else "No published rating is recorded. The product does not search for ratings by itself; a person or an analyst session records them with their source."

@@ -44,6 +44,25 @@ party said, which can be recorded with its source like any other evidence.
 11. **Contract allow-list.** `tests/p09.py` gains exactly: the path `/api/v1/cases/{case_id}/published-ratings` and the
     properties `published_ratings` and `ratings_reconciliation`. Nothing else may use the word.
 
+## Main sources (Product Owner, 2026-10-18)
+The agencies' own websites are the **main sources** for a published rating: S&P Global (`www.spglobal.com`),
+Moody's (`ratings.moodys.com`) and Fitch (`www.fitchratings.com`).
+
+- **Labelled, not forbidden.** Each recorded rating says whether its source address is on the agency's own website
+  ("main source") or somewhere else ("secondary source": press, an aggregator, another site). A secondary source is
+  still accepted, because the agencies' pages are often behind a subscription or refuse automated access, but the
+  screen and the report say so and ask the underwriter to confirm it on the agency's own site.
+- **The whole domain is checked**, so a look-alike never counts: `evil-spglobal.com`, `spglobal.com.evil.org`,
+  `www.spglobal.com@evil.org` and `fitchrating.com` (without the "s") are all secondary. Another agency's site does not
+  count for this agency. The label is always worked out from the address, never taken from what a caller sends.
+- **Each agency row links to its site** ("Look up on ...") and the recording form names the three sites.
+- **Registered as sources.** The three agencies are in the source registry (ADR 0009) as `credit_rating_agency`,
+  class COMMERCIAL, access RESTRICTED_LICENSED, no credential held. The research planner ignores a source type it has
+  no connector for, so they add no research steps. The product still does not fetch them; a person or an analyst
+  session records what a page states.
+- **A rating is current only until the next action.** A newer record for an agency supersedes the older one in the
+  analysis, and both stay on record. A draft keeps the ratings recorded when it was prepared.
+
 ## Alternatives considered
 - **Automatic web search for ratings inside the product:** rejected for now. There is no approved connector, agency
   pages are often paywalled, and a search result is discovery-only (P-06). A person or analyst session records what

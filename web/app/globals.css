@@ -3929,3 +3929,30 @@ a.ar-tile:hover {
   color: var(--ink-soft);
   font-size: 13px;
 }
+
+/* Published ratings: the agencies' own websites are the main sources (ADR 0020). Words, no colour. */
+.pr-main-sources {
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.pr-main-sources a,
+.pr .ws-muted a {
+  color: var(--teal);
+  font-weight: 700;
+}
+
+.pr-source-main,
+.pr-source-secondary,
+.pr-secondary-note {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.pr-source-secondary,
+.pr-secondary-note {
+  color: var(--ink-soft);
+}
