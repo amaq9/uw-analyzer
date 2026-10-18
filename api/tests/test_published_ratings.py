@@ -438,6 +438,14 @@ def test_the_comparison_asks_for_confirmation_when_a_rating_came_from_a_secondar
         areas(4, 0, 0), [own, view("FITCH", "AA", source_url="https://example.org/x")]
     )
     assert "Fitch AA came from a secondary source" in mixed and "S&P A came" not in mixed
+    both = reconcile(
+        areas(4, 0, 0),
+        [press, view("MOODYS", "A2", source_url="https://example.org/y")],
+    )
+    assert (
+        "S&P A and Moody's A2 came from secondary sources, not the agencies' own websites" in both
+    )
+    assert "Confirm them on the agencies' sites, which are the main sources." in both
 
 
 def test_the_research_check_names_the_secondary_ratings(
