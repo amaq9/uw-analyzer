@@ -15,6 +15,8 @@ describe("display helpers", () => {
       "assets USD 24.60bn over liabilities USD 12.55bn and USD 499m of goodwill",
     );
     expect(shorten("net cash of 1,085m", "CAD")).toBe("net cash of CAD 1.09bn");
+    expect(shorten("Equity is CAD 9m; cash less debt is -CAD 1m", "CAD")).toBe("Equity is CAD 9m; cash less debt is -CAD 1m");
+    expect(shorten("assets CAD 24,603m", "CAD")).toBe("assets CAD 24.60bn");
     expect(shorten("1.96x and 38.7% of assets", "USD")).toBe("1.96x and 38.7% of assets");
   });
 });

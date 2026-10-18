@@ -18,6 +18,13 @@ const workspaceLinks = [
   { id: "skills", label: "Skills", icon: SkillsIcon, href: "/skills", badge: "1" },
   { id: "cases", label: "Cases", icon: CasesIcon, href: "/cases", permissions: ["case:read"] },
   {
+    id: "recommendations",
+    label: "Draft recommendations",
+    icon: ReportsIcon,
+    href: "/recommendations",
+    permissions: ["case:read"],
+  },
+  {
     id: "agreement",
     label: "Draft against decision",
     icon: ReportsIcon,
@@ -38,7 +45,7 @@ const governanceLinks = [
 ];
 
 type SidebarProps = {
-  activePage?: "agreement" | "audit" | "cases" | "overview" | "skills" | "sources";
+  activePage?: "agreement" | "audit" | "cases" | "overview" | "recommendations" | "skills" | "sources";
 };
 
 export function Sidebar({ activePage = "overview" }: SidebarProps) {

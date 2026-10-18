@@ -394,6 +394,245 @@
         "title": "AnalysisOut",
         "type": "object"
       },
+      "AnalysisReport": {
+        "additionalProperties": false,
+        "properties": {
+          "analyzer_version": {
+            "maxLength": 20,
+            "title": "Analyzer Version",
+            "type": "string"
+          },
+          "areas": {
+            "items": {
+              "$ref": "#/components/schemas/AreaReport"
+            },
+            "maxItems": 10,
+            "title": "Areas",
+            "type": "array"
+          },
+          "basis": {
+            "$ref": "#/components/schemas/Basis"
+          },
+          "consolidated_finding": {
+            "maxLength": 40,
+            "title": "Consolidated Finding",
+            "type": "string"
+          },
+          "consolidated_status": {
+            "enum": [
+              "OK",
+              "WEAK",
+              "DISTRESSED",
+              "NOT_ASSESSED"
+            ],
+            "title": "Consolidated Status",
+            "type": "string"
+          },
+          "consolidated_why": {
+            "maxLength": 600,
+            "minLength": 1,
+            "title": "Consolidated Why",
+            "type": "string"
+          },
+          "debt_service": {
+            "items": {
+              "$ref": "#/components/schemas/Metric"
+            },
+            "maxItems": 10,
+            "title": "Debt Service",
+            "type": "array"
+          },
+          "debt_service_notes": {
+            "items": {
+              "maxLength": 600,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 10,
+            "title": "Debt Service Notes",
+            "type": "array"
+          },
+          "executive_summary": {
+            "maxLength": 600,
+            "minLength": 1,
+            "title": "Executive Summary",
+            "type": "string"
+          },
+          "gaps": {
+            "items": {
+              "maxLength": 600,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 30,
+            "title": "Gaps",
+            "type": "array"
+          },
+          "key_concerns": {
+            "items": {
+              "maxLength": 600,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 15,
+            "title": "Key Concerns",
+            "type": "array"
+          },
+          "other_checks": {
+            "items": {
+              "$ref": "#/components/schemas/OtherCheck"
+            },
+            "maxItems": 12,
+            "title": "Other Checks",
+            "type": "array"
+          },
+          "red_flags": {
+            "items": {
+              "$ref": "#/components/schemas/FlagCheck"
+            },
+            "maxItems": 30,
+            "title": "Red Flags",
+            "type": "array"
+          },
+          "strengths": {
+            "items": {
+              "maxLength": 600,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 12,
+            "title": "Strengths",
+            "type": "array"
+          },
+          "stress": {
+            "items": {
+              "$ref": "#/components/schemas/StressRow"
+            },
+            "maxItems": 4,
+            "title": "Stress",
+            "type": "array"
+          },
+          "stress_note": {
+            "anyOf": [
+              {
+                "maxLength": 600,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stress Note"
+          },
+          "watch": {
+            "items": {
+              "maxLength": 600,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Watch",
+            "type": "array"
+          },
+          "weaknesses": {
+            "items": {
+              "maxLength": 600,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 12,
+            "title": "Weaknesses",
+            "type": "array"
+          }
+        },
+        "required": [
+          "basis",
+          "executive_summary",
+          "areas",
+          "consolidated_status",
+          "consolidated_finding",
+          "consolidated_why",
+          "red_flags",
+          "analyzer_version"
+        ],
+        "title": "AnalysisReport",
+        "type": "object"
+      },
+      "AreaReport": {
+        "additionalProperties": false,
+        "properties": {
+          "feeds_draft": {
+            "default": true,
+            "title": "Feeds Draft",
+            "type": "boolean"
+          },
+          "finding": {
+            "maxLength": 40,
+            "title": "Finding",
+            "type": "string"
+          },
+          "flags": {
+            "items": {
+              "maxLength": 600,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 10,
+            "title": "Flags",
+            "type": "array"
+          },
+          "key": {
+            "maxLength": 40,
+            "title": "Key",
+            "type": "string"
+          },
+          "metrics": {
+            "items": {
+              "$ref": "#/components/schemas/Metric"
+            },
+            "maxItems": 14,
+            "title": "Metrics",
+            "type": "array"
+          },
+          "status": {
+            "enum": [
+              "OK",
+              "WEAK",
+              "DISTRESSED",
+              "NOT_ASSESSED"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 80,
+            "title": "Title",
+            "type": "string"
+          },
+          "trend": {
+            "maxLength": 60,
+            "title": "Trend",
+            "type": "string"
+          },
+          "why": {
+            "maxLength": 600,
+            "minLength": 1,
+            "title": "Why",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "title",
+          "status",
+          "finding",
+          "trend",
+          "why"
+        ],
+        "title": "AreaReport",
+        "type": "object"
+      },
       "AuditEventOut": {
         "properties": {
           "action": {
@@ -498,6 +737,56 @@
         ],
         "title": "Band",
         "type": "string"
+      },
+      "Basis": {
+        "additionalProperties": false,
+        "properties": {
+          "audit_note": {
+            "maxLength": 600,
+            "minLength": 1,
+            "title": "Audit Note",
+            "type": "string"
+          },
+          "currency": {
+            "maxLength": 10,
+            "title": "Currency",
+            "type": "string"
+          },
+          "method": {
+            "maxLength": 600,
+            "minLength": 1,
+            "title": "Method",
+            "type": "string"
+          },
+          "periods": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 5,
+            "title": "Periods",
+            "type": "array"
+          },
+          "statements": {
+            "maxLength": 600,
+            "minLength": 1,
+            "title": "Statements",
+            "type": "string"
+          },
+          "units": {
+            "maxLength": 60,
+            "title": "Units",
+            "type": "string"
+          }
+        },
+        "required": [
+          "statements",
+          "currency",
+          "units",
+          "audit_note",
+          "method"
+        ],
+        "title": "Basis",
+        "type": "object"
       },
       "Blocker": {
         "properties": {
@@ -2172,6 +2461,16 @@
             ],
             "title": "Ai Proposed Amount"
           },
+          "analysis": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnalysisReport"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "decline_findings": {
             "items": {
               "$ref": "#/components/schemas/DeclineFinding"
@@ -2244,6 +2543,16 @@
               }
             ],
             "title": "Ai Proposed Amount"
+          },
+          "analysis": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnalysisReport"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "band": {
             "$ref": "#/components/schemas/Band"
@@ -3315,6 +3624,40 @@
         "title": "FinancialsRow",
         "type": "object"
       },
+      "FlagCheck": {
+        "additionalProperties": false,
+        "description": "One item of the skill's red-flag checklist. A prompt for attention, never a pass or fail.",
+        "properties": {
+          "detail": {
+            "maxLength": 600,
+            "minLength": 1,
+            "title": "Detail",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "TRIGGERED",
+              "CLEAR",
+              "NOT_ASSESSABLE"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "text": {
+            "maxLength": 600,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "state",
+          "detail"
+        ],
+        "title": "FlagCheck",
+        "type": "object"
+      },
       "Freshness": {
         "enum": [
           "CURRENT",
@@ -3485,6 +3828,51 @@
         "title": "Me",
         "type": "object"
       },
+      "Metric": {
+        "additionalProperties": false,
+        "description": "One figure with this period, the period before, and which way it moved.",
+        "properties": {
+          "change": {
+            "enum": [
+              "up",
+              "down",
+              "flat",
+              "unknown"
+            ],
+            "title": "Change",
+            "type": "string"
+          },
+          "current": {
+            "maxLength": 40,
+            "title": "Current",
+            "type": "string"
+          },
+          "earlier": {
+            "default": "No earlier year",
+            "maxLength": 40,
+            "title": "Earlier",
+            "type": "string"
+          },
+          "label": {
+            "maxLength": 80,
+            "title": "Label",
+            "type": "string"
+          },
+          "prior": {
+            "maxLength": 40,
+            "title": "Prior",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "current",
+          "prior",
+          "change"
+        ],
+        "title": "Metric",
+        "type": "object"
+      },
       "MetricInfo": {
         "properties": {
           "label": {
@@ -3501,6 +3889,41 @@
           "label"
         ],
         "title": "MetricInfo",
+        "type": "object"
+      },
+      "OtherCheck": {
+        "additionalProperties": false,
+        "description": "A research area other than the financial statements, and what was done in it.",
+        "properties": {
+          "detail": {
+            "maxLength": 600,
+            "minLength": 1,
+            "title": "Detail",
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "CLEAR",
+              "FOUND",
+              "NOT_SEARCHED",
+              "INCOMPLETE",
+              "NOT_ASSESSED"
+            ],
+            "title": "State",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 80,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "state",
+          "detail"
+        ],
+        "title": "OtherCheck",
         "type": "object"
       },
       "Outcome": {
@@ -4880,6 +5303,40 @@
         ],
         "title": "StepState",
         "type": "string"
+      },
+      "StressRow": {
+        "additionalProperties": false,
+        "description": "What the figures look like if revenue falls and costs do not. Arithmetic, not a forecast.",
+        "properties": {
+          "cash_from_operations": {
+            "maxLength": 40,
+            "title": "Cash From Operations",
+            "type": "string"
+          },
+          "earnings": {
+            "maxLength": 40,
+            "title": "Earnings",
+            "type": "string"
+          },
+          "interest_cover": {
+            "maxLength": 40,
+            "title": "Interest Cover",
+            "type": "string"
+          },
+          "scenario": {
+            "maxLength": 80,
+            "title": "Scenario",
+            "type": "string"
+          }
+        },
+        "required": [
+          "scenario",
+          "earnings",
+          "interest_cover",
+          "cash_from_operations"
+        ],
+        "title": "StressRow",
+        "type": "object"
       },
       "UnconfirmedRequest": {
         "additionalProperties": false,

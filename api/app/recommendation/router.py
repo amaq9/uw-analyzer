@@ -4,6 +4,7 @@ Every output is labelled as a draft for the underwriter and as a test product.""
 
 import uuid
 from decimal import Decimal
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 
@@ -97,13 +98,15 @@ def import_draft(
             "Explain what lowered the amount: give at least one factor with its explanation."
         )
 
-    content = {
+    content: dict[str, Any] = {
         "summary": body.summary,
         "reasons": [r.model_dump(mode="json") for r in body.reasons],
         "decline_findings": [f.model_dump(mode="json") for f in body.decline_findings],
         "factors": [f.model_dump(mode="json") for f in body.factors],
         "information_gaps": body.information_gaps,
     }
+    if body.analysis is not None:
+        content["analysis"] = body.analysis.model_dump(mode="json")
     record = _drafts(request).add(
         case_id=case_id,
         tenant_id=principal.tenant_id,

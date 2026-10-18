@@ -23,11 +23,13 @@ from app.analysis import assess as rules
 from app.analysis.assess import Level, Section, money, pct, times
 from app.analysis.facts import METRICS, YearFigures, extract, to_figures
 from app.analysis.ratios import compute
+from app.analysis.report import build_report
 from app.auth.models import Principal
 from app.cases.schemas import CaseRecord
 from app.escalations.store import PostgresEscalationStore
 from app.evidence.rules import Relation
 from app.evidence.store import PostgresEvidenceStore
+from app.recommendation.analysis_report import OtherCheck
 from app.recommendation.schemas import (
     DraftImport,
     DraftOut,
@@ -520,6 +522,24 @@ def analyse(
             ),
         )
 
+    other_checks: list[OtherCheck] = []
+    if ofac_note:
+        other_checks.append(
+            OtherCheck(
+                title="Sanctions list (OFAC SDN)",
+                state="CLEAR",
+                detail="Name search found no exact or possible match. Name screening only; UN, EU and Canadian lists were not searched.",
+            )
+        )
+    else:
+        other_checks.append(
+            OtherCheck(
+                title="Sanctions list (OFAC SDN)",
+                state="NOT_SEARCHED",
+                detail="The OFAC sanctions list was not searched in this run.",
+            )
+        )
+
     # --- financial statements -------------------------------------------------------------------
     if use_uploaded:
         fin = _from_uploaded(request, principal, case, uploaded, evidence_store, currency)
@@ -598,6 +618,13 @@ def analyse(
         )
         out.evidence_created += int(made)
         if exact:
+            other_checks.append(
+                OtherCheck(
+                    title="Entity register (Global LEI)",
+                    state="FOUND",
+                    detail=f"Listed by exact legal name (LEI {exact[0]['id']}), entity status {exact[0]['attributes']['entity']['status']}.",
+                )
+            )
             claims.add(
                 f"The Global LEI register lists {case.legal_name} (LEI {exact[0]['id']}) with entity status "
                 f"{exact[0]['attributes']['entity']['status']}.",
@@ -609,8 +636,22 @@ def analyse(
             )
         else:
             gaps.append("The entity was not found by exact legal name in the Global LEI register")
+            other_checks.append(
+                OtherCheck(
+                    title="Entity register (Global LEI)",
+                    state="INCOMPLETE",
+                    detail="Not found by exact legal name. This is not evidence the entity does not exist.",
+                )
+            )
     else:
         gaps.append("The Global LEI register was not searched")
+        other_checks.append(
+            OtherCheck(
+                title="Entity register (Global LEI)",
+                state="NOT_SEARCHED",
+                detail="The Global LEI register was not searched in this run.",
+            )
+        )
 
     if "world-bank" in by_source:
         call = by_source["world-bank"]
@@ -633,6 +674,14 @@ def analyse(
             excerpt="; ".join(parts),
         )
         out.evidence_created += int(made)
+        other_checks.append(
+            OtherCheck(
+                title="Country economy (World Bank)",
+                state="FOUND",
+                detail=("; ".join(parts) or "Indicators retrieved.")
+                + ". Country level only, not a sector outlook.",
+            )
+        )
         claims.add(
             "Macroeconomic backdrop (country level, not a sector outlook): "
             + "; ".join(parts)
@@ -654,6 +703,47 @@ def analyse(
             gaps.append(
                 f"{name} was not searched or did not complete ({s.state.value.replace('_', ' ').lower()})"
             )
+    if adverse_steps and adverse_complete:
+        other_checks.append(
+            OtherCheck(
+                title="Adverse-information search",
+                state="NOT_ASSESSED",
+                detail=f"{len(adverse_steps)} search(es) ran. Their results are leads only and were not analysed here; see the Research tab.",
+            )
+        )
+    elif adverse_steps:
+        other_checks.append(
+            OtherCheck(
+                title="Adverse-information search",
+                state="INCOMPLETE",
+                detail="At least one search did not complete; see the Research tab.",
+            )
+        )
+    else:
+        other_checks.append(
+            OtherCheck(
+                title="Adverse-information search",
+                state="NOT_SEARCHED",
+                detail="No adverse-information search was planned or run.",
+            )
+        )
+    other_checks += [
+        OtherCheck(
+            title="Sector outlook",
+            state="NOT_ASSESSED",
+            detail="Only country-level economic data is connected, so the sector outlook was not assessed.",
+        ),
+        OtherCheck(
+            title="Court records and other regulators",
+            state="NOT_SEARCHED",
+            detail="Regulators and courts other than the OFAC list were not searched.",
+        ),
+        OtherCheck(
+            title="Payment behaviour",
+            state="NOT_ASSESSED",
+            detail="Payment data is outside the scope of this product.",
+        ),
+    ]
     gaps.append(
         "Sector-level outlook was not assessed (only country-level economic data is connected)"
     )
@@ -711,6 +801,23 @@ def analyse(
         + f". Proposed amount {money(float(proposed) / 1e6, currency)} of {money(float(case.exposure_amount) / 1e6, currency)} requested "
         "after the reductions listed. The adverse-news search, court records and sector outlook are not complete."
     )[:600]
+    audit_note = next(
+        (g for g in fin.gaps if "audited" in g.lower()), "Audit status is not stated."
+    )
+    analysis_report = build_report(
+        sections=sections,
+        order=rules.SECTIONS,
+        consolidated=(level, why),
+        ratio_sets=[c.ratios for c in contexts],
+        figure_sets=figures,
+        periods=out.periods,
+        currency=currency,
+        statements_label=fin.label[:600],
+        audit_note=audit_note[:600],
+        other_checks=other_checks,
+        gaps=gaps,
+        analyzer_version=rules.ANALYZER_VERSION,
+    )
     body = DraftImport(
         ai_proposed_amount=proposed,
         financial_findings_weak=level is Level.WEAK,
@@ -719,6 +826,7 @@ def analyse(
         summary=summary,
         reasons=reasons,
         information_gaps=[g[:200] for g in gaps][:20],
+        analysis=analysis_report,
         source=SourceInfo(
             kind="analyzer_v1",
             model="rules engine (no AI model)",

@@ -2,8 +2,8 @@
 
 Figures are plain numbers in one currency and unit. A figure that is not supplied makes the ratios
 that need it come back as None ("not calculable"); nothing is ever defaulted to zero, and negative
-values (losses, net cash) are kept. This mirrors `.claude/skills/financial-statement-assessment/
-scripts/calculate_ratios.py` so both give the same answers."""
+values (losses, net cash) are kept. This mirrors `tests/reference/calculate_ratios.py` (the project's
+five-area ratio script) so both give the same answers."""
 
 from typing import Any
 

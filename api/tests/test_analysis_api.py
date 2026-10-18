@@ -141,6 +141,47 @@ def test_a_strong_company_gets_a_full_draft_with_findings_and_reasons(
     )
     assert any("sector" in g.lower() for g in draft["information_gaps"])
     assert draft["limitations"]
+    report = draft["analysis"]
+    assert [a["key"] for a in report["areas"]] == [
+        "balance_sheet",
+        "liquidity",
+        "gearing",
+        "receivables",
+        "cash_flow",
+        "profitability",
+        "efficiency",
+    ]
+    core = [a for a in report["areas"] if a["feeds_draft"]]
+    context = [a for a in report["areas"] if not a["feeds_draft"]]
+    assert len(core) == 5 and [a["key"] for a in context] == ["profitability", "efficiency"]
+    assert next(a for a in context if a["key"] == "efficiency")["status"] == "NOT_ASSESSED"
+    assert {a["status"] for a in report["areas"]} <= {"OK", "WEAK", "DISTRESSED", "NOT_ASSESSED"}
+    profitability = next(a for a in context if a["key"] == "profitability")
+    assert any(m["label"] == "Net margin" for m in profitability["metrics"])
+    assert all("earlier" in m for a in report["areas"] for m in a["metrics"])
+    assert report["executive_summary"].startswith("Consolidated financial findings")
+    assert report["debt_service"] and report["debt_service_notes"]
+    assert [r["scenario"] for r in report["stress"]] == [
+        "As reported",
+        "Revenue down 10%",
+        "Revenue down 20%",
+    ]
+    assert "not a forecast" in report["stress_note"]
+    assert report["consolidated_status"] == "OK"
+    assert len(report["red_flags"]) == 16
+    assert {f["state"] for f in report["red_flags"]} <= {"TRIGGERED", "CLEAR", "NOT_ASSESSABLE"}
+    assert report["red_flags"][-1]["state"] == "NOT_ASSESSABLE"  # needs the printed statements
+    liquidity = next(a for a in report["areas"] if a["key"] == "liquidity")
+    assert liquidity["metrics"] and {"label", "current", "prior", "change"} <= set(
+        liquidity["metrics"][0]
+    )
+    assert report["basis"]["periods"] == out["periods_reviewed"]
+    assert report["strengths"] and report["watch"] and report["gaps"]
+    assert {c["title"] for c in report["other_checks"]} >= {"Sector outlook", "Payment behaviour"}
+    stored = client.get(
+        f"/api/v1/cases/{case_id}/draft-recommendations/{draft['id']}", headers=h
+    ).json()
+    assert stored["analysis"] == report  # kept with the draft, not recomputed on read
     assert Decimal(out["proposed_amount"]) == Decimal("900000.00")  # 100% less 10% for two gaps
     assert [f["code"] for f in out["factors"]] == ["missing_information"]
     assert out["evidence_created"] == 1 and out["claims_created"] >= 6
@@ -181,6 +222,11 @@ def test_a_distressed_company_gets_a_decline_draft_and_never_a_decision(
     out = analyse(client, case_id, h).json()
     assert out["consolidated_assessment"] == "WEAK"
     draft = out["draft"]
+    report = draft["analysis"]
+    assert report["consolidated_status"] == "DISTRESSED"
+    assert any(a["status"] == "DISTRESSED" for a in report["areas"])
+    assert report["weaknesses"]
+    assert report["key_concerns"][0].split(":")[1].strip().startswith("distressed")
     assert (draft["outcome"], draft["band"], draft["recommended_amount"]) == (
         "DECLINE",
         "DECLINE",

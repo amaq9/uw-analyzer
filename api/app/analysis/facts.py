@@ -229,4 +229,7 @@ def to_figures(year: YearFigures, prior: YearFigures | None) -> dict[str, float 
         "buybacks": v.get("buybacks"),
         "net_change_in_cash": v.get("net_change_in_cash"),
         "net_income": v.get("net_income"),
+        "gross_profit": v.get("gross_profit"),
+        "operating_income": v.get("operating_income"),
+        "depreciation_amortisation": dep,
     }

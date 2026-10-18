@@ -2,7 +2,9 @@
 
 - **Status:** Accepted, 2026-10-07 (stated as a decision by the Product Owner). **Point 1 is amended by
   ADR 0005**, which allows a labelled Draft recommendation and a human-recorded Underwriter decision
-  in two designated places only. Everything else here stands.
+  in two designated places only. **Amended again by ADR 0018** (2026-10-18): OK / Weak / Distressed
+  status colours are allowed on the financial areas of the Step 1 analysis report only. Everything
+  else here stands.
 - **Date:** 2026-10-07 (America/Toronto)
 - **Decider:** Product Owner. Author: Claude Code.
 

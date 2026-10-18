@@ -14,10 +14,9 @@ from app.analysis.assess import Level
 from app.analysis.facts import extract, to_figures
 from app.analysis.ratios import compute
 
-SKILL_SCRIPT = (
-    Path(__file__).resolve().parents[2]
-    / ".claude/skills/financial-statement-assessment/scripts/calculate_ratios.py"
-)
+# The project's own ratio script (the five-area method). It lives here, not in the skill folder, so
+# the check does not depend on which version of the analyst skill is installed.
+SKILL_SCRIPT = Path(__file__).resolve().parent / "reference" / "calculate_ratios.py"
 ENDS = ["2024-05-31", "2025-05-31", "2026-05-31"]
 
 

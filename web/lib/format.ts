@@ -32,10 +32,11 @@ export function money(value: string | number | null | undefined, currency?: stri
   return `${sign}${code} ${abs.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
 }
 
-/** Rewrite "24,603m" in analyst text as "USD 24.60bn", using the case currency. */
+/** Rewrite "24,603m" or "CAD 24,603m" in analyst text as "CAD 24.60bn". A currency already in the text is kept, never doubled. */
 export function shorten(text: string, currency?: string | null) {
-  const code = currency || "USD";
-  return text.replace(/(\d{1,3}(?:,\d{3})*(?:\.\d+)?)m(?![A-Za-z])/g, (_match, digits: string) => {
+  const fallback = currency || "USD";
+  return text.replace(/(?:\b([A-Z]{3}) ?)?(\d{1,3}(?:,\d{3})*(?:\.\d+)?)m(?![A-Za-z])/g, (_match, own: string | undefined, digits: string) => {
+    const code = own ?? fallback;
     const millions = Number(digits.replaceAll(",", ""));
     if (!Number.isFinite(millions)) return _match;
     return millions >= 1000 ? `${code} ${(Math.round(millions / 10) / 100).toFixed(2)}bn` : `${code} ${millions.toLocaleString()}m`;

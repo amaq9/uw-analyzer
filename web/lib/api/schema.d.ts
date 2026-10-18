@@ -904,6 +904,74 @@ export interface components {
              */
             status: "DRAFT_PREPARED" | "NEEDS_REVIEW";
         };
+        /** AnalysisReport */
+        AnalysisReport: {
+            /** Analyzer Version */
+            analyzer_version: string;
+            /** Areas */
+            areas: components["schemas"]["AreaReport"][];
+            basis: components["schemas"]["Basis"];
+            /** Consolidated Finding */
+            consolidated_finding: string;
+            /**
+             * Consolidated Status
+             * @enum {string}
+             */
+            consolidated_status: "OK" | "WEAK" | "DISTRESSED" | "NOT_ASSESSED";
+            /** Consolidated Why */
+            consolidated_why: string;
+            /** Debt Service */
+            debt_service?: components["schemas"]["Metric"][];
+            /** Debt Service Notes */
+            debt_service_notes?: string[];
+            /** Executive Summary */
+            executive_summary: string;
+            /** Gaps */
+            gaps?: string[];
+            /** Key Concerns */
+            key_concerns?: string[];
+            /** Other Checks */
+            other_checks?: components["schemas"]["OtherCheck"][];
+            /** Red Flags */
+            red_flags: components["schemas"]["FlagCheck"][];
+            /** Strengths */
+            strengths?: string[];
+            /** Stress */
+            stress?: components["schemas"]["StressRow"][];
+            /** Stress Note */
+            stress_note?: string | null;
+            /** Watch */
+            watch?: string[];
+            /** Weaknesses */
+            weaknesses?: string[];
+        };
+        /** AreaReport */
+        AreaReport: {
+            /**
+             * Feeds Draft
+             * @default true
+             */
+            feeds_draft: boolean;
+            /** Finding */
+            finding: string;
+            /** Flags */
+            flags?: string[];
+            /** Key */
+            key: string;
+            /** Metrics */
+            metrics?: components["schemas"]["Metric"][];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "OK" | "WEAK" | "DISTRESSED" | "NOT_ASSESSED";
+            /** Title */
+            title: string;
+            /** Trend */
+            trend: string;
+            /** Why */
+            why: string;
+        };
         /** AuditEventOut */
         AuditEventOut: {
             /** Action */
@@ -945,6 +1013,21 @@ export interface components {
          * @enum {string}
          */
         Band: "FULL" | "REDUCED" | "DECLINE";
+        /** Basis */
+        Basis: {
+            /** Audit Note */
+            audit_note: string;
+            /** Currency */
+            currency: string;
+            /** Method */
+            method: string;
+            /** Periods */
+            periods?: string[];
+            /** Statements */
+            statements: string;
+            /** Units */
+            units: string;
+        };
         /** Blocker */
         Blocker: {
             /** Code */
@@ -1480,6 +1563,7 @@ export interface components {
         DraftImport: {
             /** Ai Proposed Amount */
             ai_proposed_amount?: number | string | null;
+            analysis?: components["schemas"]["AnalysisReport"] | null;
             /** Decline Findings */
             decline_findings?: components["schemas"]["DeclineFinding"][];
             /** Factors */
@@ -1501,6 +1585,7 @@ export interface components {
         DraftOut: {
             /** Ai Proposed Amount */
             ai_proposed_amount: string | null;
+            analysis?: components["schemas"]["AnalysisReport"] | null;
             band: components["schemas"]["Band"];
             /**
              * Case Id
@@ -1883,6 +1968,21 @@ export interface components {
             title: string;
         };
         /**
+         * FlagCheck
+         * @description One item of the skill's red-flag checklist. A prompt for attention, never a pass or fail.
+         */
+        FlagCheck: {
+            /** Detail */
+            detail: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "TRIGGERED" | "CLEAR" | "NOT_ASSESSABLE";
+            /** Text */
+            text: string;
+        };
+        /**
          * Freshness
          * @enum {string}
          */
@@ -1947,12 +2047,49 @@ export interface components {
             /** Tenant Id */
             tenant_id: string;
         };
+        /**
+         * Metric
+         * @description One figure with this period, the period before, and which way it moved.
+         */
+        Metric: {
+            /**
+             * Change
+             * @enum {string}
+             */
+            change: "up" | "down" | "flat" | "unknown";
+            /** Current */
+            current: string;
+            /**
+             * Earlier
+             * @default No earlier year
+             */
+            earlier: string;
+            /** Label */
+            label: string;
+            /** Prior */
+            prior: string;
+        };
         /** MetricInfo */
         MetricInfo: {
             /** Label */
             label: string;
             /** Metric */
             metric: string;
+        };
+        /**
+         * OtherCheck
+         * @description A research area other than the financial statements, and what was done in it.
+         */
+        OtherCheck: {
+            /** Detail */
+            detail: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "CLEAR" | "FOUND" | "NOT_SEARCHED" | "INCOMPLETE" | "NOT_ASSESSED";
+            /** Title */
+            title: string;
         };
         /**
          * Outcome
@@ -2468,6 +2605,20 @@ export interface components {
          * @enum {string}
          */
         StepState: "PLANNED" | "RUNNING" | "SUCCEEDED" | "FAILED" | "NOT_AVAILABLE" | "SKIPPED";
+        /**
+         * StressRow
+         * @description What the figures look like if revenue falls and costs do not. Arithmetic, not a forecast.
+         */
+        StressRow: {
+            /** Cash From Operations */
+            cash_from_operations: string;
+            /** Earnings */
+            earnings: string;
+            /** Interest Cover */
+            interest_cover: string;
+            /** Scenario */
+            scenario: string;
+        };
         /**
          * UnconfirmedRequest
          * @description A person records that the legal entity could not be confirmed or found (reason required).

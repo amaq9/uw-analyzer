@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { DocumentsTab } from "@/components/case/documents-tab";
 import { EntityTab } from "@/components/case/entity-tab";
 import { EvidenceTab } from "@/components/case/evidence-tab";
+import { FinalDecisionTab } from "@/components/case/final-decision-tab";
 import { RecommendationTab } from "@/components/case/recommendation-tab";
 import { ReportTab } from "@/components/case/report-tab";
 import { ResearchTab } from "@/components/case/research-tab";
@@ -23,6 +24,7 @@ const TABS = [
   { id: "evidence", label: "Evidence and claims" },
   { id: "review", label: "Review items" },
   { id: "recommendation", label: "Draft recommendation" },
+  { id: "final", label: "Final decision" },
   { id: "report", label: "Report" },
 ] as const;
 
@@ -97,6 +99,13 @@ export function CaseWorkspace({ caseId }: Readonly<{ caseId: string }>) {
   const [tab, setTab] = useState<TabId>("overview");
   const data = record.data;
 
+  // A link such as /cases/<id>?tab=recommendation opens that tab straight away.
+  useEffect(() => {
+    const wanted = new URLSearchParams(window.location.search).get("tab");
+    const match = TABS.find((item) => item.id === wanted);
+    if (match) setTab(match.id);
+  }, []);
+
   return (
     <Gate error={record.error} loading={record.loading} name="Case" signedIn={Boolean(session)}>
       {data && session && (
@@ -152,7 +161,17 @@ export function CaseWorkspace({ caseId }: Readonly<{ caseId: string }>) {
             <RecommendationTab
               caseId={caseId}
               onChanged={record.reload}
+              onOpenTab={setTab}
               permissions={session.user.permissions}
+              token={session.token}
+            />
+          )}
+          {tab === "final" && (
+            <FinalDecisionTab
+              caseId={caseId}
+              onChanged={record.reload}
+              permissions={session.user.permissions}
+              record={data}
               token={session.token}
             />
           )}
