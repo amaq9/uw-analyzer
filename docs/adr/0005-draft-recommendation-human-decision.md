@@ -1,10 +1,16 @@
 # ADR 0005: Draft recommendation for the underwriter, and a human-recorded decision (amends P-09)
 
-- **Status:** Accepted, 2026-10-07 (Product Owner decision; Option B confirmed twice). Nothing in this
-  ADR is built yet: it depends on the research and analysis phases and on the Product Owner's
-  recommendation policy (see "What it depends on").
+- **Status:** Accepted, 2026-10-07 (Product Owner decision; Option B confirmed twice). **Built** (as of
+  2026-10-18): the server applies the approved policy v1.0 and enforces the preconditions, the analyzer
+  prepares the draft (ADR 0016), a named person adopts, changes or rejects it, and the agreement view
+  compares draft and decision. The screen design (outcome panel, reasoning, decision step, draft against
+  decision) is on the case's Draft recommendation tab. Not built, by Product Owner choice for the test
+  product: a second named reviewer (policy v1.0 sets no threshold), and strengths/weaknesses/conditions as
+  separate lists (the draft carries reasons, factors and information gaps).
 - **Date:** 2026-10-07 (America/Toronto)
 - **Decider:** Product Owner. Author: Claude Code.
+- **Amended by:** ADR 0018 (2026-10-18) allows OK / Weak / Distressed status colours on the Step 1
+  financial areas only; decision 3 below otherwise stands.
 - **Amends:** invariant P-09 (as worded in `AGENTS.md`, the BRD and the PRD) and ADR 0004 point 1.
 
 ## Context

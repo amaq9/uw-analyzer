@@ -200,8 +200,8 @@ export function DraftRecommendationView({ caseId, draftId }: DraftRecommendation
             <h2>Information gaps</h2>
             {draft.information_gaps.length ? (
               <ul className="plain-record-list">
-                {draft.information_gaps.map((gap) => (
-                  <li key={gap}>{gap}</li>
+                {draft.information_gaps.map((gap, index) => (
+                  <li key={`${index}-${gap}`}>{gap}</li>
                 ))}
               </ul>
             ) : (
@@ -214,8 +214,8 @@ export function DraftRecommendationView({ caseId, draftId }: DraftRecommendation
             <h2>Limitations</h2>
             {draft.limitations.length ? (
               <ul className="plain-record-list">
-                {draft.limitations.map((limitation) => (
-                  <li key={limitation}>{limitation}</li>
+                {draft.limitations.map((limitation, index) => (
+                  <li key={`${index}-${limitation}`}>{limitation}</li>
                 ))}
               </ul>
             ) : (

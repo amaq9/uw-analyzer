@@ -19,6 +19,7 @@ from pydantic import (
     model_validator,
 )
 
+from app.recommendation.analysis_report import AnalysisReport
 from app.recommendation.policy import POLICY_VERSION, Band, Outcome
 
 NOTICE = "Draft recommendation for the underwriter. Not a decision."
@@ -117,6 +118,7 @@ class DraftImport(BaseModel):
     summary: Annotated[Text, StringConstraints(max_length=600)]
     reasons: list[Reason] = Field(min_length=1, max_length=12)
     information_gaps: list[ShortText] = Field(default_factory=list, max_length=20)
+    analysis: AnalysisReport | None = None
     source: SourceInfo
 
     @model_validator(mode="after")
@@ -149,6 +151,7 @@ class DraftOut(BaseModel):
     factors: list[Factor]
     information_gaps: list[str]
     limitations: list[str]
+    analysis: AnalysisReport | None = None
     source: SourceInfo
     policy_version: str
     notice: str = NOTICE
@@ -197,6 +200,7 @@ def to_out(record: DraftRecord) -> DraftOut:
         factors=[Factor(**f) for f in content["factors"]],
         information_gaps=content["information_gaps"],
         limitations=[PAYMENT_LIMITATION],
+        analysis=AnalysisReport(**content["analysis"]) if content.get("analysis") else None,
         source=SourceInfo(**record.source),
         policy_version=record.policy_version,
         created_by=record.created_by,

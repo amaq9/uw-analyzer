@@ -48,12 +48,8 @@ describe("analysis panel", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: /analyse the research/i }));
-    expect(await screen.findByText("Balance sheet strength")).toBeInTheDocument();
-    expect(screen.getByText("Needs attention")).toBeInTheDocument();
-    expect(screen.getByText("Weakening")).toBeInTheDocument();
-    expect(screen.getByText(/they are not scores or ratings/i)).toBeInTheDocument();
-    expect(screen.getByText(/USD 4.00m/)).toBeInTheDocument();
-    expect(screen.getByText(/Consolidated financial findings/)).toBeInTheDocument();
+    expect(await screen.findByText(/evidence item\(s\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/the full analysis is shown below/i)).toBeInTheDocument();
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
     const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toContain("/api/v1/cases/c1/analysis");

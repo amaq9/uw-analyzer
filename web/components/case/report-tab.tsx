@@ -46,8 +46,8 @@ function ReportBody({ content: raw, currency }: Readonly<{ content: Content; cur
       <section className="ws-card">
         <h3>Evidence confidence: {readable(content.evidence_confidence.level)}</h3>
         <ul className="ws-bullets">
-          {content.evidence_confidence.explanations.map((line) => (
-            <li key={line}>{line}</li>
+          {content.evidence_confidence.explanations.map((line, index) => (
+            <li key={`${index}-${line}`}>{line}</li>
           ))}
         </ul>
         <p className="ws-muted">
@@ -136,11 +136,11 @@ function ReportBody({ content: raw, currency }: Readonly<{ content: Content; cur
       <section className="ws-card">
         <h3>Information gaps and limitations</h3>
         <ul className="ws-bullets">
-          {content.information_gaps.map((gap) => (
-            <li key={gap}>{gap}</li>
+          {content.information_gaps.map((gap, index) => (
+            <li key={`${index}-${gap}`}>{gap}</li>
           ))}
-          {content.limitations.map((line) => (
-            <li key={line}>{line}</li>
+          {content.limitations.map((line, index) => (
+            <li key={`${index}-${line}`}>{line}</li>
           ))}
         </ul>
       </section>

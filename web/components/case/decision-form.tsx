@@ -2,37 +2,71 @@
 
 import { type FormEvent, useState } from "react";
 
+import { outcomeHeadline, TestPill } from "@/components/case/draft-hero";
 import type { DecisionRecord, DraftRecord } from "@/components/case/types";
 import { ActionError, useAction } from "@/components/use-api";
 import { api } from "@/lib/api/client";
 import { dateTime, money, readable } from "@/lib/format";
 
-export function DecisionSummary({ decision }: Readonly<{ decision: DecisionRecord }>) {
+type Choice = "ADOPT" | "CHANGE" | "REJECT";
+
+function draftLine(draft: Pick<DraftRecord, "outcome" | "band" | "recommended_amount" | "requested_currency">) {
+  return draft.outcome === "APPROVE"
+    ? `${outcomeHeadline(draft)}: ${money(draft.recommended_amount, draft.requested_currency)}`
+    : "Decline";
+}
+
+function decisionLine(decision: DecisionRecord) {
+  if (decision.final_outcome === "APPROVE") return `Approve ${money(decision.final_amount, decision.currency)}`;
+  if (decision.final_outcome === "DECLINE") return "Decline";
+  return "No outcome recorded";
+}
+
+/** Draft and decision side by side, so the difference is plain. The decision is the only outcome. */
+export function DecisionSummary({ decision, draft }: Readonly<{ decision: DecisionRecord; draft?: DraftRecord }>) {
+  const action =
+    decision.action === "ADOPT"
+      ? "Adopted the draft as written"
+      : decision.action === "CHANGE"
+        ? "Changed the draft"
+        : "Rejected the draft (set aside)";
   return (
-    <section className="ws-card ws-decision">
-      <p className="eyebrow">Underwriter decision</p>
-      <h3>Recorded by {decision.decided_by}</h3>
-      <p>
-        {decision.action === "ADOPT" && "The draft was adopted as written."}
-        {decision.action === "CHANGE" && "The draft was changed."}
-        {decision.action === "REJECT" && "The draft was set aside; no outcome was recorded."}
+    <section aria-labelledby="rec-decision-title" className="rec-decided">
+      <div className="rec-hero-top">
+        <p className="rec-label">Underwriter decision, recorded by a named person.</p>
+        <TestPill />
+      </div>
+      <h2 id="rec-decision-title">{action}</h2>
+      <p className="rec-decided-by">
+        Recorded by <strong>{decision.decided_by}</strong> · {dateTime(decision.decided_at)} · cannot be edited
       </p>
-      {decision.final_outcome && (
-        <p>
-          <strong>
-            {decision.final_outcome === "APPROVE"
-              ? `Approved amount: ${money(decision.final_amount, decision.currency)}`
-              : "Declined"}
-          </strong>
-        </p>
+
+      <div className="rec-compare">
+        <div className="rec-compare-col">
+          <span>The draft said</span>
+          <strong>{draft ? draftLine(draft) : "See the draft above"}</strong>
+        </div>
+        <div className="rec-compare-col is-final">
+          <span>Your decision</span>
+          <strong>{decisionLine(decision)}</strong>
+        </div>
+      </div>
+      <p className="rec-agree">{decision.agrees ? "Your decision matches the draft." : "Your decision differs from the draft."}</p>
+      {decision.reason && (
+        <blockquote className="rec-your-reason">
+          <span>Your written reason</span>
+          {decision.reason}
+        </blockquote>
       )}
-      {decision.reason && <p>Reason: {decision.reason}</p>}
-      <p className="ws-muted">
-        {dateTime(decision.decided_at)} · {decision.agrees ? "Agrees with the draft" : "Differs from the draft"}
-      </p>
     </section>
   );
 }
+
+const CHOICES: { value: Choice; title: string; hint: string }[] = [
+  { value: "ADOPT", title: "Adopt the draft as written", hint: "Your decision becomes the draft's outcome and amount." },
+  { value: "CHANGE", title: "Change it (different outcome or amount)", hint: "Set your own outcome. You explain why." },
+  { value: "REJECT", title: "Reject it (set it aside; no outcome is recorded)", hint: "No outcome is recorded. You explain why." },
+];
 
 /** The one place a decision is recorded, by a named person. Never pre-filled with an outcome. */
 export function DecisionForm({
@@ -42,13 +76,17 @@ export function DecisionForm({
   token,
 }: Readonly<{ base: string; draft: DraftRecord; onDone: () => void; token: string }>) {
   const action = useAction();
-  const [choice, setChoice] = useState<"ADOPT" | "CHANGE" | "REJECT">("ADOPT");
+  const [choice, setChoice] = useState<Choice>("ADOPT");
   const [reason, setReason] = useState("");
   const [outcome, setOutcome] = useState<"APPROVE" | "DECLINE">("APPROVE");
   const [amount, setAmount] = useState("");
   const needsReason = choice !== "ADOPT";
+  const requested = Number(draft.requested_amount);
+  const typed = Number(amount);
+  const overRequest = Number.isFinite(requested) && requested > 0 && typed > requested;
   const ready =
-    (!needsReason || reason.trim().length > 0) && (choice !== "CHANGE" || outcome === "DECLINE" || Number(amount) > 0);
+    (!needsReason || reason.trim().length > 0) &&
+    (choice !== "CHANGE" || outcome === "DECLINE" || (typed > 0 && !overRequest));
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -62,32 +100,45 @@ export function DecisionForm({
     if (done) onDone();
   }
 
+  const consequence =
+    choice === "ADOPT"
+      ? `You will record: ${draftLine(draft)}.`
+      : choice === "REJECT"
+        ? "You will record: the draft set aside, with no outcome."
+        : outcome === "DECLINE"
+          ? "You will record: Decline."
+          : amount && typed > 0
+            ? `You will record: Approve ${money(amount, draft.requested_currency)}.`
+            : "Enter the amount you approve.";
+
   return (
-    <section className="ws-card ws-decision">
-      <p className="eyebrow">Underwriter decision</p>
-      <h3>Your decision on draft version {draft.version}</h3>
-      <p>
-        The draft above is a recommendation only. Adopt it, change it, or set it aside. Your choice is recorded under your
+    <section aria-labelledby="rec-decide-title" className="rec-decide">
+      <div className="rec-hero-top">
+        <p className="rec-label">Underwriter decision</p>
+        <TestPill />
+      </div>
+      <h2 id="rec-decide-title">Your decision on draft version {draft.version}</h2>
+      <p className="rec-decide-intro">
+        The draft above is a recommendation only. Nothing is decided until you record your choice. It is saved under your
         name and cannot be edited afterwards.
       </p>
-      <form className="ws-form" onSubmit={submit}>
-        <fieldset className="ws-radios">
+
+      <form className="rec-decide-form" onSubmit={submit}>
+        <fieldset className="rec-choices">
           <legend>What do you do with the draft?</legend>
-          {(
-            [
-              ["ADOPT", "Adopt the draft as written"],
-              ["CHANGE", "Change it (different outcome or amount)"],
-              ["REJECT", "Reject it (set it aside; no outcome is recorded)"],
-            ] as const
-          ).map(([value, label]) => (
-            <label key={value}>
-              <input checked={choice === value} name="choice" onChange={() => setChoice(value)} type="radio" />
-              {label}
+          {CHOICES.map((item) => (
+            <label className={`rec-choice${choice === item.value ? " is-selected" : ""}`} key={item.value}>
+              <input checked={choice === item.value} name="choice" onChange={() => setChoice(item.value)} type="radio" />
+              <span>
+                <strong>{item.title}</strong>
+                <small>{item.hint}</small>
+              </span>
             </label>
           ))}
         </fieldset>
+
         {choice === "CHANGE" && (
-          <>
+          <div className="rec-change">
             <label className="ws-field">
               Your outcome
               <select onChange={(event) => setOutcome(event.target.value as "APPROVE" | "DECLINE")} value={outcome}>
@@ -99,19 +150,29 @@ export function DecisionForm({
               <label className="ws-field">
                 Amount ({draft.requested_currency ?? "currency of the request"}; not above the amount requested)
                 <input inputMode="decimal" onChange={(event) => setAmount(event.target.value)} value={amount} />
+                {overRequest && (
+                  <small className="rec-field-error">
+                    That is above the amount requested ({money(draft.requested_amount, draft.requested_currency)}).
+                  </small>
+                )}
               </label>
             )}
-          </>
+          </div>
         )}
+
         {needsReason && (
           <label className="ws-field">
             Reason (required)
             <textarea onChange={(event) => setReason(event.target.value)} required rows={3} value={reason} />
           </label>
         )}
-        <button className="ws-button primary" disabled={action.busy || !ready} type="submit">
-          Record my decision ({readable(choice).toLowerCase()})
-        </button>
+
+        <div className="rec-confirm">
+          <p aria-live="polite">{consequence}</p>
+          <button className="ws-button primary" disabled={action.busy || !ready} type="submit">
+            Record my decision ({readable(choice).toLowerCase()})
+          </button>
+        </div>
         <ActionError error={action.error} />
       </form>
     </section>

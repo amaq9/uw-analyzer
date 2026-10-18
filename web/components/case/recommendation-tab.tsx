@@ -3,22 +3,42 @@
 import Link from "next/link";
 
 import { AnalysisPanel } from "@/components/case/analysis-panel";
+import { AnalysisReportView } from "@/components/case/analysis-report";
 import { DecisionForm, DecisionSummary } from "@/components/case/decision-form";
-import { type DecisionRecord, type DraftRecord, type TabProps, can } from "@/components/case/types";
+import { loadDecision } from "@/components/case/decision-data";
+import { AnalysisFindings, DraftBasis, DraftHero, outcomeHeadline, StepHeading } from "@/components/case/draft-hero";
+import { type DraftRecord, type TabProps, can } from "@/components/case/types";
 import { useLoad } from "@/components/use-api";
-import { ApiRequestError, api } from "@/lib/api/client";
-import { dateTime, money, readable } from "@/lib/format";
+import { api } from "@/lib/api/client";
+import { dateTime, money } from "@/lib/format";
 
-async function loadDecision(token: string, base: string, draftId: string, signal: AbortSignal) {
-  try {
-    return await api<DecisionRecord>(token, "GET", `${base}/${draftId}/decision`, undefined, signal);
-  } catch (error) {
-    if (error instanceof ApiRequestError && error.status === 404) return null;
-    throw error;
-  }
+function Steps({ hasDraft, decided }: Readonly<{ hasDraft: boolean; decided: boolean }>) {
+  const steps = [
+    { id: "rec-step-1", label: "Research and analysis", state: hasDraft ? "done" : "current" },
+    { id: "rec-step-2", label: "Draft recommendation", state: !hasDraft ? "next" : decided ? "done" : "current" },
+    { id: "rec-step-3", label: "Your decision", state: decided ? "done" : hasDraft ? "current" : "next" },
+  ];
+  return (
+    <ol aria-label="Progress" className="rec-steps">
+      {steps.map((step, index) => (
+        <li aria-current={step.state === "current" ? "step" : undefined} className={`is-${step.state}`} key={step.label}>
+          <a href={`#${step.id}`}>
+            <span className="rec-step-dot">{step.state === "done" ? "✓" : index + 1}</span>
+            <span>{step.label}</span>
+          </a>
+        </li>
+      ))}
+    </ol>
+  );
 }
 
-export function RecommendationTab({ caseId, onChanged, permissions, token }: TabProps) {
+export function RecommendationTab({
+  caseId,
+  onChanged,
+  onOpenTab,
+  permissions,
+  token,
+}: TabProps & { onOpenTab?: (tab: "final") => void }) {
   const base = `/api/v1/cases/${encodeURIComponent(caseId)}/draft-recommendations`;
   const drafts = useLoad((t, signal) => api<DraftRecord[]>(t, "GET", base, undefined, signal), [caseId]);
   const list = drafts.data ?? [];
@@ -28,20 +48,22 @@ export function RecommendationTab({ caseId, onChanged, permissions, token }: Tab
     [caseId, latest?.id],
   );
   const canDecide = can(permissions, "decision:record");
+  const decided = Boolean(decision.data);
 
   return (
-    <div className="ws-stack">
-      <section className="ws-card">
-        <h2>Draft recommendation for the underwriter</h2>
-        <p>
-          A draft is prepared from the evidence by the analyst, then the approved test policy (v1.0) is applied by the system.
-          It is a recommendation only. <strong>Not a decision.</strong> Only your recorded decision below is a decision.
-        </p>
-      </section>
+    <div className="ws-stack rec">
+      <Steps decided={decided} hasDraft={Boolean(latest)} />
 
+      <StepHeading
+        id="rec-step-1"
+        note="The analyzer reads the finished research and the uploaded statements, and records what it found with its sources."
+        number={1}
+        title="Research and analysis"
+      />
       <AnalysisPanel
         base={`/api/v1/cases/${encodeURIComponent(caseId)}`}
         canRun={can(permissions, "draft:import")}
+        hasDraft={Boolean(latest)}
         onDone={() => {
           drafts.reload();
           decision.reload();
@@ -49,62 +71,44 @@ export function RecommendationTab({ caseId, onChanged, permissions, token }: Tab
         }}
         token={token}
       />
+      {latest?.analysis && <AnalysisReportView currency={latest.requested_currency} report={latest.analysis} />}
+      {latest && !latest.analysis && (
+        <p className="ws-note">
+          This draft was prepared before the detailed analysis existed. Run the analysis again to see the full Step 1 here.
+        </p>
+      )}
+      {latest && <AnalysisFindings draft={latest} />}
 
+      <StepHeading
+        id="rec-step-2"
+        note="The approved policy turns the findings into a draft outcome and amount. It is a recommendation only."
+        number={2}
+        title="Draft recommendation"
+      />
+      {!latest && (
+        <section className="ws-card rec-empty">
+          <h3>No draft has been prepared yet</h3>
+          <p>
+            Run the analysis in Step 1 once the research has finished. A draft needs a confirmed company, no open review
+            items, and finished research and financial analysis. If any is missing, the analysis says which.
+          </p>
+        </section>
+      )}
+      {latest && <DraftHero draft={latest} />}
+      {latest && <DraftBasis draft={latest} />}
+
+      <StepHeading
+        id="rec-step-3"
+        note="Only your recorded decision is the decision. Adopt the draft, change it, or reject it."
+        number={3}
+        title="Your decision"
+      />
       {!latest && (
         <section className="ws-card">
-          <p>No draft has been prepared yet. Run the analysis above once the research has finished.</p>
+          <p>Available once a draft has been prepared.</p>
         </section>
       )}
-
-      {latest && (
-        <section className="ws-card">
-          <p className="eyebrow">Draft recommendation for the underwriter. Not a decision.</p>
-          <h3>
-            Version {latest.version} · prepared {dateTime(latest.created_at)}
-          </h3>
-          <dl className="ws-facts">
-            <div>
-              <dt>Requested amount</dt>
-              <dd>{money(latest.requested_amount, latest.requested_currency)}</dd>
-            </div>
-            <div>
-              <dt>Draft outcome</dt>
-              <dd>
-                {latest.outcome === "APPROVE"
-                  ? `Approve ${money(latest.recommended_amount, latest.requested_currency)} (${readable(latest.band).toLowerCase()})`
-                  : "Decline"}
-              </dd>
-            </div>
-            <div>
-              <dt>Analyst&apos;s proposed amount</dt>
-              <dd>{money(latest.ai_proposed_amount, latest.requested_currency)}</dd>
-            </div>
-            <div>
-              <dt>Policy version</dt>
-              <dd>{latest.policy_version}</dd>
-            </div>
-          </dl>
-          <p>{latest.summary}</p>
-          <p>
-            <Link className="inline-action" href={`/cases/${caseId}/recommendations/${latest.id}`}>
-              Open the full draft with reasons and sources
-            </Link>
-          </p>
-          {latest.information_gaps.length > 0 && (
-            <>
-              <h4>Information gaps</h4>
-              <ul className="ws-bullets">
-                {latest.information_gaps.map((gap) => (
-                  <li key={gap}>{gap}</li>
-                ))}
-              </ul>
-            </>
-          )}
-          <p className="ws-muted">{latest.limitations.join(" ")}</p>
-        </section>
-      )}
-
-      {latest && decision.data && <DecisionSummary decision={decision.data} />}
+      {latest && decision.data && <DecisionSummary decision={decision.data} draft={latest} />}
       {latest && decision.data === null && canDecide && (
         <DecisionForm
           base={base}
@@ -121,16 +125,32 @@ export function RecommendationTab({ caseId, onChanged, permissions, token }: Tab
           <p>No decision has been recorded. Your role cannot record one.</p>
         </section>
       )}
+      {latest && decision.data && (
+        <section className="ws-card rec-report-prompt">
+          <div>
+            <p className="eyebrow">Next</p>
+            <h3>Your one-page final decision report is ready</h3>
+            <p className="ws-muted">Open the Final decision tab to print it or save it as a PDF.</p>
+          </div>
+          <button className="ws-button primary" onClick={() => onOpenTab?.("final")} type="button">
+            Open the Final decision tab
+          </button>
+        </section>
+      )}
 
       {list.length > 1 && (
         <section className="ws-card">
-          <h3>Earlier drafts</h3>
+          <p className="eyebrow">Earlier drafts of this case</p>
           <ul className="ws-list">
             {list.slice(1).map((draft) => (
               <li key={draft.id}>
                 <Link className="ws-link" href={`/cases/${caseId}/recommendations/${draft.id}`}>
                   Version {draft.version} · {dateTime(draft.created_at)}
                 </Link>
+                <small className="ws-muted">
+                  Draft said: {outcomeHeadline(draft)}
+                  {draft.outcome === "APPROVE" ? ` (${money(draft.recommended_amount, draft.requested_currency)})` : ""}
+                </small>
               </li>
             ))}
           </ul>
