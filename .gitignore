@@ -58,3 +58,8 @@ BRD + PRD/
 
 # Local test login codes written by api/scripts/dev_server.py
 /MY-LOGIN-TOKENS.txt
+
+# Local secrets and supplied files: never commit (public repo).
+/*API KEY*
+/*api key*
+/*.zip
