@@ -29,6 +29,7 @@ METRIC_LABELS: dict[str, str] = {
     "receivables": "Accounts receivable, net",
     "allowance_for_credit_losses": "Allowance for credit losses",
     "inventory": "Inventories",
+    "payables": "Accounts payable (trade payables)",
     "goodwill": "Goodwill",
     "intangibles": "Intangible assets, net",
     "debt_noncurrent": "Long-term debt (non-current)",
@@ -38,6 +39,7 @@ METRIC_LABELS: dict[str, str] = {
     "lease_current": "Operating lease liabilities (current)",
     "revenue": "Revenue (net sales)",
     "gross_profit": "Gross profit",
+    "cost_of_revenue": "Cost of sales (cost of goods sold)",
     "net_income": "Net income",
     "operating_income": "Operating income",
     "pretax_income": "Income before income taxes",
@@ -79,6 +81,13 @@ _PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ),
     ("receivables", re.compile(r"^(trade )?(accounts )?receivables?|^accounts receivable")),
     ("inventory", re.compile(r"^inventor(y|ies)")),
+    ("payables", re.compile(r"^(trade )?(accounts )?payables?|^accounts payable")),
+    (
+        "cost_of_revenue",
+        re.compile(
+            r"^(total )?cost of (sales|revenues?|goods sold|products sold|goods and services sold)"
+        ),
+    ),
     ("goodwill", re.compile(r"^goodwill$")),
     ("intangibles", re.compile(r"^(other )?intangible assets|^intangibles")),
     (

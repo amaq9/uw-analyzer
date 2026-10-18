@@ -138,8 +138,8 @@ def test_a_strong_company_gets_a_full_draft_with_findings_and_reasons(
     assert out["status"] == "DRAFT_PREPARED" and "not a decision" in out["message"]
     assert out["periods_reviewed"] == ["2026-05-31", "2025-05-31", "2024-05-31"]
     assert [s["key"] for s in out["sections"]] == [
-        "liquidity",
         "profitability",
+        "liquidity",
         "leverage",
         "cash_flow",
         "efficiency",
@@ -164,15 +164,15 @@ def test_a_strong_company_gets_a_full_draft_with_findings_and_reasons(
     assert draft["limitations"]
     report = draft["analysis"]
     assert [a["key"] for a in report["areas"]] == [
-        "liquidity",
         "profitability",
+        "liquidity",
         "leverage",
         "cash_flow",
         "efficiency",
     ]
     core = [a for a in report["areas"] if a["feeds_draft"]]
     context = [a for a in report["areas"] if not a["feeds_draft"]]
-    assert [a["key"] for a in core] == ["liquidity", "profitability", "leverage", "cash_flow"]
+    assert [a["key"] for a in core] == ["profitability", "liquidity", "leverage", "cash_flow"]
     assert [a["key"] for a in context] == ["efficiency"]
     assert context[0]["status"] == "NOT_ASSESSED"
     assert {a["status"] for a in report["areas"]} <= {"OK", "WEAK", "DISTRESSED", "NOT_ASSESSED"}
@@ -188,6 +188,15 @@ def test_a_strong_company_gets_a_full_draft_with_findings_and_reasons(
     assert all(s.startswith("Revenue down") for s in scenarios[1:])
     assert "not a forecast" in report["stress_note"]
     assert report["consolidated_status"] == "OK"
+    brief = report["executive_brief"]
+    assert brief["headline"].startswith("Approve the full USD 1.00m requested.")
+    assert [x["heading"] for x in brief["sections"]][:3] == [
+        "Recommendation",
+        "How the four core dimensions stand",
+        "Financial position in numbers",
+    ]
+    assert all(a["summary"] for a in report["areas"])
+    assert report["cash_cycle"] is None or len(report["cash_cycle"]["rows"]) == 4
     assert len(report["red_flags"]) == 23
     assert {f["state"] for f in report["red_flags"]} <= {"TRIGGERED", "CLEAR", "NOT_ASSESSABLE"}
     assert report["red_flags"][-1]["state"] == "NOT_ASSESSABLE"  # needs the printed statements
@@ -199,7 +208,7 @@ def test_a_strong_company_gets_a_full_draft_with_findings_and_reasons(
     # Step 2 and Step 1 tell the same story (found on the live Nike case: they once disagreed).
     assert draft["summary"].startswith("Consolidated financial findings: OK.")
     assert (
-        "By dimension: liquidity strong; profitability strong; leverage strong; cash flow adequate"
+        "By dimension: profitability strong; liquidity strong; balance sheet and leverage strong; cash flow adequate"
         in draft["summary"]
     )
     assert report["executive_summary"].startswith("Consolidated financial findings: OK.")

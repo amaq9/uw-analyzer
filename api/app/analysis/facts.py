@@ -45,6 +45,7 @@ METRICS: dict[str, tuple[str, tuple[str, ...]]] = {
         ),
     ),
     "inventory": ("instant", ("InventoryNet", "InventoryFinishedGoodsNetOfReserves")),
+    "payables": ("instant", ("AccountsPayableCurrent", "AccountsPayableTradeCurrent")),
     "goodwill": ("instant", ("Goodwill",)),
     "intangibles": (
         "instant",
@@ -63,6 +64,15 @@ METRICS: dict[str, tuple[str, tuple[str, ...]]] = {
         ("RevenueFromContractWithCustomerExcludingAssessedTax", "Revenues", "SalesRevenueNet"),
     ),
     "gross_profit": ("flow", ("GrossProfit",)),
+    "cost_of_revenue": (
+        "flow",
+        (
+            "CostOfGoodsAndServicesSold",
+            "CostOfRevenue",
+            "CostOfGoodsSold",
+            "CostOfGoodsAndServiceExcludingDepreciationDepletionAndAmortization",
+        ),
+    ),
     "net_income": ("flow", ("NetIncomeLoss", "ProfitLoss")),
     "operating_income": ("flow", ("OperatingIncomeLoss",)),
     "pretax_income": (
@@ -190,6 +200,11 @@ def to_figures(year: YearFigures, prior: YearFigures | None) -> dict[str, float 
         year.derived["ebit"] = (
             "pre-tax income less net interest income (operating income not tagged)"
         )
+    cost_of_revenue = v.get("cost_of_revenue")
+    revenue, gross = v.get("revenue"), v.get("gross_profit")
+    if cost_of_revenue is None and revenue is not None and gross is not None:
+        cost_of_revenue = revenue - gross
+        year.derived["cost_of_revenue"] = "revenue less gross profit (cost of sales not tagged)"
     dep = v.get("depreciation_amortisation")
     ebitda = None if ebit is None or dep is None else ebit + dep
     if ebitda is not None:
@@ -212,6 +227,8 @@ def to_figures(year: YearFigures, prior: YearFigures | None) -> dict[str, float 
         "current_liabilities": v.get("current_liabilities"),
         "cash": cash,
         "inventory": v.get("inventory"),
+        "payables": v.get("payables"),
+        "cost_of_revenue": cost_of_revenue,
         "financial_debt": debt,
         "lease_liabilities": leases,
         "debt_due_12m": add(v.get("debt_current"), v.get("short_term_borrowings")),

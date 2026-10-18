@@ -1,7 +1,7 @@
 """Build the written-up analysis (Step 1) from the analyzer's figures and findings.
 
 Pure and deterministic: the same figures give the same report. Nothing here decides anything. It lays
-out the five dimensions of the analyst framework (liquidity, profitability, leverage, cash flow,
+out the five dimensions of the analyst framework (profitability, liquidity, balance sheet and leverage, cash flow,
 efficiency and sector) with their figures and reference ranges, runs the red-flag checklist as prompts
 for attention, and closes with strengths, weaknesses, what to watch and what is not known."""
 
@@ -9,6 +9,8 @@ from datetime import date, timedelta
 from typing import Any, Literal
 
 from app.analysis.assess import CORE, Level, Section, money, pct, times
+from app.analysis.brief import Recommendation, build_brief
+from app.analysis.cycle import build_cash_cycle
 from app.analysis.dimensions import dimension_metrics
 from app.analysis.dimensions import div as _div
 from app.analysis.ratios import Figures
@@ -481,6 +483,9 @@ STANDARD_DEFINITIONS = [
     "Debt to equity is financial debt plus lease liabilities, divided by shareholders' equity.",
     "Interest cover is EBIT divided by interest expense. The quick ratio is current assets less inventory, divided by current liabilities.",
     "Free cash flow is cash from operations less capital expenditure. Net margin is net income divided by revenue.",
+    "Days sales outstanding (DSO) is year-end receivables divided by revenue, times 365. Days inventory outstanding "
+    "(DIO) is year-end inventory divided by cost of sales, times 365. Days payables outstanding (DPO) is year-end "
+    "trade payables divided by cost of sales, times 365. The cash conversion cycle (CCC) is DSO plus DIO less DPO.",
 ]
 
 
@@ -813,7 +818,7 @@ def _consolidated_why(core: list[AreaReport]) -> str:
     parts = [f"{c['OK']} OK", f"{c['WEAK']} weak", f"{c['DISTRESSED']} distressed"]
     if c["NOT_ASSESSED"]:
         parts.append(f"{c['NOT_ASSESSED']} not assessed")
-    return f"The four core dimensions (liquidity, profitability, leverage, cash flow): {', '.join(parts)}."
+    return f"The four core dimensions (profitability, liquidity, balance sheet and leverage, cash flow): {', '.join(parts)}."
 
 
 def _executive_summary(
@@ -876,6 +881,8 @@ def build_report(
     as_of: date | None = None,
     definitions: list[str] | None = None,
     notes: NotesReview | None = None,
+    recommendation: Recommendation | None = None,
+    company: str = "the company",
 ) -> AnalysisReport:
     ratios, figures = ratio_sets[0], figure_sets[0]
     prior_figures = figure_sets[1] if len(figure_sets) > 1 else None
@@ -889,6 +896,7 @@ def build_report(
             finding=finding_word(sections[key].level),
             trend=sections[key].trend,
             why=sections[key].why,
+            summary=(sections[key].summary or None),
             flags=sections[key].flags[:10],
             metrics=_metrics(key, metric_sets, currency),
             feeds_draft=key in CORE,
@@ -922,7 +930,7 @@ def build_report(
     all_definitions = list(dict.fromkeys(STANDARD_DEFINITIONS + (definitions or [])))
     ds_metrics, ds_notes = debt_service_block(ratio_sets, figure_sets, currency)
     stress, stress_note = stress_block(ratio_sets, figure_sets, currency)
-    return AnalysisReport(
+    report = AnalysisReport(
         basis=Basis(
             statements=statements_label,
             periods=periods,
@@ -930,7 +938,7 @@ def build_report(
             units=f"Figures shown in millions of {currency} unless stated",
             audit_note=audit_note,
             method=(
-                "Analyst framework: liquidity, profitability, leverage, cash flow, efficiency and sector, "
+                "Analyst framework: profitability, liquidity, balance sheet and leverage, cash flow, efficiency and sector, "
                 "as written rules with the framework's reference ranges"
             ),
         ),
@@ -953,6 +961,35 @@ def build_report(
         gaps=[g[:600] for g in unique_gaps],
         definitions=[d[:600] for d in all_definitions][:20],
         notes_review=notes,
+        cash_cycle=build_cash_cycle(figure_sets, periods, all_definitions),
         other_checks=other_checks,
         analyzer_version=analyzer_version,
     )
+    if recommendation is not None:
+        m0 = metric_sets[0]
+        m1 = metric_sets[1] if len(metric_sets) > 1 else None
+        ocf0 = m0["cash_flow"]["operating_cash_flow"]
+        ocf1 = m1["cash_flow"]["operating_cash_flow"] if m1 else None
+        nums = {
+            "revenue": m0["profitability"]["revenue"],
+            "growth": m0["profitability"]["growth"],
+            "net_income": figures.get("net_income"),
+            "net_margin": m0["profitability"]["net_margin"],
+            "prior_net_margin": m1["profitability"]["net_margin"] if m1 else None,
+            "ebitda_margin": m0["profitability"]["ebitda_margin"],
+            "ocf": ocf0,
+            "ocf_to_ni": m0["cash_flow"]["ocf_to_net_income"],
+            "ocf_change": None if ocf0 is None or not ocf1 or ocf1 <= 0 else ocf0 / ocf1 - 1,
+            "fcf": m0["cash_flow"]["free_cash_flow"],
+            "fcf_after": m0["cash_flow"]["fcf_after_distributions"],
+            "current_ratio": m0["liquidity"]["current_ratio"],
+            "prior_current_ratio": m1["liquidity"]["current_ratio"] if m1 else None,
+            "buffer": m0["liquidity"]["cash_less_debt_due_12m"],
+            "de": m0["leverage"]["debt_to_equity"],
+            "nd": m0["leverage"]["net_debt_to_ebitda"],
+            "cover": m0["leverage"]["interest_cover"],
+            "equity": m0["leverage"]["equity"],
+            "equity_ratio": m0["leverage"]["equity_ratio"],
+        }
+        report.executive_brief = build_brief(report, recommendation, nums, company)
+    return report
