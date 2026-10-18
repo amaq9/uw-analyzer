@@ -338,7 +338,9 @@ def _level(measures: list[Measure]) -> str | None:
     return _LEVEL[min(banded)] if banded else None
 
 
-def _recommendations(measures: list[Measure], figs: list[Figures]) -> list[str]:
+def _recommendations(
+    measures: list[Measure], figs: list[Figures], sets: list[dict[str, Any]]
+) -> list[str]:
     by = {m.label: m for m in measures}
     recs: list[str] = []
     dso = by.get("Change in days sales outstanding")
@@ -349,11 +351,20 @@ def _recommendations(measures: list[Measure], figs: list[Figures]) -> list[str]:
         extra = ""
         if rec_now and rec_before and rev_now and rev_before and rec_before > 0 and rev_before > 0:
             extra = f" (receivables {pct(rec_now / rec_before - 1)} against revenue {pct(rev_now / rev_before - 1)})"
+        again = ""
+        three = [sets[i]["dso"] for i in range(3)] if len(sets) > 2 else []
+        if three and None not in three and three[1] - three[2] > 5:
+            again = (
+                " Days sales outstanding has lengthened two years running "
+                f"({three[2]:.1f} to {three[1]:.1f} to {three[0]:.1f} days)."
+            )
         recs.append(
             "Customers are paying more slowly"
             + extra
-            + ". Ask for the receivables ageing and the largest overdue "
-            "balances, and whether payment terms were extended or sales were pulled forward."
+            + "."
+            + again
+            + " Ask for the receivables ageing and the largest overdue balances, and whether payment terms "
+            "were extended or sales were pulled forward."
         )
     dio = by.get("Change in days inventory outstanding")
     if dio is not None and dio.band is not None and dio.band <= 1:
@@ -411,7 +422,7 @@ def rate_cycle(sets: list[dict[str, Any]], figs: list[Figures]) -> dict[str, Any
         cut_percent=None,
         core=False,
     )
-    recs = _recommendations(measures, figs)
+    recs = _recommendations(measures, figs, sets)
     if recs:
         text += " What to do: " + " ".join(recs)
     text += " This is context only: it does not change the recommended amount."
