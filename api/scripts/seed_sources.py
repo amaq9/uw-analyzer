@@ -75,6 +75,19 @@ SOURCES = [
         "terms_notes": "Free index; 1 request per 5 s. Leads only: read the publisher page.",
         "rate_limit_per_minute": 10,
     },
+    {
+        "key": "alpha-vantage-news",
+        "name": "Alpha Vantage market news and sentiment (leads only)",
+        "source_class": "COMMERCIAL",
+        "source_type": "news",
+        "jurisdictions": ["GLOBAL"],
+        "access_category": "DISCOVERY_ONLY",
+        "auth_state": "CONFIGURED",
+        "terms_notes": "Needs an API key (ALPHA_VANTAGE_API_KEY on the worker); the free key "
+        "allows 25 requests a day. Listed shares and fixed market topics only. Sentiment is "
+        "the provider's automated label. Leads only: read the publisher page.",
+        "rate_limit_per_minute": 5,
+    },
 ]
 
 
