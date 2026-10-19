@@ -44,3 +44,35 @@ step ends `FAILED` with `retryable`; run `start` again later to resume).
 What each connector does and does not do: SEC EDGAR covers U.S. SEC filers only (Nike yes; a private or
 non-U.S. company is not found and the step ends with `permanent:no_unique_match`). GLEIF covers any entity
 that has a Legal Entity Identifier. Neither covers adverse news, courts, sanctions or sector outlook.
+
+## Alpha Vantage market news (needs a key, ADR 0023)
+The `alpha-vantage-news` connector is enabled only when the worker also has `ALPHA_VANTAGE_API_KEY` set. The key
+stays on this computer: it is never written to the repo, a snapshot or the call log. Keep the key file at the repo
+root (its name contains `API KEY`, which `.gitignore` excludes) or in your own secret store.
+
+1. Register the source once: `cd api; uv run python scripts/seed_sources.py` (adds `alpha-vantage-news`).
+2. Start the worker with the key, in PowerShell:
+   ```
+   cd api
+   $env:CONNECTOR_CONTACT = "your address"
+   $env:ALPHA_VANTAGE_API_KEY = "<your key>"
+   uv run python scripts/worker.py
+   ```
+3. Plan and start a run as above. The plan lists `alpha-vantage-news` twice: once under the adverse search
+   (news about the company's listed share) and once under country and industry (news for the industry's market
+   topic).
+
+What it does and does not do:
+- Adverse search: finds the company's listed share by exact name (suffixes such as Inc. ignored). If no listing,
+  or more than one in the named countries, matches, the step ends `permanent:no_unique_match`; nothing is
+  guessed. Private companies are never found.
+- Country and industry: the case's industry must map to one of the provider's topics (technology, retail and
+  wholesale, manufacturing, energy and transportation, life sciences, real estate, finance); otherwise the step
+  ends `permanent:no_topic`.
+- The snapshot keeps the latest 50 articles and the provider's own sentiment labels. Labels are automated scores,
+  not findings, and every article is a lead: open and read the publisher's page before relying on it.
+- The free key allows 25 requests a day (about 3 per run). When the limit is reached the step ends `FAILED`
+  with `retryable`; run `start` again the next day to resume. A refused key ends `permanent:key_refused`.
+- If the key's plan does not include the news endpoint (the provider answers "premium endpoint"; true of the
+  current key on 2026-10-19), news steps end `permanent:premium_required`. Upgrade the key's plan, or leave the
+  key unset so the steps are simply `SKIPPED`.

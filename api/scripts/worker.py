@@ -7,7 +7,8 @@
 Connectors for the free public sources (SEC EDGAR, GLEIF, OFAC, World Bank, GDELT news) are
 enabled when CONNECTOR_CONTACT (your contact address, sent to the registries as required) and
 the document storage settings are set. Otherwise planned steps are recorded as SKIPPED
-("No connector is implemented").
+("No connector is implemented"). Alpha Vantage market news is added only when
+ALPHA_VANTAGE_API_KEY is also set (ADR 0023).
 """
 
 import logging
@@ -23,6 +24,7 @@ from sqlalchemy import create_engine  # noqa: E402
 from app.cases.store import PostgresCaseStore  # noqa: E402
 from app.config import Settings  # noqa: E402
 from app.documents.storage import S3Storage  # noqa: E402
+from app.research.alpha_vantage import AlphaVantageNewsConnector  # noqa: E402
 from app.research.connectors import Connector, ConnectorSet  # noqa: E402
 from app.research.executor import Executor  # noqa: E402
 from app.research.fetch import HttpsFetcher  # noqa: E402
@@ -78,6 +80,9 @@ def build_connectors(settings: Settings) -> ConnectorSet:
         WorldBankConnector(fetcher, snapshots),
         GdeltNewsConnector(fetcher, snapshots),
     ]
+    api_key = os.environ.get("ALPHA_VANTAGE_API_KEY", "").strip()
+    if api_key:
+        others.append(AlphaVantageNewsConnector(fetcher, snapshots, api_key))
     everything: list[Connector] = [sec, gleif, *others]
     return ConnectorSet({c.key: c for c in everything})
 
