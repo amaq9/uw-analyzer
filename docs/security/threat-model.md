@@ -48,6 +48,7 @@ agent (prompt injection); the LLM itself (untrusted output).
 | T15 | Denial of service, brute force | Rate limits, connector quotas, request size limits | Planned |
 | T16 | Data loss | Encrypted, tested backups; restore drills | Planned (needs hosting decision) |
 | T17 | Information leakage in errors | Generic 401/403/404 messages; reasons logged and audited, never returned | Built |
+| T18 | A connector API key leaking through snapshots, logs or errors | The key is read from the worker's environment only, sent only in the request address to the one allowed host, and removed from every address that is saved; snapshots hold the provider's response; error codes are fixed strings; a test asserts the key is in no stored object (ADR 0023) | Built (alpha-vantage-news) |
 
 ## Residual risks and open items
 - Hosting, identity provider and retention are undecided (PRD section 19), so transport security,
