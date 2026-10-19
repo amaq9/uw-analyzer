@@ -1,9 +1,10 @@
 # AGENTS.md — Rules for AI coding agents on UW Analyzer
 
-This repo is built by two AI coding agents working in parallel, directed by the Product Owner:
+This repo is built by an AI coding agent directed by the Product Owner:
 
-- **Codex** owns the **front end (UI)**.
-- **Claude Code** owns the **back end** and everything else that isn't UI.
+- **Claude Code** owns the **whole product**: front end (UI), back end and everything else.
+- **Codex** worked on the front end until 2026-10-20 and is no longer assigned work (Product Owner decision,
+  2026-10-20). Its handoff file is kept for history.
 
 Every agent reads this file before starting work, every session. It applies to any other agent added later, too.
 
@@ -25,21 +26,21 @@ Source of truth for requirements: the BRD and PRD (v1.0, 16 Sep 2026) in `BRD + 
 
 | Area | Owner | Notes |
 |---|---|---|
-| `/web/**`: pages, components, styling, client state, front-end unit tests | **Codex** | Next.js + TypeScript + React |
-| `/tests/e2e/**`: Playwright end-to-end tests | **Codex** | Claude Code keeps the API testable and supplies seed data |
+| `/web/**`: pages, components, styling, client state, front-end unit tests | **Claude Code** | Next.js + TypeScript + React |
+| `/tests/e2e/**`: Playwright end-to-end tests | **Claude Code** | |
 | `/api/**`: FastAPI service, auth/OIDC, RBAC, tenant isolation, audit events | **Claude Code** | |
 | `/worker/**`: background jobs, research pipeline, LLM and connector integration | **Claude Code** | |
 | Database schema and migrations | **Claude Code** | |
 | `/infra/**`: Docker, Terraform | **Claude Code** | |
-| `.github/**`: CI/CD workflows | **Claude Code** | Codex may *request* front-end CI steps (lint, typecheck, Vitest, Playwright) |
+| `.github/**`: CI/CD workflows | **Claude Code** | |
 | `.pre-commit-config.yaml`, `.gitignore`, security tooling | **Claude Code** | |
-| `docs/api/`: API contract (OpenAPI) | **Claude Code** writes, **Product Owner** approves | The interface between the two sides (section 3) |
+| `docs/api/`: API contract (OpenAPI) | **Claude Code** | The interface between front end and back end (section 3) |
 | `docs/adr/`, `docs/security/`, `docs/runbooks/` | Author of the decision or change | Product Owner approves |
 | `AGENTS.md`, `CLAUDE.md`, `README.md`, `CODEOWNERS` | **Product Owner** | Agents propose changes via PR only |
 
 **Rules:**
 
-- **Never edit files you don't own.** If you need a change on the other side, write it up as a request in your handoff and tell the Product Owner, who routes it.
+- **Never edit files you don't own.** If another agent is added later and you need a change on its side, write it up as a request in your handoff and tell the Product Owner, who routes it.
 - **Never edit the other agent's handoff file.**
 - If ownership of a path is unclear, stop and ask the Product Owner. Don't assume.
 
@@ -47,8 +48,8 @@ Source of truth for requirements: the BRD and PRD (v1.0, 16 Sep 2026) in `BRD + 
 
 - The OpenAPI spec in `docs/api/` is the single contract between front end and back end.
 - **Claude Code** publishes and versions it. Back-end changes that alter request or response shapes must update the spec in the same PR.
-- **Codex** builds against the spec, using mocks generated from it until the real endpoints exist. Don't hand-write API types that drift from the spec; generate them.
-- If the UI needs a new endpoint or field, Codex requests it (section 2). Neither agent changes the other side to "make it fit."
+- The UI builds against the spec, using types and mocks generated from it. Don't hand-write API types that drift from the spec; generate them.
+- When the UI needs a new endpoint or field, change the spec and the API first (or in the same PR), then the UI.
 - Breaking contract changes need Product Owner approval before merge.
 
 ## 4. Hard invariants (from `rulebook.md` §1)
@@ -73,7 +74,7 @@ If a request conflicts with any invariant, **stop and explain the conflict befor
 
 - **Separate working copies.** Each agent works in its own git worktree, never in a folder the other agent is using. This prevents one agent switching branches under the other.
 - **Branch names:** `codex/<short-topic>` and `claude/<short-topic>`. Short-lived, one purpose per branch.
-- **Never push to `main`.** Every change goes through a pull request that the Product Owner merges. No direct pushes, no force-pushes, no bypassing branch protection.
+- **Never push to `main`.** Every change goes through a pull request. Claude Code may merge its own pull request once every required check has passed (Product Owner decision, 2026-10-20), and reports each merge. No direct pushes, no force-pushes, no admin overrides, no bypassing branch protection, no merging with failing or pending checks.
 - **Small, single-purpose PRs** (rulebook §5). A PR touches only paths its author owns, plus a matching spec or doc update where required.
 - **Pre-commit hooks must pass** (gitleaks, semgrep, hygiene). Never skip them with `--no-verify`.
 - After a PR merges, sync `main` before starting the next branch.
