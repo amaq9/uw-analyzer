@@ -6,7 +6,11 @@ from typing import Any
 
 import pytest
 
-from app.research.connectors import ConnectorRequest, PermanentConnectorError
+from app.research.connectors import (
+    ConnectorRequest,
+    PermanentConnectorError,
+    RetryableConnectorError,
+)
 from app.research.fetch import Fetched, HttpsFetcher
 from app.research.plan import Category
 from app.research.screening_connectors import (
@@ -200,6 +204,14 @@ def test_gdelt_sector_query_needs_an_industry_and_empty_answers_are_logged() -> 
 def test_gdelt_refuses_unreadable_responses() -> None:
     connector, storage, _, _ = gdelt(b"<html>nope</html>")
     with pytest.raises(PermanentConnectorError):
+        connector.execute(req())
+    assert storage.objects == {}
+
+
+def test_gdelt_rate_limit_note_is_retryable_not_a_bad_response() -> None:
+    note = b"Please limit requests to one every 5 seconds or contact us for larger queries."
+    connector, storage, _, _ = gdelt(note)
+    with pytest.raises(RetryableConnectorError):
         connector.execute(req())
     assert storage.objects == {}
 
