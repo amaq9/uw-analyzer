@@ -20,6 +20,7 @@ from app.research.connectors import (
     ConnectorRequest,
     ConnectorResult,
     PermanentConnectorError,
+    RetryableConnectorError,
 )
 from app.research.fetch import Fetcher
 from app.research.plan import Category
@@ -253,6 +254,9 @@ class GdeltNewsConnector:
         got = self._fetcher.get(url, allowed_hosts=self._HOSTS)
         text = got.body.decode("utf-8", errors="replace").strip()
         parsed: Any = None
+        if text and not text.startswith(("{", "[")) and "limit requests" in text.lower():
+            # The index answers a too-fast request with a plain-text note, not an HTTP error.
+            raise RetryableConnectorError("rate_limited")
         if text:
             try:
                 parsed = json.loads(text)

@@ -281,7 +281,13 @@ def _points(report: AnalysisReport) -> list[str]:
         and "What to do: " in cc.standing
     ):
         first = cc.standing.split("What to do: ", 1)[1].split(". ")[0]
-        points.insert(2 if len(points) > 2 else len(points), f"Cash conversion cycle: {first}.")
+        receivables_flagged = any(
+            f.state == "TRIGGERED" and f.text.lower().startswith("receivables")
+            for f in report.red_flags
+        )
+        # The same receivables movement is already a point when its red flag fired: say it once.
+        if not (receivables_flagged and "receivables" in first.lower()):
+            points.insert(2 if len(points) > 2 else len(points), f"Cash conversion cycle: {first}.")
     return [p[:600] for p in points][:8]
 
 
