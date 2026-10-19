@@ -151,7 +151,8 @@ def _liquidity(c: YearContext, p: YearContext | None, cur: str) -> Section:
         why += f" (was {times(prior_cr)})"
     why += f" against a reference range of 1.5 to 2.0; quick ratio {times(quick)}"
     if ocf_cl is not None:
-        why += f"; cash from operations is {times(ocf_cl)} of current liabilities (reference above 0.40)"
+        why += f"; cash from operations is {times(ocf_cl)} of current liabilities "
+        why += "(reference: 0.30 to 0.50 adequate, below 0.30 concerning)"
     if buffer is not None:
         why += f"; cash less debt due within 12 months is {money(buffer, cur)}"
     pm = {} if p is None else dimension_metrics(p.ratios, p.figures, p.prior_figures)["liquidity"]
@@ -219,7 +220,7 @@ def _profitability(c: YearContext, p: YearContext | None, cur: str) -> Section:
     why = f"Net margin {pct(net)}"
     if prior_net is not None:
         why += f" (was {pct(prior_net)})"
-    why += f" against a reference of above 10%; operating margin {pct(m['operating_margin'])}"
+    why += f" against a reference of above 10% strong, 5% to 10% adequate; operating margin {pct(m['operating_margin'])}"
     why += f"; EBITDA margin {pct(ebitda)} (reference 12 to 18%)"
     if m["growth"] is not None:
         why += f"; revenue changed {pct(m['growth'])} on the year before"
@@ -391,11 +392,11 @@ def _cash_flow(c: YearContext, p: YearContext | None, cur: str) -> Section:
     if drop is not None:
         why += f", {'down' if drop > 0 else 'up'} {abs(drop) * 100:.1f}% on the year before"
     if conv is not None:
-        why += f", {times(conv)} net income (reference above 0.80)"
+        why += f", {times(conv)} net income (reference: above 1.0 strong, 0.8 to 1.0 concerning)"
     if m["free_cash_flow"] is not None:
         why += f"; free cash flow {money(m['free_cash_flow'], cur)}"
     if fcf_margin is not None:
-        why += f" or {pct(fcf_margin)} of revenue (reference above 10%)"
+        why += f" or {pct(fcf_margin)} of revenue (reference: 10% to 20% adequate, below 10% concerning)"
     if after is not None:
         why += f", {money(after, cur)} after dividends and buybacks"
     pm = {} if p is None else dimension_metrics(p.ratios, p.figures, p.prior_figures)["cash_flow"]

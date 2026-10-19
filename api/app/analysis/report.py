@@ -69,14 +69,14 @@ def finding_word(level: Level) -> str:
 _SPECS: dict[str, list[tuple[str, str, str, str]]] = {
     "liquidity": [
         ("Current ratio", "current_ratio", "times", "1.5 to 2.0"),
-        ("Quick ratio", "quick_ratio", "times", "1.0 to 1.5"),
+        ("Quick ratio", "quick_ratio", "times", "0.8 to 1.2"),
         ("Cash ratio", "cash_ratio", "times", "0.5 to 1.0"),
         ("Working capital", "working_capital", "money", ""),
         (
             "Cash from operations over current liabilities",
             "ocf_to_current_liabilities",
             "times",
-            "above 0.40",
+            "0.30 to 0.50",
         ),
         ("Cash less debt due within 12 months", "cash_less_debt_due_12m", "money", ""),
     ],
@@ -102,12 +102,12 @@ _SPECS: dict[str, list[tuple[str, str, str, str]]] = {
     "cash_flow": [
         ("Cash from operations", "operating_cash_flow", "money", ""),
         ("Free cash flow (after capital spending)", "free_cash_flow", "money", ""),
-        ("Free cash flow as a share of revenue", "fcf_margin", "pct", "above 10%"),
+        ("Free cash flow as a share of revenue", "fcf_margin", "pct", "10% to 20%"),
         (
             "Cash from operations as a multiple of net income",
             "ocf_to_net_income",
             "times",
-            "above 0.80",
+            "above 1.0",
         ),
         ("Capital spending over depreciation", "capex_to_depreciation", "times", "below 1.0"),
         ("Dividends and buybacks", "distributions", "money", ""),
@@ -459,7 +459,7 @@ def debt_service_block(
     if ocf_cl[0] is not None:
         notes.append(
             f"Cash from operations is {times(ocf_cl[0])} of current liabilities "
-            "(a common reference point is 0.40x)."
+            "(the framework's adequate range is 0.30x to 0.50x)."
         )
     notes.append(
         "The debt maturity ladder, covenant headroom and refinancing options are not in the figures, so the "

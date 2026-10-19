@@ -712,3 +712,35 @@ def test_a_supersedes_note_and_the_duplicate_confirm_sentence_are_dropped() -> N
     text = next(s for s in brief.sections if s.heading == "What the rating agencies say").text
     assert "supersedes" not in text
     assert text.count("Confirm ") == 1  # one prompt to confirm on the agencies' own sites
+
+
+def test_a_receivables_point_is_not_repeated_by_the_cycle_advice() -> None:
+    from types import SimpleNamespace as NS
+
+    from app.analysis.brief import _points
+
+    flag = NS(
+        state="TRIGGERED", text="Receivables growing faster than revenue", detail="25.7% vs 0.2%."
+    )
+    cycle = NS(
+        rows=[NS(key="ccc", direction="worse", movement="Longer by 8.0 days")],
+        status="WEAK",
+        standing="Rated weak. What to do: Customers are paying more slowly (receivables 25.7%). Ask.",
+    )
+    report = NS(notes_review=None, published_ratings=[], cash_cycle=cycle, red_flags=[flag])
+    points = _points(report)  # type: ignore[arg-type]
+    assert sum("receivables" in p.lower() for p in points) == 1
+    assert any(p.startswith("The cash conversion cycle lengthened") for p in points)
+    report.red_flags = []
+    assert any(p.startswith("Cash conversion cycle: Customers") for p in _points(report))  # type: ignore[arg-type]
+
+
+def test_stated_references_match_the_bands_that_rate_the_measure() -> None:
+    from app.analysis.report import _SPECS
+
+    refs = {key: ref for rows in _SPECS.values() for _, key, _, ref in rows}
+    # Each band edge below is the adequate (or strong) line used by assess.py's _band_* rules.
+    assert refs["quick_ratio"] == "0.8 to 1.2"
+    assert refs["ocf_to_current_liabilities"] == "0.30 to 0.50"
+    assert refs["fcf_margin"] == "10% to 20%"
+    assert refs["ocf_to_net_income"] == "above 1.0"
