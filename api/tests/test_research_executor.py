@@ -19,6 +19,7 @@ from app.research.connectors import (
     RetryableConnectorError,
 )
 from app.research.executor import Executor
+from app.sources.schemas import Health
 from scripts import worker
 from tests.test_cases_api import audit, headers
 from tests.test_draft_recommendations import resolved_case
@@ -358,3 +359,52 @@ def test_worker_script_once_drains_the_queue(
     assert worker.main(["--once"]) == 0
     assert get_run(client, case_id, run_id, h)["status"] == "COMPLETED"
     assert uuid.UUID(run_id)
+
+
+def _source(db_app: FastAPI, tenant: str, key: str) -> Any:
+    return next(s for s in db_app.state.source_store.list_for_tenant(tenant) if s.key == key)
+
+
+def test_a_successful_call_marks_the_source_healthy_without_a_new_version(
+    client: TestClient, db_app: FastAPI, tenant: str
+) -> None:
+    key = f"k-{tenant}"
+    case_id, run_id, h = setup_run(client, db_app, tenant, {"key": key})
+    before = _source(db_app, tenant, key)
+    assert before.health.value == "UNKNOWN"
+    start(client, case_id, run_id, h)
+    drain(executor(db_app, Fake(key, ["ok"]))[0])
+    after = _source(db_app, tenant, key)
+    assert after.health.value == "HEALTHY" and after.health_checked_at is not None
+    assert after.version == before.version  # observed health is not a configuration change
+
+
+def test_a_source_that_keeps_refusing_is_degraded_and_recovers_on_success(
+    client: TestClient, db_app: FastAPI, tenant: str
+) -> None:
+    key = f"k-{tenant}"
+    case_id, run_id, h = setup_run(client, db_app, tenant, {"key": key})
+    start(client, case_id, run_id, h)
+    drain(executor(db_app, Fake(key, ["retry"]))[0])
+    assert _source(db_app, tenant, key).health.value == "DEGRADED"
+    start(client, case_id, run_id, h)
+    drain(executor(db_app, Fake(key, ["ok"]))[0])
+    assert _source(db_app, tenant, key).health.value == "HEALTHY"
+
+
+def test_a_permanent_error_says_nothing_about_the_source_and_down_stays_a_person_decision(
+    client: TestClient, db_app: FastAPI, tenant: str
+) -> None:
+    key = f"k-{tenant}"
+    case_id, run_id, h = setup_run(client, db_app, tenant, {"key": key})
+    start(client, case_id, run_id, h)
+    drain(executor(db_app, Fake(key, ["permanent"]))[0])
+    src = _source(db_app, tenant, key)
+    assert src.health.value == "UNKNOWN"  # e.g. no unique match: the request, not the source
+
+    store = db_app.state.source_store
+    store.update(src.id, tenant, src.version, {"health": "DOWN"})
+    store.record_health(src.id, Health.HEALTHY)
+    assert _source(db_app, tenant, key).health.value == "DOWN"  # never overwritten
+    with pytest.raises(ValueError, match="administrator"):
+        store.record_health(src.id, Health.DOWN)

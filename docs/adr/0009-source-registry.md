@@ -29,3 +29,13 @@ or simulated.
 Next slices: research plan from the case and registry (FR-2.3), connector-call log (FR-2.6), job queue
 and worker (FR-2.5), LLM interface (ADR 0006). Needs the Product Owner at that point: an Anthropic API
 key and the first public data source(s).
+
+## Addendum, 2026-10-20: health observed from connector calls
+Item 6 said automatic health checks would come with connectors; they now exist. After each research step the
+executor records the source's health from the logged calls: a success sets **HEALTHY**; a step that fails after
+its retries on a temporary error (network, rate limit, timeout) sets **DEGRADED**. A permanent error (no unique
+match, no name, a refused request) is about the request, so it changes nothing. The system never sets **DOWN**
+and never overwrites an administrator's DOWN, because DOWN takes a source out of research plans and stays a
+person's decision. Observed health is not a configuration change: it updates `health_checked_at` but not the
+source's `version`, so an administrator's edit in progress is not refused as stale. The call log remains the
+record of what happened; the health field is a summary of the latest outcome.

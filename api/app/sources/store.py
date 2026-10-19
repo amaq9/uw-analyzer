@@ -7,7 +7,7 @@ from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import IntegrityError
 
-from app.sources.schemas import AccessCategory, SourceRecord
+from app.sources.schemas import AccessCategory, Health, SourceRecord
 
 metadata = sa.MetaData()
 sources = sa.Table(
@@ -119,3 +119,17 @@ class PostgresSourceStore:
         with self._engine.begin() as conn:
             row = conn.execute(stmt).mappings().first()
         return _record(row) if row else None
+
+    def record_health(self, source_id: uuid.UUID, health: Health) -> None:
+        """Health observed from a logged connector call (ADR 0009 item 6). Not a configuration
+        change, so the version is not bumped. An administrator's DOWN is never overwritten, and
+        DOWN is never set here: taking a source out of plans stays a person's decision."""
+        if health is Health.DOWN:
+            raise ValueError("Only an administrator marks a source DOWN.")
+        stmt = (
+            sa.update(sources)
+            .where(sources.c.id == source_id, sources.c.health != Health.DOWN.value)
+            .values(health=health.value, health_checked_at=datetime.now(UTC))
+        )
+        with self._engine.begin() as conn:
+            conn.execute(stmt)
