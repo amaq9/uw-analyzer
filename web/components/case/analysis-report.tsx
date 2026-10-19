@@ -63,6 +63,8 @@ function FlagTable({ flags, t }: Readonly<{ flags: AnalysisReportData["red_flags
             <tr key={flag.text}>
               <td>{flag.text}</td>
               <td>
+                {/* "Below threshold" alone can read as reassuring: a fired check also says it is flagged. */}
+                {flag.state === "TRIGGERED" && <span className="ar-flag-mark">Flagged</span>}
                 <span className={`ar-flag-state is-${flag.state.toLowerCase()}`}>{flag.result || FLAG_FALLBACK[flag.state]}</span>
               </td>
               <td>{t(flag.detail)}</td>

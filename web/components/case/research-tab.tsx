@@ -41,7 +41,7 @@ export function SnapshotViewer({ caseId, reference, token }: Readonly<{ caseId: 
   );
 }
 
-export function ResearchTab({ caseId, onChanged, permissions, token }: TabProps) {
+export function ResearchTab({ caseId, onChanged, permissions, status, token }: TabProps & { status?: string }) {
   const base = `/api/v1/cases/${encodeURIComponent(caseId)}`;
   const runs = useLoad((t, signal) => api<RunRecord[]>(t, "GET", `${base}/research-runs`, undefined, signal), [caseId]);
   const [selectedId, setSelectedId] = useState<string>();
@@ -57,6 +57,8 @@ export function ResearchTab({ caseId, onChanged, permissions, token }: TabProps)
   const plan = useAction();
   const start = useAction();
   const canRun = can(permissions, "research:run");
+  // Only a resolved entity unblocks research (P-03); the server enforces it, the page explains it.
+  const entityBlocked = status !== undefined && status !== "ENTITY_RESOLVED";
   const reloadRuns = runs.reload;
   const inFlight = selected ? IN_FLIGHT.has(selected.status) : false;
 
@@ -111,12 +113,14 @@ export function ResearchTab({ caseId, onChanged, permissions, token }: TabProps)
               operates)
               <input defaultValue="US" name="countries" required />
             </label>
-            <button className="ws-button primary" disabled={plan.busy} type="submit">
+            <button className="ws-button primary" disabled={plan.busy || entityBlocked} type="submit">
               Create research plan
             </button>
             <ActionError error={plan.error} />
           </form>
-          <p className="ws-muted">Research is blocked until the legal entity has been chosen on the Entity tab.</p>
+          {entityBlocked && (
+            <p className="ws-muted">Research is blocked until the legal entity has been chosen on the Entity tab.</p>
+          )}
         </section>
       )}
 

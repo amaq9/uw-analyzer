@@ -156,7 +156,13 @@ export function CaseWorkspace({ caseId }: Readonly<{ caseId: string }>) {
             <DocumentsTab caseId={caseId} onChanged={record.reload} permissions={session.user.permissions} token={session.token} />
           )}
           {tab === "research" && (
-            <ResearchTab caseId={caseId} onChanged={record.reload} permissions={session.user.permissions} token={session.token} />
+            <ResearchTab
+              caseId={caseId}
+              onChanged={record.reload}
+              permissions={session.user.permissions}
+              status={data.status}
+              token={session.token}
+            />
           )}
           {tab === "evidence" && (
             <EvidenceTab caseId={caseId} currency={data.exposure_currency} onChanged={record.reload} permissions={session.user.permissions} token={session.token} />
