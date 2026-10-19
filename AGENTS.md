@@ -54,7 +54,7 @@ Source of truth for requirements: the BRD and PRD (v1.0, 16 Sep 2026) in `BRD + 
 
 ## 4. Hard invariants (from `rulebook.md` §1)
 
-These bind **both** agents. The UI is where several of them are most visible.
+These bind **every** agent. The UI is where several of them are most visible.
 
 - **P-09: no autonomous underwriting decision.** The system never decides. It never approves, declines or sets a credit limit by itself, never acts on or communicates an outcome without a named human, and never makes a binding commitment. *Amended by ADR 0005 (Product Owner decision, 2026-10-07; not yet built, and it depends on the research and analysis phases and on the Product Owner's recommendation policy; Legal and Compliance review is not required while this is a test product):* the system may later produce a **Draft recommendation for the underwriter** (approve an amount, do not approve, or decline) which a named person must adopt, change or reject. Only that person's recorded **Underwriter decision** is the decision.
   - *Back end:* no endpoint returns or records a decision on the underwriter's behalf. Until ADR 0005 is built and approved there is no recommendation or decision endpoint at all. When built, the server enforces the ADR 0005 preconditions, the approved recommendation policy, and human adoption.
@@ -73,7 +73,7 @@ If a request conflicts with any invariant, **stop and explain the conflict befor
 ## 5. Git workflow
 
 - **Separate working copies.** Each agent works in its own git worktree, never in a folder the other agent is using. This prevents one agent switching branches under the other.
-- **Branch names:** `codex/<short-topic>` and `claude/<short-topic>`. Short-lived, one purpose per branch.
+- **Branch names:** `claude/<short-topic>` (and `<agent>/<short-topic>` for any agent added later). Short-lived, one purpose per branch.
 - **Never push to `main`.** Every change goes through a pull request. Claude Code may merge its own pull request once every required check has passed (Product Owner decision, 2026-10-20), and reports each merge. No direct pushes, no force-pushes, no admin overrides, no bypassing branch protection, no merging with failing or pending checks.
 - **Small, single-purpose PRs** (rulebook §5). A PR touches only paths its author owns, plus a matching spec or doc update where required.
 - **Pre-commit hooks must pass** (gitleaks, semgrep, hygiene). Never skip them with `--no-verify`.
