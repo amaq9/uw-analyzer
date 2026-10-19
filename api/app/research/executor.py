@@ -31,7 +31,7 @@ from app.research.plan import Category, StepState
 from app.research.run_store import PostgresRunQueue
 from app.research.schemas import RunRecord, StepRecord
 from app.research.store import PostgresResearchStore
-from app.sources.schemas import AccessCategory
+from app.sources.schemas import AccessCategory, Health
 from app.sources.store import PostgresSourceStore
 
 logger = logging.getLogger("uw.research")
@@ -165,6 +165,7 @@ class Executor:
             )
             if outcome == "SUCCESS":
                 self._queue.mark_step(step.id, "SUCCEEDED", attempts=attempt, finished=True)
+                self._observe_health(step, Health.HEALTHY)
                 return connector.key, connector.version
             if error_class and error_class.startswith("permanent"):
                 break
@@ -173,7 +174,19 @@ class Executor:
         self._queue.mark_step(
             step.id, "FAILED", attempts=attempt, error_class=error_class, finished=True
         )
+        if error_class in ("retryable", "timeout"):
+            # The source itself kept refusing or not answering. A permanent error (no unique
+            # match, no name) is about the request, so it says nothing about the source.
+            self._observe_health(step, Health.DEGRADED)
         return connector.key, connector.version
+
+    def _observe_health(self, step: StepRecord, health: Health) -> None:
+        if step.source_id is None:
+            return
+        try:
+            self._sources.record_health(step.source_id, health)
+        except Exception:  # health is a convenience; it never fails a research step
+            logger.exception("research.health_not_recorded source=%s", step.source_id)
 
     def _call(
         self, connector: Connector, request: ConnectorRequest
