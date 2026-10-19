@@ -10,6 +10,8 @@ them have the key removed. Searching sends the company name and share symbol to 
 
 import json
 import re
+import time
+from collections.abc import Callable
 from typing import Any
 from urllib.parse import urlencode
 
@@ -74,13 +76,21 @@ class AlphaVantageNewsConnector:
     version = "1"
     _HOSTS = frozenset({"www.alphavantage.co"})
     LIMIT = 50
+    PAUSE_SECONDS = 1.5  # the provider refuses bursts faster than about one request a second
 
-    def __init__(self, fetcher: Fetcher, snapshots: SnapshotStore, api_key: str) -> None:
+    def __init__(
+        self,
+        fetcher: Fetcher,
+        snapshots: SnapshotStore,
+        api_key: str,
+        pause: Callable[[float], None] = time.sleep,
+    ) -> None:
         if not api_key.strip():
             raise ValueError("An Alpha Vantage key is required.")
         self._fetcher = fetcher
         self._snapshots = snapshots
         self._api_key = api_key.strip()
+        self._pause = pause
 
     def describe(self, request: ConnectorRequest) -> str:
         if request.category is Category.COUNTRY_INDUSTRY:
@@ -96,6 +106,7 @@ class AlphaVantageNewsConnector:
     def _call(self, params: dict[str, str]) -> tuple[dict[str, Any], bytes, str]:
         """One request: the parsed answer, the exact bytes and the address WITHOUT the key."""
         shown = _BASE + urlencode(params)
+        self._pause(self.PAUSE_SECONDS)
         got = self._fetcher.get(
             _BASE + urlencode({**params, "apikey": self._api_key}), allowed_hosts=self._HOSTS
         )

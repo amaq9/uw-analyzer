@@ -64,7 +64,11 @@ NIKE_SEARCH = {  # shaped like the provider's real answer for "nike" on 2026-10-
 def connect(answers: dict[str, Any]) -> tuple[AlphaVantageNewsConnector, MemoryStorage, Fake]:
     storage = MemoryStorage()
     fetcher = Fake(answers)
-    return AlphaVantageNewsConnector(fetcher, SnapshotStore(storage), KEY), storage, fetcher
+    connector = AlphaVantageNewsConnector(fetcher, SnapshotStore(storage), KEY, PAUSES.append)
+    return connector, storage, fetcher
+
+
+PAUSES: list[float] = []
 
 
 def manifest(storage: MemoryStorage, ref: str) -> dict[str, Any]:
@@ -78,6 +82,7 @@ def test_adverse_search_finds_the_one_listing_and_keeps_both_answers() -> None:
     result = connector.execute(req(name="NIKE, Inc.", jurisdictions=["US"]))
     assert result.items == 3
     assert "tickers=NKE&" in fetcher.urls[1]
+    assert PAUSES[-2:] == [1.5, 1.5]  # every request waits, so two in a row are not a burst
     out = manifest(storage, result.provenance_ref)
     assert out["searched"] == {"legal_name": "NIKE, Inc.", "symbol": "NKE"}
     assert out["files"][0]["region"] == "United States"
