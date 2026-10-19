@@ -14,6 +14,26 @@ import { useLoad } from "@/components/use-api";
 import { api } from "@/lib/api/client";
 import { dateTime, money } from "@/lib/format";
 
+const RECENT_EARLIER = 3; // earlier versions shown before "show older"
+
+function EarlierList({ caseId, drafts }: Readonly<{ caseId: string; drafts: DraftRecord[] }>) {
+  return (
+    <ul className="ws-list">
+      {drafts.map((draft) => (
+        <li key={draft.id}>
+          <Link className="ws-link" href={`/cases/${caseId}/recommendations/${draft.id}`}>
+            Version {draft.version} · {dateTime(draft.created_at)}
+          </Link>
+          <small className="ws-muted">
+            UW Analyzer said: {outcomeHeadline(draft)}
+            {draft.outcome === "APPROVE" ? ` (${money(draft.recommended_amount, draft.requested_currency)})` : ""}
+          </small>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function Steps({ hasDraft, decided }: Readonly<{ hasDraft: boolean; decided: boolean }>) {
   const steps = [
     { id: "rec-step-1", label: "Research and analysis", state: hasDraft ? "done" : "current" },
@@ -163,19 +183,13 @@ export function RecommendationTab({
       {list.length > 1 && (
         <section className="ws-card">
           <p className="eyebrow">Earlier recommendations of this case</p>
-          <ul className="ws-list">
-            {list.slice(1).map((draft) => (
-              <li key={draft.id}>
-                <Link className="ws-link" href={`/cases/${caseId}/recommendations/${draft.id}`}>
-                  Version {draft.version} · {dateTime(draft.created_at)}
-                </Link>
-                <small className="ws-muted">
-                  UW Analyzer said: {outcomeHeadline(draft)}
-                  {draft.outcome === "APPROVE" ? ` (${money(draft.recommended_amount, draft.requested_currency)})` : ""}
-                </small>
-              </li>
-            ))}
-          </ul>
+          <EarlierList caseId={caseId} drafts={list.slice(1, 1 + RECENT_EARLIER)} />
+          {list.length > 1 + RECENT_EARLIER && (
+            <details className="ws-details">
+              <summary>Show {list.length - 1 - RECENT_EARLIER} older versions</summary>
+              <EarlierList caseId={caseId} drafts={list.slice(1 + RECENT_EARLIER)} />
+            </details>
+          )}
         </section>
       )}
     </div>

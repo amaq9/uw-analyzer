@@ -20,8 +20,9 @@ function EvidenceList({ caseId, claim, token }: Readonly<{ caseId: string; claim
             {link.evidence.source_class_basis === "registry" ? "class from the source registry" : "class declared by the author"}
             ){link.evidence.discovery_only ? " · leads only" : ""}
             <br />
-            Accessed {dateTime(link.evidence.accessed_at)} via {readable(link.evidence.kind).toLowerCase()} · figures for{" "}
-            {dateOnly(link.evidence.event_on)} · published {dateOnly(link.evidence.published_on)}
+            Accessed {dateTime(link.evidence.accessed_at)} via {readable(link.evidence.kind).toLowerCase()} ·{" "}
+            {link.evidence.evidence_type === "FINANCIAL" ? "figures for" : "as of"} {dateOnly(link.evidence.event_on)} ·{" "}
+            {link.evidence.published_on ? `published ${dateOnly(link.evidence.published_on)}` : "publication date not recorded"}
           </p>
           <blockquote className="ws-quote">{link.evidence.excerpt}</blockquote>
           {link.evidence.url && (

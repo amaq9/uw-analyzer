@@ -25,6 +25,14 @@ html {
   background: var(--cream);
 }
 
+/* Keep room for the scrollbar so short pages do not shift sideways against long ones. Phones use
+   overlay scrollbars, so the space is only kept on wider screens. */
+@media (min-width: 900px) {
+  html {
+    scrollbar-gutter: stable;
+  }
+}
+
 body {
   margin: 0;
   color: var(--ink);
@@ -739,10 +747,22 @@ textarea {
 }
 
 .hero-note-number {
-  color: var(--sand);
-  font-family: var(--font-serif);
-  font-size: 42px;
-  line-height: 1;
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--teal);
+  border-radius: 50%;
+  color: var(--teal);
+  background: var(--mint);
+}
+
+.hero-note-number svg {
+  width: 20px;
+  height: 20px;
+  stroke: var(--teal);
+  stroke-width: 2.2;
 }
 
 .hero-note div {
@@ -2797,6 +2817,13 @@ textarea {
   list-style: none;
 }
 
+.ws-details summary {
+  color: var(--teal);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .ws-bullets {
   margin: 6px 0;
   padding-left: 20px;
@@ -3871,6 +3898,19 @@ a.ar-tile:hover {
 .ar-flag-state {
   font-weight: 700;
   white-space: nowrap;
+}
+
+.ar-flag-mark {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--st-distressed);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
 .ar-flag-state.is-triggered {

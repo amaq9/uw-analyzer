@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ControlCards } from "@/components/control-cards";
+import { CheckIcon } from "@/components/icons";
 import { Readiness } from "@/components/readiness";
 import { Sidebar } from "@/components/sidebar";
 import { SkillSpotlight } from "@/components/skill-spotlight";
@@ -25,7 +26,9 @@ export default function Home() {
               </p>
             </div>
             <aside className="hero-note" aria-label="Current project phase">
-              <span className="hero-note-number">✓</span>
+              <span aria-hidden="true" className="hero-note-number">
+                <CheckIcon />
+              </span>
               <div>
                 <small>Current status</small>
                 <strong>Ready for your test run</strong>

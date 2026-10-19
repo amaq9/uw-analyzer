@@ -82,7 +82,11 @@ export function RecommendationsOverview() {
                     <tr key={row.record.id}>
                       <td>
                         <strong>{row.record.legal_name ?? row.record.trading_name ?? "Unnamed case"}</strong>
-                        <small className="ws-muted">{dateTime(row.record.updated_at)}</small>
+                        <small className="ws-muted">
+                          {row.draft
+                            ? `Version ${row.draft.version} · prepared ${dateTime(row.draft.created_at)}`
+                            : `Case updated ${dateTime(row.record.updated_at)}`}
+                        </small>
                       </td>
                       <td>{money(row.record.exposure_amount, row.record.exposure_currency)}</td>
                       <td>

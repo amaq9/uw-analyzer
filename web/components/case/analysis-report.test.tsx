@@ -237,6 +237,7 @@ describe("Step 1 notes, definitions and threshold wording", () => {
     render(<AnalysisReportView currency="CAD" report={{ ...report, red_flags: flags }} />);
     expect(screen.getByText("Not above threshold")).toHaveClass("is-clear");
     expect(screen.getByText("Above threshold")).toHaveClass("is-triggered");
+    expect(screen.getAllByText("Flagged")).toHaveLength(1); // only the check that fired is marked
     expect(screen.getByText(/Show the other 1 prompts \(not above or below the threshold, or not assessable\)/)).toBeInTheDocument();
   });
 });
