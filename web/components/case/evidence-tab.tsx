@@ -9,29 +9,68 @@ import { dateOnly, dateTime, readable, shorten } from "@/lib/format";
 /** The classification as a person reads it. An interpretation here is the written rules applied to facts. */
 const CLASS_WORD: Record<string, string> = { INTERPRETATION: "Rule-based assessment", INFERENCE: "Inference" };
 
+type Link = ClaimRecord["links"][number];
+
+function EvidenceItem({ caseId, link, token }: Readonly<{ caseId: string; link: Link; token: string }>) {
+  return (
+    <>
+      <strong>{readable(link.relation)}</strong>: {link.evidence.title}
+      <p className="ws-muted">
+        Source: {link.evidence.origin} · {readable(link.evidence.source_class)} (
+        {link.evidence.source_class_basis === "registry" ? "class from the source registry" : "class declared by the author"}
+        ){link.evidence.discovery_only ? " · leads only" : ""}
+        <br />
+        Accessed {dateTime(link.evidence.accessed_at)} via {readable(link.evidence.kind).toLowerCase()} ·{" "}
+        {link.evidence.evidence_type === "FINANCIAL" ? "figures for" : "as of"} {dateOnly(link.evidence.event_on)} ·{" "}
+        {link.evidence.published_on ? `published ${dateOnly(link.evidence.published_on)}` : "publication date not recorded"}
+      </p>
+      <blockquote className="ws-quote">{link.evidence.excerpt}</blockquote>
+      {link.evidence.url && (
+        <a href={link.evidence.url} rel="noreferrer" target="_blank">
+          Open the web source
+        </a>
+      )}
+      {link.evidence.provenance_ref?.startsWith("snapshot://") && (
+        <SnapshotViewer caseId={caseId} reference={link.evidence.provenance_ref} token={token} />
+      )}
+    </>
+  );
+}
+
+/** Repeat checks of the same thing: same relation, source, title and address. Each research run reads the
+ *  source again and keeps its own record (records are never replaced), so the newest is shown and the
+ *  earlier ones are folded away. Nothing is hidden from the verification, which uses every record. */
+export function groupRepeatChecks(links: Link[]): Link[][] {
+  const groups = new Map<string, Link[]>();
+  for (const link of links) {
+    const e = link.evidence;
+    const key = [link.relation, e.source_id ?? e.origin, e.title, e.url ?? ""].join("|");
+    groups.set(key, [...(groups.get(key) ?? []), link]);
+  }
+  return [...groups.values()].map((group) =>
+    [...group].sort((a, b) => b.evidence.accessed_at.localeCompare(a.evidence.accessed_at)),
+  );
+}
+
 function EvidenceList({ caseId, claim, token }: Readonly<{ caseId: string; claim: ClaimRecord; token: string }>) {
   return (
     <ul className="ws-list">
-      {claim.links.map((link) => (
-        <li key={link.id}>
-          <strong>{readable(link.relation)}</strong>: {link.evidence.title}
-          <p className="ws-muted">
-            Source: {link.evidence.origin} · {readable(link.evidence.source_class)} (
-            {link.evidence.source_class_basis === "registry" ? "class from the source registry" : "class declared by the author"}
-            ){link.evidence.discovery_only ? " · leads only" : ""}
-            <br />
-            Accessed {dateTime(link.evidence.accessed_at)} via {readable(link.evidence.kind).toLowerCase()} ·{" "}
-            {link.evidence.evidence_type === "FINANCIAL" ? "figures for" : "as of"} {dateOnly(link.evidence.event_on)} ·{" "}
-            {link.evidence.published_on ? `published ${dateOnly(link.evidence.published_on)}` : "publication date not recorded"}
-          </p>
-          <blockquote className="ws-quote">{link.evidence.excerpt}</blockquote>
-          {link.evidence.url && (
-            <a href={link.evidence.url} rel="noreferrer" target="_blank">
-              Open the web source
-            </a>
-          )}
-          {link.evidence.provenance_ref?.startsWith("snapshot://") && (
-            <SnapshotViewer caseId={caseId} reference={link.evidence.provenance_ref} token={token} />
+      {groupRepeatChecks(claim.links).map(([latest, ...earlier]) => (
+        <li key={latest.id}>
+          <EvidenceItem caseId={caseId} link={latest} token={token} />
+          {earlier.length > 0 && (
+            <details className="ws-details">
+              <summary>
+                {earlier.length} earlier check{earlier.length === 1 ? "" : "s"} of this source
+              </summary>
+              <ul className="ws-list">
+                {earlier.map((link) => (
+                  <li key={link.id}>
+                    <EvidenceItem caseId={caseId} link={link} token={token} />
+                  </li>
+                ))}
+              </ul>
+            </details>
           )}
         </li>
       ))}
