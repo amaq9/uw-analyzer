@@ -156,17 +156,17 @@ def start_run(
     run_id: uuid.UUID,
     principal: Principal = Depends(require_permission(Permission.RESEARCH_RUN)),  # noqa: B008
 ) -> RunOut:
-    """Queue a planned run for the worker. A failed run can be queued again to resume: finished
-    steps are not repeated. The entity gate is checked again here (the entity may have been
-    reopened since planning)."""
+    """Queue a planned run for the worker. A run with failed steps (FAILED, or COMPLETED where only
+    discovery-only sources failed) can be queued again to resume: finished steps are not repeated.
+    The entity gate is checked again here (the entity may have been reopened since planning)."""
     run = _load_run(request, principal, case_id, run_id)
     case = load_case_for(request, principal, case_id)
     _check_research_allowed(request, principal, case_id, case.status)
     if not _queue(request).queue(run_id):
         raise HTTPException(
             status.HTTP_409_CONFLICT,
-            f"This run is {run.status.value.lower()} and cannot be started. Only a planned or "
-            "failed run can be queued.",
+            f"This run is {run.status.value.lower()} and cannot be started. Only a planned run, "
+            "or a run with failed steps, can be queued.",
         )
     record_event(
         request,

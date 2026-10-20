@@ -48,10 +48,22 @@ class PostgresRunQueue:
         self._engine = engine
 
     def queue(self, run_id: uuid.UUID) -> bool:
-        """PLANNED or FAILED -> QUEUED. False if the run is in any other state."""
+        """PLANNED, FAILED, or COMPLETED with a failed step (a discovery-only source that could not
+        be reached) -> QUEUED. False if the run is in any other state."""
+        has_failed_step = (
+            sa.select(research_steps.c.id)
+            .where(research_steps.c.run_id == run_id, research_steps.c.state == "FAILED")
+            .exists()
+        )
         stmt = (
             sa.update(research_runs)
-            .where(research_runs.c.id == run_id, research_runs.c.status.in_(("PLANNED", "FAILED")))
+            .where(
+                research_runs.c.id == run_id,
+                sa.or_(
+                    research_runs.c.status.in_(("PLANNED", "FAILED")),
+                    sa.and_(research_runs.c.status == "COMPLETED", has_failed_step),
+                ),
+            )
             .values(status="QUEUED", completed_at=None)
         )
         with self._engine.begin() as conn:
