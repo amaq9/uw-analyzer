@@ -1125,6 +1125,50 @@ textarea {
   stroke-width: 1.7;
 }
 
+.integration-status-row.is-live {
+  color: var(--teal);
+}
+
+.integration-status-row.is-live .connection-dot {
+  background: var(--teal-bright);
+  box-shadow: 0 0 0 4px rgba(32, 160, 140, 0.15);
+}
+
+.run-skill-button.is-live {
+  color: var(--white);
+  background: var(--teal);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.run-skill-button.is-live:hover,
+.run-skill-button.is-live:focus-visible {
+  background: var(--navy);
+}
+
+/* Six perspectives: three to a row on a wide screen; the method grid's own rules apply below 900px. */
+.perspective-grid .method-card {
+  min-height: 0;
+}
+
+@media (min-width: 901px) {
+  .perspective-grid .method-card,
+  .perspective-grid .method-card:nth-child(4),
+  .perspective-grid .method-card:nth-child(5) {
+    grid-column: span 2;
+  }
+}
+
+@media (min-width: 561px) and (max-width: 900px) {
+  .perspective-grid .method-card:last-child {
+    grid-column: span 1;
+  }
+}
+
+.perspective-grid .method-card-top {
+  margin-bottom: 16px;
+}
+
 .integration-card > small {
   display: block;
   margin-top: 9px;
