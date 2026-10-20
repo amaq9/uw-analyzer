@@ -112,7 +112,8 @@ textarea {
   width: fit-content;
 }
 
-/* The crosshair mark. On the dark sidebar the dark lines of the original logo are drawn light. */
+/* The crosshair mark, in the sidebar's own colours: soft white lines like its text, and the
+   brand teal (as on the active menu item) for the centre point. */
 .brand-mark {
   flex: 0 0 auto;
   width: 34px;
@@ -127,22 +128,22 @@ textarea {
 }
 
 .brand-mark-ring {
-  stroke: var(--white);
+  stroke: rgba(255, 255, 255, 0.82);
   stroke-width: 12;
 }
 
 .brand-mark-v {
-  stroke: var(--white);
+  stroke: rgba(255, 255, 255, 0.82);
   stroke-width: 10;
 }
 
 .brand-mark-h {
-  stroke: rgba(255, 255, 255, 0.55);
+  stroke: rgba(255, 255, 255, 0.38);
   stroke-width: 10;
 }
 
 .brand-mark-dot {
-  fill: #0088b0;
+  fill: var(--teal-bright);
 }
 
 .brand > span:last-child {
