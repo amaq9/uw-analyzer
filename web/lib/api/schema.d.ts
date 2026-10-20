@@ -655,9 +655,9 @@ export interface paths {
         put?: never;
         /**
          * Start Run
-         * @description Queue a planned run for the worker. A failed run can be queued again to resume: finished
-         *     steps are not repeated. The entity gate is checked again here (the entity may have been
-         *     reopened since planning).
+         * @description Queue a planned run for the worker. A run with failed steps (FAILED, or COMPLETED where only
+         *     discovery-only sources failed) can be queued again to resume: finished steps are not repeated.
+         *     The entity gate is checked again here (the entity may have been reopened since planning).
          */
         post: operations["start_run_api_v1_cases__case_id__research_runs__run_id__start_post"];
         delete?: never;

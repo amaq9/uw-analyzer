@@ -208,6 +208,14 @@ def test_gdelt_refuses_unreadable_responses() -> None:
     assert storage.objects == {}
 
 
+def test_gdelt_titles_with_control_characters_or_stray_backslashes_are_read() -> None:
+    body = b'{"articles": [{"title": "Nike\tcase\x01 C:\\dir \\x", "url": "https://n.example/a"}]}'
+    connector, storage, _, _ = gdelt(body)
+    assert connector.execute(req()).items == 1
+    record = json.loads(next(iter(storage.objects.values())))
+    assert record["response"]["articles"][0]["title"] == "Nike\tcase\x01 C:\\dir \\x"
+
+
 def test_gdelt_rate_limit_note_is_retryable_not_a_bad_response() -> None:
     note = b"Please limit requests to one every 5 seconds or contact us for larger queries."
     connector, storage, _, _ = gdelt(note)

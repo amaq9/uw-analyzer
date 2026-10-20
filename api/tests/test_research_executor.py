@@ -218,6 +218,19 @@ def test_timeout_is_recorded_and_retried(client: TestClient, db_app: FastAPI, te
     assert get_run(client, case_id, run_id, h)["status"] == "FAILED"
 
 
+def test_a_connector_can_ask_for_a_longer_timeout(
+    client: TestClient, db_app: FastAPI, tenant: str
+) -> None:
+    key = f"k-{tenant}"
+    case_id, run_id, h = setup_run(client, db_app, tenant, {"key": key})
+    start(client, case_id, run_id, h)
+    slow = Fake(key, ["slow"])
+    slow.timeout_seconds = 5.0  # type: ignore[attr-defined]
+    drain(executor(db_app, slow, timeout=0.05)[0])
+    assert [c["outcome"] for c in calls(client, case_id, run_id, h)] == ["SUCCESS"]
+    assert get_run(client, case_id, run_id, h)["status"] == "COMPLETED"
+
+
 def test_a_result_without_provenance_never_counts_as_access(
     client: TestClient, db_app: FastAPI, tenant: str
 ) -> None:
@@ -341,6 +354,64 @@ def test_a_crashed_connector_fails_the_step_without_stopping_the_worker(
     drain(executor(db_app, Crashing(key, ["ok"]))[0])
     log = calls(client, case_id, run_id, h)
     assert {c["error_class"] for c in log} == {"permanent"} and len(log) == 1
+    assert get_run(client, case_id, run_id, h)["status"] == "FAILED"
+
+
+NEWS = {"source_type": "news", "access_category": "DISCOVERY_ONLY", "source_class": "SECONDARY"}
+
+
+def test_a_discovery_only_source_that_refuses_does_not_fail_the_run(
+    client: TestClient, db_app: FastAPI, tenant: str
+) -> None:
+    reg_key, news_key = f"r-{tenant}", f"n-{tenant}"
+    case_id, run_id, h = setup_run(
+        client, db_app, tenant, {"key": reg_key}, {"key": news_key, **NEWS}
+    )
+    start(client, case_id, run_id, h)
+    news = Fake(news_key, ["retry"])
+    drain(executor(db_app, Fake(reg_key, ["ok"]), news)[0])
+    run = get_run(client, case_id, run_id, h)
+    assert run["status"] == "COMPLETED"
+    news_steps = [s for s in run["steps"] if s["discovery_only"]]
+    assert len(news_steps) == 2  # adverse search and country/industry, both from the news source
+    assert {s["state"] for s in news_steps} == {"FAILED"}
+    assert all(s["accessed"] is False for s in news_steps)
+    # The refusing source was tried 3 times for the first step and not again for the second.
+    assert news.calls == 3
+    assert sorted(s["attempts"] for s in news_steps) == [0, 3]
+    assert len([c for c in calls(client, case_id, run_id, h) if c["source_key"] == news_key]) == 3
+
+
+def test_a_completed_run_with_failed_discovery_steps_can_try_them_again(
+    client: TestClient, db_app: FastAPI, tenant: str
+) -> None:
+    reg_key, news_key = f"r-{tenant}", f"n-{tenant}"
+    case_id, run_id, h = setup_run(
+        client, db_app, tenant, {"key": reg_key}, {"key": news_key, **NEWS}
+    )
+    start(client, case_id, run_id, h)
+    reg = Fake(reg_key, ["ok"])
+    drain(executor(db_app, reg, Fake(news_key, ["retry"]))[0])
+    assert get_run(client, case_id, run_id, h)["status"] == "COMPLETED"
+
+    assert start(client, case_id, run_id, h).status_code == 200  # COMPLETED with failures -> QUEUED
+    news = Fake(news_key, ["ok"])
+    drain(executor(db_app, reg, news)[0])
+    run = get_run(client, case_id, run_id, h)
+    assert run["status"] == "COMPLETED" and reg.calls == 1 and news.calls == 2
+    assert {s["state"] for s in run["steps"] if s["discovery_only"]} == {"SUCCEEDED"}
+    assert start(client, case_id, run_id, h).status_code == 409  # nothing left to try
+
+
+def test_a_refused_source_that_is_not_discovery_only_still_fails_the_run(
+    client: TestClient, db_app: FastAPI, tenant: str
+) -> None:
+    reg_key, news_key = f"r-{tenant}", f"n-{tenant}"
+    case_id, run_id, h = setup_run(
+        client, db_app, tenant, {"key": reg_key}, {"key": news_key, **NEWS}
+    )
+    start(client, case_id, run_id, h)
+    drain(executor(db_app, Fake(reg_key, ["retry"]), Fake(news_key, ["ok"]))[0])
     assert get_run(client, case_id, run_id, h)["status"] == "FAILED"
 
 

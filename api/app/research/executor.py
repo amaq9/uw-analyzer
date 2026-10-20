@@ -79,11 +79,19 @@ class Executor:
 
     def execute(self, run: RunRecord) -> None:
         used: dict[str, str] = dict(run.versions.get("connectors") or {})
+        # Sources that kept refusing or not answering in this pass, with the last error class. A
+        # later step on the same source fails without a call (0 attempts, nothing in the call log):
+        # the answer would be the same, and each refusal costs a minute of backoff.
+        refused: dict[str, str] = {}
         for step in self._runs.steps_for_run(run.id):
             if step.state in DONE:
                 continue
+            key = str(step.source_snapshot.get("key"))
+            if key in refused:
+                self._queue.mark_step(step.id, "FAILED", error_class=refused[key], finished=True)
+                continue
             try:
-                version = self._run_step(run, step)
+                version = self._run_step(run, step, refused)
             except Exception:  # keep the worker alive; the step is recorded as failed
                 logger.exception("research.step_crashed run=%s step=%s", run.id, step.id)
                 self._queue.mark_step(
@@ -92,11 +100,18 @@ class Executor:
                 version = None
             if version:
                 used[version[0]] = version[1]
-        failed = any(s.state is StepState.FAILED for s in self._runs.steps_for_run(run.id))
+        # A discovery-only source can never verify a claim (P-06), so its failure does not fail the
+        # run. The step itself stays FAILED, with its reason, and can be tried again.
+        failed = any(
+            s.state is StepState.FAILED and not s.discovery_only
+            for s in self._runs.steps_for_run(run.id)
+        )
         versions: dict[str, Any] = {**run.versions, "connectors": used}
         self._queue.finish_run(run.id, "FAILED" if failed else "COMPLETED", versions)
 
-    def _run_step(self, run: RunRecord, step: StepRecord) -> tuple[str, str] | None:
+    def _run_step(
+        self, run: RunRecord, step: StepRecord, refused: dict[str, str]
+    ) -> tuple[str, str] | None:
         if step.source_id is None:
             self._queue.mark_step(step.id, "SKIPPED", reason="No source to search.", finished=True)
             return None
@@ -130,7 +145,7 @@ class Executor:
             registration_number=case.registration_number if case else None,
             industry=case.industry if case else None,
         )
-        return self._attempts(run, step, connector, request, source.access_category.value)
+        return self._attempts(run, step, connector, request, source.access_category.value, refused)
 
     def _attempts(
         self,
@@ -139,6 +154,7 @@ class Executor:
         connector: Connector,
         request: ConnectorRequest,
         access_status: str,
+        refused: dict[str, str],
     ) -> tuple[str, str] | None:
         attempt = step.attempts
         while attempt < step.max_attempts:
@@ -178,6 +194,7 @@ class Executor:
             # The source itself kept refusing or not answering. A permanent error (no unique
             # match, no name) is about the request, so it says nothing about the source.
             self._observe_health(step, Health.DEGRADED)
+            refused[request.source_key] = error_class
         return connector.key, connector.version
 
     def _observe_health(self, step: StepRecord, health: Health) -> None:
@@ -192,10 +209,11 @@ class Executor:
         self, connector: Connector, request: ConnectorRequest
     ) -> tuple[str, str | None, ConnectorResult | None]:
         """Run one connector call under a timeout. Returns (outcome, error_class, result)."""
+        timeout = float(getattr(connector, "timeout_seconds", None) or self._timeout)
         pool = ThreadPoolExecutor(max_workers=1)
         future = pool.submit(connector.execute, request)
         try:
-            result = future.result(timeout=self._timeout)
+            result = future.result(timeout=timeout)
         except FutureTimeout:
             return "TIMEOUT", "timeout", None
         except RetryableConnectorError:

@@ -45,6 +45,9 @@ class ConnectorResult:
 
 
 class Connector(Protocol):
+    """A connector may also set `timeout_seconds` when one call needs longer than the executor's
+    default (e.g. it downloads whole lists)."""
+
     key: str  # the registry key of the source it reaches
     version: str
 
