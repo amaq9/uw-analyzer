@@ -17,26 +17,32 @@ const boundaries = [
   "Unsourced benchmarks stay indicative only",
 ];
 
+/** The skill's status and how to run it. Sits at the top right of the Skills page. */
+export function SkillStatus() {
+  return (
+    <section className="panel integration-card skill-status" aria-labelledby="integration-title">
+      <div className="integration-status-row is-live">
+        <span className="connection-dot" />
+        <span>In use</span>
+      </div>
+      <h2 id="integration-title">Runs on every UW Analyzer analysis.</h2>
+      <p>
+        Open a case, go to the UW Analyzer recommendation tab and ask for the case to be analysed. Step 1 shows this
+        skill&apos;s full analysis; Step 2 turns it into a recommendation under the approved policy; Step 3 is your decision.
+      </p>
+      <Link className="run-skill-button is-live" href="/cases">
+        Open cases
+        <ArrowIcon />
+      </Link>
+      <small>Skill: financial-statement-assessment-enhanced · analyzer v2 · recommendation policy v1.1</small>
+    </section>
+  );
+}
+
+/** What the analysis needs, and the boundaries it never crosses. */
 export function SkillSafeguards() {
   return (
     <div className="skill-panels">
-      <section className="panel integration-card" aria-labelledby="integration-title">
-        <div className="integration-status-row is-live">
-          <span className="connection-dot" />
-          <span>In use</span>
-        </div>
-        <h2 id="integration-title">Runs on every<br />UW Analyzer analysis.</h2>
-        <p>
-          Open a case, go to the UW Analyzer recommendation tab and ask for the case to be analysed. Step 1 shows this
-          skill&apos;s full analysis; Step 2 turns it into a recommendation under the approved policy; Step 3 is your decision.
-        </p>
-        <Link className="run-skill-button is-live" href="/cases">
-          Open cases
-          <ArrowIcon />
-        </Link>
-        <small>Skill: financial-statement-assessment-enhanced · analyzer v2 · recommendation policy v1.1</small>
-      </section>
-
       <section className="panel skill-checklist" aria-labelledby="requirements-title">
         <div className="checklist-heading">
           <CheckIcon />

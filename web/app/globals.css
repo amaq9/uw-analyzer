@@ -923,8 +923,8 @@ textarea {
 
 .skills-hero {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) 240px;
-  gap: 24px;
+  grid-template-columns: auto minmax(0, 1fr) minmax(300px, 380px);
+  gap: 28px;
   align-items: center;
   margin-bottom: 38px;
 }
@@ -969,31 +969,22 @@ textarea {
   margin: 0;
 }
 
-.skill-purpose {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  padding: 19px;
-  border-left: 3px solid var(--teal);
-  background: rgba(255, 255, 255, 0.58);
+/* The skill's status card at the top right of the Skills page: compact enough to sit beside the title. */
+.skill-status {
+  align-self: center;
+  padding: 22px 24px;
 }
 
-.skill-purpose small {
-  color: #718085;
-  font-size: 8px;
-  font-weight: 800;
-  letter-spacing: 0.11em;
-  text-transform: uppercase;
+.skill-status .integration-status-row {
+  margin-bottom: 12px;
 }
 
-.skill-purpose strong {
-  font-size: 12px;
+.skill-status h2 {
+  font-size: 21px;
 }
 
-.skill-purpose span {
-  color: var(--teal);
-  font-size: 9px;
-  font-weight: 700;
+.skill-status > p {
+  margin: 10px 0 16px;
 }
 
 .skills-stack {
@@ -1307,7 +1298,7 @@ textarea {
 
 .skill-panels {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px;
   align-items: stretch;
 }
@@ -2503,6 +2494,16 @@ textarea {
     position: static;
   }
 
+  /* Too narrow for the status card beside the title: it moves under it, full width. */
+  .skills-hero {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .skill-status {
+    grid-column: 1 / -1;
+  }
+
   /* Too narrow for five cards in a row: the track turns vertical, nodes on the left. */
   .track {
     grid-template-columns: minmax(0, 1fr);
@@ -2648,7 +2649,7 @@ textarea {
     align-items: start;
   }
 
-  .skill-purpose {
+  .skill-status {
     grid-column: 1 / -1;
   }
 

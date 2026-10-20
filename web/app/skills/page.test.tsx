@@ -49,9 +49,12 @@ describe("financial statement assessment skill, enhanced", () => {
     ]);
   });
 
-  it("says the skill is in use and links to the cases where it runs", () => {
-    renderSkillsPage();
+  it("says the skill is in use at the top of the page and links to the cases where it runs", () => {
+    const { container } = renderSkillsPage();
 
+    const hero = container.querySelector(".skills-hero");
+    expect(hero?.querySelector(".skill-status")?.textContent).toContain("Runs on every UW Analyzer analysis.");
+    expect(screen.queryByLabelText("Skill purpose")).not.toBeInTheDocument();
     expect(screen.getByText("In use")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /open cases/i })).toHaveAttribute("href", "/cases");
     expect(screen.queryByRole("button", { name: /run assessment/i })).not.toBeInTheDocument();
