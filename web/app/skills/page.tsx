@@ -37,23 +37,21 @@ export default function SkillsPage() {
             </div>
           </section>
 
-          <div className="skills-layout">
-            <div className="skills-main-column">
-              <SkillMethod />
-              <SkillPerspectives />
-              <section className="benchmark-notice" aria-labelledby="benchmark-title">
-                <AlertIconProxy />
-                <div>
-                  <p className="eyebrow">Benchmark discipline</p>
-                  <h2 id="benchmark-title">Indicative context is not verified peer evidence.</h2>
-                  <p>
-                    Any generic industry range must be labeled indicative and replaced with sourced,
-                    dated peer data whenever it is used for a material conclusion.
-                  </p>
-                </div>
-              </section>
-            </div>
+          <div className="skills-stack">
+            <SkillMethod />
+            <SkillPerspectives />
             <SkillSafeguards />
+            <section className="benchmark-notice" aria-labelledby="benchmark-title">
+              <AlertIconProxy />
+              <div>
+                <p className="eyebrow">Benchmark discipline</p>
+                <h2 id="benchmark-title">Indicative context is not verified peer evidence.</h2>
+                <p>
+                  Any generic industry range must be labeled indicative and replaced with sourced,
+                  dated peer data whenever it is used for a material conclusion.
+                </p>
+              </div>
+            </section>
           </div>
         </main>
       </div>

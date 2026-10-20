@@ -5,7 +5,7 @@ const controls = [
     icon: LockIcon,
     kicker: "Human authority",
     title: "The system informs. The underwriter decides.",
-    body: "No approval, decline, rating, or credit limit is produced by the platform.",
+    body: "The UW Analyzer recommends; only the underwriter's recorded decision counts. It never approves, declines or sets a limit on its own.",
     tone: "navy",
   },
   {

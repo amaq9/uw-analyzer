@@ -14,5 +14,6 @@ describe("brand", () => {
     expect(mark?.querySelector(".brand-mark-ring")).not.toBeNull();
     expect(mark?.querySelector(".brand-mark-dot")).not.toBeNull();
     expect(screen.getByText("UW Analyzer")).toBeInTheDocument();
+    expect(screen.getByText("Evidence-led underwriting")).toBeInTheDocument();
   });
 });

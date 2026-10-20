@@ -8,7 +8,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: { default: "UW Analyzer", template: "%s · UW Analyzer" },
-  description: "Verified external research for human-led credit underwriting.",
+  description: "Evidence-led underwriting: verified external research for human-led credit decisions.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {

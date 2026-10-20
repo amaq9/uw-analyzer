@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { SessionProvider } from "@/components/session-provider";
@@ -21,22 +21,31 @@ describe("financial statement assessment skill, enhanced", () => {
     expect(screen.getByText("Enhanced · with published ratings")).toBeInTheDocument();
   });
 
-  it("shows the five dimensions in their required order, then what the enhanced skill adds", () => {
+  it("shows the five dimensions in their required order, numbered, each with what the review includes", () => {
     renderSkillsPage();
 
-    const headings = screen.getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent);
-    expect(headings).toEqual([
-      "Profitability",
-      "Liquidity",
-      "Balance sheet and leverage",
-      "Cash flow",
-      "Efficiency and sector",
-      "Published credit ratings",
+    const section = screen.getByRole("region", { name: "Five dimensions, reviewed in order" });
+    const titles = within(section).getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent);
+    expect(titles).toEqual(["Profitability", "Liquidity", "Balance sheet and leverage", "Cash flow", "Efficiency and sector"]);
+    expect(within(section).getAllByText("Review includes")).toHaveLength(5);
+    expect(within(section).getByText("5 required dimensions")).toBeInTheDocument();
+    expect(section.querySelectorAll(".track-node")).toHaveLength(5);
+  });
+
+  it("groups what the enhanced skill adds into corroboration, diagnostics and stress testing", () => {
+    renderSkillsPage();
+
+    const section = screen.getByRole("region", { name: "Corroboration, context and stress testing" });
+    const groups = within(section).getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent);
+    expect(groups).toEqual(["External corroboration", "Operating diagnostics", "Stress testing and context"]);
+    const items = within(section).getAllByRole("heading", { level: 4 }).map((heading) => heading.textContent);
+    expect(items).toEqual([
+      "Published third-party credit ratings",
       "Notes and auditor's report",
       "Cash conversion cycle",
       "Warning signs",
-      "If sales fall",
-      "Screening and context",
+      "Revenue decline scenario",
+      "Screening and reporting context",
     ]);
   });
 

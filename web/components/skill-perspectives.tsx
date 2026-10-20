@@ -2,82 +2,106 @@ import type { ComponentType, SVGProps } from "react";
 
 import {
   AlertIcon,
-  AuditIcon,
-  CasesIcon,
   DocumentChartIcon,
+  EvidenceIcon,
+  FolderIcon,
+  GearIcon,
   ReportsIcon,
   ShieldIcon,
+  TrendIcon,
 } from "@/components/icons";
 
-type Perspective = {
-  title: string;
-  detail: string;
-  checks: string;
-  icon: ComponentType<SVGProps<SVGSVGElement>>;
-};
+type Item = { title: string; detail: string; icon: ComponentType<SVGProps<SVGSVGElement>> };
+type Group = { key: string; title: string; icon: ComponentType<SVGProps<SVGSVGElement>>; items: Item[] };
 
-/** What the enhanced skill adds to the five dimensions, as the analysis shows it in Step 1 of a case. */
-const perspectives: Perspective[] = [
+/** What the enhanced skill adds to the five dimensions, grouped as Step 1 of a case shows it. */
+const groups: Group[] = [
   {
-    title: "Published credit ratings",
-    detail: "Each agency's grade, outlook and last action, with the agency's own stated reason and where it was reported.",
-    checks: "Moody's · S&P · Fitch · downgrades and negative outlooks · information only, never changes the amount",
-    icon: ReportsIcon,
+    key: "corroboration",
+    title: "External corroboration",
+    icon: EvidenceIcon,
+    items: [
+      {
+        title: "Published third-party credit ratings",
+        detail: "Show the agency, rating date, outlook and linked source.",
+        icon: ReportsIcon,
+      },
+      {
+        title: "Notes and auditor's report",
+        detail: "Read the printed annual report and quoted notes for hidden figures and risk context.",
+        icon: EvidenceIcon,
+      },
+    ],
   },
   {
-    title: "Notes and auditor's report",
-    detail: "Reads the printed annual report and quotes it, so what the figures leave out is not missed.",
-    checks: "Audit opinion · going concern · covenants · credit facilities · customer concentration · internal control",
-    icon: AuditIcon,
+    key: "diagnostics",
+    title: "Operating diagnostics",
+    icon: GearIcon,
+    items: [
+      {
+        title: "Cash conversion cycle",
+        detail: "Show how long cash is tied up between paying suppliers and collecting from customers.",
+        icon: FolderIcon,
+      },
+      {
+        title: "Warning signs",
+        detail: "Display each triggered red flag with its figures, source and limitations.",
+        icon: AlertIcon,
+      },
+    ],
   },
   {
-    title: "Cash conversion cycle",
-    detail: "How long cash is tied up between paying suppliers and collecting from customers, against the year before.",
-    checks: "Days sales outstanding · days inventory · days payables · the movement that drives it",
-    icon: CasesIcon,
-  },
-  {
-    title: "Warning signs",
-    detail: "A fixed checklist of credit red flags, each shown as triggered, clear or not assessable, with its numbers.",
-    checks: "Cash below profit · payouts above free cash flow · receivables outpacing sales · rising leverage",
-    icon: AlertIcon,
-  },
-  {
-    title: "If sales fall",
-    detail: "What happens to operating profit and cash if revenue drops, and the fall at which profit reaches zero.",
-    checks: "10% and 20% revenue falls · break-even point · illustration, not a forecast",
-    icon: DocumentChartIcon,
-  },
-  {
-    title: "Screening and context",
-    detail: "Checks around the company that the financial statements cannot show.",
-    checks: "Sanctions name search · legal entity register · country economy · news leads",
-    icon: ShieldIcon,
+    key: "stress",
+    title: "Stress testing and context",
+    icon: TrendIcon,
+    items: [
+      {
+        title: "Revenue decline scenario",
+        detail: "Show what happens to operating profit and cash under clearly stated downside assumptions.",
+        icon: DocumentChartIcon,
+      },
+      {
+        title: "Screening and reporting context",
+        detail: "Check whether sanctions, legal structure or reporting context limit interpretation.",
+        icon: ShieldIcon,
+      },
+    ],
   },
 ];
 
 export function SkillPerspectives() {
   return (
-    <section className="skill-method" aria-labelledby="skill-perspectives-title">
-      <div className="section-heading skill-section-heading">
+    <section className="skill-section" aria-labelledby="skill-perspectives-title">
+      <div className="section-heading">
         <div>
-          <p className="eyebrow">Enhanced skill</p>
-          <h2 id="skill-perspectives-title">Beyond the ratios</h2>
+          <p className="eyebrow">Enhanced review</p>
+          <h2 id="skill-perspectives-title">Corroboration, context and stress testing</h2>
         </div>
-        <span className="phase-tag">Ratings, notes and risk</span>
+        <span className="phase-tag">Beyond the ratios</span>
       </div>
-      <ul className="method-grid perspective-grid">
-        {perspectives.map(({ title, detail, checks, icon: PerspectiveIcon }) => (
-          <li key={title} className="method-card">
-            <div className="method-card-top">
-              <span className="method-icon"><PerspectiveIcon /></span>
-            </div>
-            <h3>{title}</h3>
-            <p>{detail}</p>
-            <small>{checks}</small>
-          </li>
+      <div className="review-groups">
+        {groups.map(({ key, title, icon: GroupIcon, items }) => (
+          <section key={key} className={`review-group is-${key}`} aria-labelledby={`review-group-${key}`}>
+            <h3 className="review-group-head" id={`review-group-${key}`}>
+              <GroupIcon />
+              {title}
+            </h3>
+            <ul>
+              {items.map(({ title: itemTitle, detail, icon: ItemIcon }) => (
+                <li key={itemTitle} className="review-item">
+                  <span className="icon-tile">
+                    <ItemIcon />
+                  </span>
+                  <div>
+                    <h4>{itemTitle}</h4>
+                    <p>{detail}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
         ))}
-      </ul>
+      </div>
     </section>
   );
 }

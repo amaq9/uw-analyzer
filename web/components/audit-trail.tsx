@@ -16,12 +16,12 @@ export function AuditTrail() {
   );
 
   return (
-    <Gate error={events.error} loading={events.loading} name="Audit trail" signedIn={Boolean(session)}>
+    <Gate error={events.error} loading={events.loading} name="Audit history" signedIn={Boolean(session)}>
       <section className="ws">
         <header className="ws-header">
           <div>
             <p className="eyebrow">Governance</p>
-            <h1>Audit trail</h1>
+            <h1>Audit history</h1>
             <p className="ws-muted">
               Every material action, newest first. The log can only be added to, and case content is never copied into it.
               Only the auditor role can read it.
