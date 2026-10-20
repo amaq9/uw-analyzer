@@ -209,10 +209,11 @@ class Executor:
         self, connector: Connector, request: ConnectorRequest
     ) -> tuple[str, str | None, ConnectorResult | None]:
         """Run one connector call under a timeout. Returns (outcome, error_class, result)."""
+        timeout = float(getattr(connector, "timeout_seconds", None) or self._timeout)
         pool = ThreadPoolExecutor(max_workers=1)
         future = pool.submit(connector.execute, request)
         try:
-            result = future.result(timeout=self._timeout)
+            result = future.result(timeout=timeout)
         except FutureTimeout:
             return "TIMEOUT", "timeout", None
         except RetryableConnectorError:

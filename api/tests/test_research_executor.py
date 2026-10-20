@@ -218,6 +218,19 @@ def test_timeout_is_recorded_and_retried(client: TestClient, db_app: FastAPI, te
     assert get_run(client, case_id, run_id, h)["status"] == "FAILED"
 
 
+def test_a_connector_can_ask_for_a_longer_timeout(
+    client: TestClient, db_app: FastAPI, tenant: str
+) -> None:
+    key = f"k-{tenant}"
+    case_id, run_id, h = setup_run(client, db_app, tenant, {"key": key})
+    start(client, case_id, run_id, h)
+    slow = Fake(key, ["slow"])
+    slow.timeout_seconds = 5.0  # type: ignore[attr-defined]
+    drain(executor(db_app, slow, timeout=0.05)[0])
+    assert [c["outcome"] for c in calls(client, case_id, run_id, h)] == ["SUCCESS"]
+    assert get_run(client, case_id, run_id, h)["status"] == "COMPLETED"
+
+
 def test_a_result_without_provenance_never_counts_as_access(
     client: TestClient, db_app: FastAPI, tenant: str
 ) -> None:

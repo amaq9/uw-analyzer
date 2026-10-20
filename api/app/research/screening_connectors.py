@@ -11,6 +11,7 @@ is a real, logged negative result."""
 import csv
 import io
 import json
+import re
 import time
 from collections.abc import Callable
 from typing import Any
@@ -37,6 +38,8 @@ def _tokens(name: str) -> frozenset[str]:
 class OfacSdnConnector:
     key = "ofac-sdn"
     version = "1"
+    # Two whole lists (about 7 MB together) from a server that can take 20 s for one of them.
+    timeout_seconds = 120.0
     _HOSTS = frozenset({"sanctionslistservice.ofac.treas.gov"})
     _FILE_HOSTS = frozenset({"wc2h-sls-prod-public-published.s3.us-gov-west-1.amazonaws.com"})
     _BASE = "https://sanctionslistservice.ofac.treas.gov/api/publicationpreview/exports/"
@@ -182,6 +185,20 @@ class WorldBankConnector:
         return ConnectorResult(provenance_ref=snap.ref, items=len(responses))
 
 
+_BAD_ESCAPE = re.compile(r'\\(?!["\\/bfnrtu])')
+
+
+def _lenient_json(text: str) -> Any:
+    """The news index copies article titles into its JSON as they are, so a title can carry a raw
+    control character or a stray backslash. Accept both; anything else unreadable gives None."""
+    for candidate in (text, _BAD_ESCAPE.sub(r"\\\\", text)):
+        try:
+            return json.loads(candidate, strict=False)
+        except ValueError:
+            continue
+    return None
+
+
 class GdeltNewsConnector:
     """Leads from news coverage. The index allows one request every five seconds, so the call waits
     first; a refusal is retried by the executor with backoff."""
@@ -258,10 +275,9 @@ class GdeltNewsConnector:
             # The index answers a too-fast request with a plain-text note, not an HTTP error.
             raise RetryableConnectorError("rate_limited")
         if text:
-            try:
-                parsed = json.loads(text)
-            except ValueError:
-                raise PermanentConnectorError("bad_response", "Unreadable news response.") from None
+            parsed = _lenient_json(text)
+            if parsed is None:
+                raise PermanentConnectorError("bad_response", "Unreadable news response.")
         articles = (parsed or {}).get("articles", []) if isinstance(parsed, dict) else []
         record = {
             "source": self.key,
