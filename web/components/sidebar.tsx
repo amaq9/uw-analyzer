@@ -15,7 +15,7 @@ import { useSession } from "@/components/session-provider";
 
 const workspaceLinks = [
   { id: "overview", label: "Overview", icon: OverviewIcon, href: "/" },
-  { id: "skills", label: "Skills", icon: SkillsIcon, href: "/skills", badge: "1" },
+  { id: "skills", label: "Skills", icon: SkillsIcon, href: "/skills" },
   { id: "cases", label: "Cases", icon: CasesIcon, href: "/cases", permissions: ["case:read"] },
   {
     id: "recommendations",
@@ -76,7 +76,6 @@ export function Sidebar({ activePage = "overview" }: SidebarProps) {
                 >
                   <LinkIcon className="nav-icon" />
                   {item.label}
-                  {"badge" in item && item.badge && <span className="nav-count">{item.badge}</span>}
                 </Link>
               </li>
             );
