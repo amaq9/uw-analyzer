@@ -112,29 +112,38 @@ textarea {
   width: fit-content;
 }
 
+/* The crosshair mark. On the dark sidebar the dark lines of the original logo are drawn light. */
 .brand-mark {
-  display: grid;
-  grid-template-columns: repeat(3, 5px);
-  align-items: end;
-  gap: 3px;
-  width: 29px;
+  flex: 0 0 auto;
+  width: 34px;
   height: 34px;
-  padding: 7px 5px;
-  border: 1px solid rgba(255, 255, 255, 0.32);
-  border-radius: 4px 10px 4px 4px;
-  transform: skewY(-4deg);
+  overflow: visible;
 }
 
-.brand-mark span {
-  display: block;
-  width: 5px;
-  background: var(--teal-bright);
-  border-radius: 2px 2px 0 0;
+.brand-mark line,
+.brand-mark .brand-mark-ring {
+  fill: none;
+  stroke-linecap: butt;
 }
 
-.brand-mark span:nth-child(1) { height: 7px; }
-.brand-mark span:nth-child(2) { height: 13px; }
-.brand-mark span:nth-child(3) { height: 19px; }
+.brand-mark-ring {
+  stroke: var(--white);
+  stroke-width: 12;
+}
+
+.brand-mark-v {
+  stroke: var(--white);
+  stroke-width: 10;
+}
+
+.brand-mark-h {
+  stroke: rgba(255, 255, 255, 0.55);
+  stroke-width: 10;
+}
+
+.brand-mark-dot {
+  fill: #0088b0;
+}
 
 .brand > span:last-child {
   display: flex;
