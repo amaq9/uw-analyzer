@@ -220,19 +220,6 @@ textarea {
   text-transform: uppercase;
 }
 
-.nav-count {
-  display: grid;
-  place-items: center;
-  width: 20px;
-  height: 20px;
-  margin-left: auto;
-  color: var(--navy-deep);
-  border-radius: 50%;
-  background: var(--teal-bright);
-  font-size: 9px;
-  font-weight: 800;
-}
-
 .sidebar-note {
   display: flex;
   gap: 11px;
