@@ -171,7 +171,7 @@ export function RecommendationTab({
         <section className="ws-card rec-report-prompt">
           <div>
             <p className="eyebrow">Next</p>
-            <h3>Your one-page final decision report is ready</h3>
+            <h3>Your UW Analyzer Decision Summary is ready</h3>
             <p className="ws-muted">Open the Final decision tab to print it or save it as a PDF.</p>
           </div>
           <button className="ws-button primary" onClick={() => onOpenTab?.("final")} type="button">
