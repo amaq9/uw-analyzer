@@ -467,7 +467,7 @@ test.describe("the recommendation journey", () => {
     expect(state.decisionPosts).toHaveLength(0);
   });
 
-  test("the final decision tab is empty before a decision and a one-page report after it", async ({ page }) => {
+  test("the final decision tab is empty before a decision and a one-page decision summary after it", async ({ page }) => {
     await mockApi(page);
     await page.addInitScript(() => {
       (window as unknown as { __printed: number }).__printed = 0;
@@ -485,12 +485,12 @@ test.describe("the recommendation journey", () => {
     await page.locator("section.rec-decide").getByRole("button", { name: /Record my decision/ }).click();
     await expect(page.getByRole("heading", { name: "Adopted the UW Analyzer recommendation as written" })).toBeVisible();
     await page.getByRole("button", { name: "Open the Final decision tab" }).click();
-    const report = page.getByLabel("Final decision report");
+    const report = page.getByLabel("UW Analyzer Decision Summary");
     await expect(report).toContainText("Approve USD 3.75m");
-    const compare = report.getByLabel("UW Analyzer versus actual decision");
-    await expect(compare).toContainText("UW Analyzer recommended");
-    await expect(compare).toContainText("Actual decision");
-    await expect(compare).toContainText("The actual decision matches the UW Analyzer recommendation.");
+    const decision = report.getByLabel("Decision", { exact: true });
+    await expect(decision).toContainText("Underwriter decision");
+    await expect(decision).toContainText("In line with the UW Analyzer recommendation.");
+    await expect(report).not.toContainText("Points to settle first");
     await expect(report).toContainText("Test product");
     await expect(report).toContainText("not communicated to any customer");
     await expect(page).toHaveTitle("NIKE, Inc. · Final decision · UW Analyzer");
@@ -504,9 +504,9 @@ test.describe("the recommendation journey", () => {
     await openDraft(page);
     await page.locator("section.rec-decide").getByRole("button", { name: /Record my decision/ }).click();
     await page.getByRole("button", { name: "Open the Final decision tab" }).click();
-    await expect(page.getByLabel("Final decision report")).toBeVisible();
+    await expect(page.getByLabel("UW Analyzer Decision Summary")).toBeVisible();
     await page.emulateMedia({ media: "print" });
-    await expect(page.getByLabel("Final decision report")).toBeVisible();
+    await expect(page.getByLabel("UW Analyzer Decision Summary")).toBeVisible();
     await expect(page.locator(".sidebar")).toBeHidden();
     await expect(page.locator(".topbar")).toBeHidden();
     await expect(page.getByRole("navigation", { name: "Case sections" })).toBeHidden();
