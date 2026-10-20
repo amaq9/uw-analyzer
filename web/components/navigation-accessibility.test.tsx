@@ -62,7 +62,7 @@ describe("workspace navigation", () => {
 
     const listed = (name: string) =>
       within(screen.getByRole("list", { name })).getAllByRole("link").map((link) => link.textContent);
-    expect(listed("Workspace")).toEqual(["Overview", "Cases", "Skills"]);
+    expect(listed("Workspace")).toEqual(["Overview", "Skills", "Cases"]);
     expect(listed("Analysis")).toEqual(["UW Analyzer recommendation", "Decision Outcome"]);
     expect(listed("Governance")).toEqual(["Source access", "Audit history"]);
     expect(screen.getByRole("link", { name: "UW Analyzer recommendation" })).toHaveAttribute("href", "/recommendations");

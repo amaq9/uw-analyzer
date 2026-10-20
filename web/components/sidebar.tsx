@@ -33,8 +33,8 @@ const sections: NavSection[] = [
     label: "Workspace",
     links: [
       { id: "overview", label: "Overview", icon: OverviewIcon, href: "/" },
-      { id: "cases", label: "Cases", icon: CasesIcon, href: "/cases", permissions: ["case:read"] },
       { id: "skills", label: "Skills", icon: SkillsIcon, href: "/skills" },
+      { id: "cases", label: "Cases", icon: CasesIcon, href: "/cases", permissions: ["case:read"] },
     ],
   },
   {

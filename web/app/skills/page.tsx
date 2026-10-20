@@ -3,7 +3,7 @@ import { DocumentChartIcon } from "@/components/icons";
 import { Sidebar } from "@/components/sidebar";
 import { SkillMethod } from "@/components/skill-method";
 import { SkillPerspectives } from "@/components/skill-perspectives";
-import { SkillSafeguards } from "@/components/skill-safeguards";
+import { SkillSafeguards, SkillStatus } from "@/components/skill-safeguards";
 import { Topbar } from "@/components/topbar";
 
 export const metadata: Metadata = { title: "Skills" };
@@ -30,11 +30,7 @@ export default function SkillsPage() {
                 missing. The underwriter makes the decision.
               </p>
             </div>
-            <div className="skill-purpose" aria-label="Skill purpose">
-              <small>Purpose</small>
-              <strong>Credit analysis for trade credit</strong>
-              <span>Recommendation only. The underwriter decides.</span>
-            </div>
+            <SkillStatus />
           </section>
 
           <div className="skills-stack">
