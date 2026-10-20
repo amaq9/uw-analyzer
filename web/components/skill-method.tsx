@@ -1,79 +1,81 @@
 import type { ComponentType, SVGProps } from "react";
 
-import {
-  CasesIcon,
-  DocumentChartIcon,
-  EvidenceIcon,
-  ReportsIcon,
-  ResearchIcon,
-} from "@/components/icons";
+import { DocumentChartIcon, GearIcon, ReportsIcon, ResearchIcon } from "@/components/icons";
 
-type MethodItem = {
+type Dimension = {
   number: string;
   title: string;
-  detail: string;
-  checks: string;
+  question: string;
+  includes: string[];
   icon: ComponentType<SVGProps<SVGSVGElement>>;
 };
 
-const method: MethodItem[] = [
+/** The five dimensions in the order the analysis always follows. "Includes" lists measures Step 1 actually shows. */
+const dimensions: Dimension[] = [
   {
     number: "01",
     title: "Profitability",
-    detail: "Check that profits are real, sustainable and turning into cash.",
-    checks: "Gross · operating · EBITDA · net margin · return on assets and equity · trend",
-    icon: CasesIcon,
+    question: "Can the business generate sustainable profit and convert it into cash?",
+    includes: ["Gross margin", "Operating margin", "EBITDA", "Net margin", "ROA", "ROE"],
+    icon: ReportsIcon,
   },
   {
     number: "02",
     title: "Liquidity",
-    detail: "Test short-term obligations against genuinely available resources.",
-    checks: "Current · quick · cash ratios · working capital · cash from operations over current liabilities",
+    question: "Can the business meet short-term obligations using genuinely available resources?",
+    includes: ["Current ratio", "Quick ratio", "Cash ratio", "Working capital"],
     icon: ResearchIcon,
   },
   {
     number: "03",
     title: "Balance sheet and leverage",
-    detail: "Separate gross debt, leases and net debt from headline leverage.",
-    checks: "Debt to equity · equity share of assets · interest cover · net debt to EBITDA",
+    question: "Separate gross debt, leases and net debt from headline leverage.",
+    includes: ["Debt-to-equity", "Equity share", "Interest cover", "Net debt-to-EBITDA"],
     icon: ReportsIcon,
   },
   {
     number: "04",
     title: "Cash flow",
-    detail: "Follow cash through operations, investment and distributions, and how long cash is tied up in working capital.",
-    checks: "Cash from operations · free cash flow · conversion of profit · capital spending · cash conversion cycle (DSO, DIO, DPO)",
+    question: "Follow cash through operations, investment and distributions.",
+    includes: ["Cash from operations", "Free cash flow", "Capital spending", "Cash conversion cycle"],
     icon: DocumentChartIcon,
   },
   {
     number: "05",
     title: "Efficiency and sector",
-    detail: "Show how hard the assets work, and say plainly that no peer data is connected.",
-    checks: "Asset turnover · receivables days · inventory turnover · concentration and market share not assessed",
-    icon: EvidenceIcon,
+    question: "Show how hard the assets work. Peer comparison needs sourced peer data, which is not connected yet.",
+    includes: ["Asset turnover", "Receivable days", "Inventory turnover", "Sector context"],
+    icon: GearIcon,
   },
 ];
 
 export function SkillMethod() {
   return (
-    <section className="skill-method" aria-labelledby="skill-method-title">
-      <div className="section-heading skill-section-heading">
+    <section className="skill-section" aria-labelledby="skill-method-title">
+      <div className="section-heading">
         <div>
-          <p className="eyebrow">Required review sequence</p>
-          <h2 id="skill-method-title">Five dimensions, always in this order</h2>
+          <p className="eyebrow">Required financial review</p>
+          <h2 id="skill-method-title">Five dimensions, reviewed in order</h2>
         </div>
-        <span className="phase-tag">Financial evidence</span>
+        <span className="phase-tag">5 required dimensions</span>
       </div>
-      <ol className="method-grid">
-        {method.map(({ number, title, detail, checks, icon: MethodIcon }) => (
-          <li key={number} className="method-card">
-            <div className="method-card-top">
-              <span className="method-number">{number}</span>
-              <span className="method-icon"><MethodIcon /></span>
+      <ol className="track dimension-track">
+        {dimensions.map(({ number, title, question, includes, icon: DimensionIcon }) => (
+          <li key={number} className="track-stage">
+            <span className="track-node" aria-hidden="true">
+              {number}
+            </span>
+            <div className="track-card">
+              <span className="icon-tile">
+                <DimensionIcon />
+              </span>
+              <h3>{title}</h3>
+              <p>{question}</p>
+              <div className="track-includes">
+                <span>Review includes</span>
+                <p>{includes.join(" · ")}</p>
+              </div>
             </div>
-            <h3>{title}</h3>
-            <p>{detail}</p>
-            <small>{checks}</small>
           </li>
         ))}
       </ol>

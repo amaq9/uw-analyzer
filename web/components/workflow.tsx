@@ -1,4 +1,4 @@
-import { ArrowIcon, CheckIcon, LockIcon } from "@/components/icons";
+import { CheckIcon, LockIcon } from "@/components/icons";
 
 const stages = [
   {
@@ -29,6 +29,7 @@ const stages = [
   },
 ];
 
+/** The five controlled stages on a numbered track. The required gate is marked and linked to the rule it enforces. */
 export function Workflow() {
   return (
     <section className="panel workflow-panel" aria-labelledby="workflow-title">
@@ -39,18 +40,22 @@ export function Workflow() {
         </div>
         <span className="phase-tag">5 controlled stages</span>
       </div>
-      <ol className="workflow-list">
-        {stages.map((stage, index) => (
-          <li key={stage.number} className={stage.gate ? "workflow-step gate" : "workflow-step"}>
-            <div className="step-number">{stage.gate ? <LockIcon /> : stage.number}</div>
-            <div className="step-copy">
-              <div className="step-title-row">
-                <h3>{stage.label}</h3>
-                {stage.gate && <span className="required-badge">Required gate</span>}
-              </div>
+      <ol className="track workflow-track">
+        {stages.map((stage) => (
+          <li key={stage.number} className={stage.gate ? "track-stage is-gate" : "track-stage"}>
+            <span className="track-node" aria-hidden="true">
+              {stage.number}
+            </span>
+            <div className="track-card">
+              {stage.gate && <LockIcon className="track-lock" />}
+              <h3>
+                <span className="visually-hidden">Stage {stage.number}: </span>
+                {stage.label}
+              </h3>
+              {stage.gate && <span className="required-badge">Required gate</span>}
               <p>{stage.detail}</p>
             </div>
-            {index < stages.length - 1 && <ArrowIcon className="workflow-arrow" />}
+            {stage.gate && <span className="track-gate-link" aria-hidden="true" />}
           </li>
         ))}
       </ol>

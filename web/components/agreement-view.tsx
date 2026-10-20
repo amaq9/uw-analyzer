@@ -14,13 +14,13 @@ export function AgreementView() {
   const data = report.data;
 
   return (
-    <Gate error={report.error} loading={report.loading} name="Agreement view" signedIn={Boolean(session)}>
+    <Gate error={report.error} loading={report.loading} name="Decision Outcome" signedIn={Boolean(session)}>
       {data && (
         <section className="ws">
           <header className="ws-header">
             <div>
-              <p className="eyebrow">Test measure</p>
-              <h1>UW Analyzer versus actual decision</h1>
+              <p className="eyebrow">UW Analyzer versus actual decision</p>
+              <h1>Decision Outcome</h1>
               <p className="ws-muted">{data.notice}</p>
             </div>
           </header>

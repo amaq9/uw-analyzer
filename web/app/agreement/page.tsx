@@ -3,7 +3,7 @@ import { AgreementView } from "@/components/agreement-view";
 import { Sidebar } from "@/components/sidebar";
 import { Topbar } from "@/components/topbar";
 
-export const metadata: Metadata = { title: "UW Analyzer versus actual decision" };
+export const metadata: Metadata = { title: "Decision Outcome" };
 
 export default function AgreementPage() {
   return (

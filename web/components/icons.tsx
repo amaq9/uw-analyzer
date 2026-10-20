@@ -124,6 +124,60 @@ export function AlertIcon(props: IconProps) {
   );
 }
 
+export function GearIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7" />
+      <circle cx="12" cy="12" r="6.3" />
+    </Icon>
+  );
+}
+
+export function FolderIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M3.5 6.5h6l2 2h9v10h-17zM3.5 10.5h17" />
+    </Icon>
+  );
+}
+
+export function TrendIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="m3.5 17 6-6 4 4 7-7.5M15 7.5h5.5V13" />
+    </Icon>
+  );
+}
+
+export function DocumentSearchIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M13 20.5H5.5v-17h9l3 3V10M14.5 3.5v3h3M8.5 9h5M8.5 12.5h3" />
+      <circle cx="15.5" cy="16" r="3" />
+      <path d="m17.7 18.2 2.3 2.3" />
+    </Icon>
+  );
+}
+
+export function DocumentCheckIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M6 3.5h9l3 3v14H6zM15 3.5v3h3" />
+      <path d="m9 13.5 2.2 2.2 4-4.4" />
+    </Icon>
+  );
+}
+
+export function HistoryIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3" />
+      <path d="M4 4.5v3.7h3.7M12 8v4.3l3 1.8" />
+    </Icon>
+  );
+}
+
 export function DocumentChartIcon(props: IconProps) {
   return (
     <Icon {...props}>

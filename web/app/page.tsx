@@ -37,9 +37,10 @@ export default function Home() {
             </aside>
           </section>
 
+          <Workflow />
+
           <div className="dashboard-grid">
             <div className="dashboard-primary">
-              <Workflow />
               <SkillSpotlight />
               <ControlCards />
             </div>

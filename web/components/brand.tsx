@@ -16,9 +16,9 @@ export function Brand() {
   return (
     <Link className="brand" href="/" aria-label="UW Analyzer home">
       <BrandMark />
-      <span>
+      <span className="brand-text">
         <strong>UW Analyzer</strong>
-        <small>Verified external research</small>
+        <small>Evidence-led underwriting</small>
       </span>
     </Link>
   );

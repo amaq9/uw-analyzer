@@ -5,6 +5,8 @@
   --navy-deep: #0b252e;
   --teal: #0e776f;
   --teal-bright: #2ba69b;
+  --teal-glow: #1fc3ae;
+  --teal-label: #5cb3a8;
   --mint: #dceee8;
   --cream: #f4f1e9;
   --paper: #fcfbf7;
@@ -108,16 +110,16 @@ textarea {
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
+  gap: 11px;
   width: fit-content;
+  max-width: 100%;
 }
 
-/* The crosshair mark, in the sidebar's own colours: soft white lines like its text, and the
-   brand teal (as on the active menu item) for the centre point. */
+/* The crosshair mark: white ring and lines, and a bright teal centre point. */
 .brand-mark {
   flex: 0 0 auto;
-  width: 34px;
-  height: 34px;
+  width: 40px;
+  height: 40px;
   overflow: visible;
 }
 
@@ -128,58 +130,73 @@ textarea {
 }
 
 .brand-mark-ring {
-  stroke: rgba(255, 255, 255, 0.82);
-  stroke-width: 12;
+  stroke: rgba(255, 255, 255, 0.92);
+  stroke-width: 11;
 }
 
-.brand-mark-v {
-  stroke: rgba(255, 255, 255, 0.82);
-  stroke-width: 10;
-}
-
+.brand-mark-v,
 .brand-mark-h {
-  stroke: rgba(255, 255, 255, 0.38);
-  stroke-width: 10;
+  stroke: rgba(255, 255, 255, 0.92);
+  stroke-width: 9;
 }
 
 .brand-mark-dot {
-  fill: var(--teal-bright);
+  fill: var(--teal-glow);
 }
 
-.brand > span:last-child {
+.brand-text {
   display: flex;
+  min-width: 0;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
 }
 
 .brand strong {
   color: var(--white);
-  font-size: 17px;
-  letter-spacing: -0.02em;
+  font-family: var(--font-serif);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.05;
 }
 
 .brand small {
-  color: rgba(255, 255, 255, 0.52);
-  font-size: 9px;
-  letter-spacing: 0.13em;
+  position: relative;
+  padding-bottom: 7px;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* The short teal rule under the tagline. */
+.brand small::after {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 28px;
+  height: 2px;
+  border-radius: 2px;
+  content: "";
+  background: var(--teal-glow);
 }
 
 .sidebar nav {
-  margin-top: 50px;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  margin-top: 44px;
 }
 
 .nav-label {
   margin: 0 12px 10px;
-  color: rgba(255, 255, 255, 0.38);
+  color: var(--teal-label);
   font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
+  font-weight: 800;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-}
-
-.governance-label {
-  margin-top: 36px;
 }
 
 .nav-list {
@@ -197,15 +214,22 @@ textarea {
   gap: 12px;
   min-height: 42px;
   padding: 0 12px;
-  border-radius: 7px;
+  color: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
   font-size: 13px;
   font-weight: 600;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.nav-item:hover {
+  color: var(--white);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .nav-item.active {
   color: var(--white);
   background: rgba(255, 255, 255, 0.09);
-  box-shadow: inset 3px 0 var(--teal-bright);
+  box-shadow: inset 3px 0 var(--teal-glow);
 }
 
 .nav-item.unavailable {
@@ -972,106 +996,320 @@ textarea {
   font-weight: 700;
 }
 
-.skills-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 330px;
-  gap: 24px;
-  align-items: start;
-}
-
-.skills-main-column,
-.skill-side-column {
+.skills-stack {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 22px;
 }
 
-.skill-method {
-  padding: 28px;
+.skill-section {
+  padding: 28px 28px 30px;
   border: 1px solid rgba(16, 42, 48, 0.09);
-  border-radius: 12px;
+  border-radius: 14px;
   background: rgba(255, 255, 255, 0.72);
   box-shadow: var(--shadow);
 }
 
-.skill-section-heading {
-  margin-bottom: 22px;
-}
-
-.method-grid {
+/* Numbered track: one card per stage, a numbered node above each, joined by a teal line.
+   Used by the Overview workflow and the Skills dimensions. */
+.track {
+  --node: 40px;
+  --track-gap: 14px;
+  position: relative;
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--track-gap);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.method-card {
-  grid-column: span 2;
-  min-height: 205px;
-  padding: 18px;
-  border: 1px solid rgba(16, 42, 48, 0.1);
-  border-radius: 9px;
+/* The faint frame behind the cards; its top edge is the line the nodes sit on. */
+.track::before {
+  position: absolute;
+  inset: calc(var(--node) / 2) 0 0;
+  border: 1px solid rgba(16, 42, 48, 0.07);
+  border-radius: 12px;
+  content: "";
+  pointer-events: none;
+}
+
+.track-stage {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  padding-top: calc(var(--node) / 2 + 12px);
+}
+
+/* The teal segment from this node to the next one. */
+.track-stage:not(:last-child)::after {
+  position: absolute;
+  top: calc(var(--node) / 2);
+  left: 50%;
+  z-index: 0;
+  width: calc(100% + var(--track-gap));
+  height: 2px;
+  margin-top: -1px;
+  content: "";
+  background: var(--teal);
+  opacity: 0.75;
+}
+
+.track-node {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: var(--node);
+  height: var(--node);
+  color: var(--teal);
+  border: 1.5px solid var(--teal);
+  border-radius: 50%;
+  background: var(--paper);
+  font-size: 13px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  transform: translateX(-50%);
+}
+
+.track-card {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  padding: calc(var(--node) / 2 + 14px) 20px 20px;
+  border: 1px solid rgba(16, 42, 48, 0.11);
+  border-radius: 10px;
   background: var(--paper);
 }
 
-.method-card:nth-child(4),
-.method-card:nth-child(5) {
-  grid-column: span 3;
-}
-
-.method-card-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 30px;
-}
-
-.method-number {
-  color: var(--teal);
-  font-family: var(--font-serif);
-  font-size: 24px;
-}
-
-.method-icon {
-  display: grid;
-  place-items: center;
-  width: 31px;
-  height: 31px;
-  border-radius: 7px;
-  background: var(--mint);
-}
-
-.method-icon svg {
-  width: 16px;
-  stroke: var(--teal);
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 1.5;
-}
-
-.method-card h3 {
+.track-card h3 {
   margin: 0;
   font-family: var(--font-serif);
   font-size: 17px;
-  line-height: 1.15;
+  font-weight: 600;
+  line-height: 1.2;
 }
 
-.method-card p {
-  margin: 9px 0 16px;
+.track-card > p {
+  margin: 8px 0 0;
   color: var(--ink-soft);
-  font-size: 10px;
-  line-height: 1.5;
+  font-size: 12px;
+  line-height: 1.55;
 }
 
-.method-card small {
+.track-stage.is-gate .track-card {
+  border-color: var(--teal);
+  background: linear-gradient(180deg, rgba(220, 238, 232, 0.7), rgba(220, 238, 232, 0.35));
+}
+
+.track-stage.is-gate .required-badge {
+  margin-top: 8px;
+}
+
+.track-lock {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 18px;
+  stroke: var(--teal);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+/* The stem from the gate card down to the rule it enforces. */
+.track-gate-link {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  width: 2px;
+  height: 20px;
+  margin-left: -1px;
+  background: var(--teal);
+}
+
+.track-gate-link::after {
+  position: absolute;
+  bottom: -4px;
+  left: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  content: "";
+  background: var(--teal);
+}
+
+.icon-tile {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  background: var(--mint);
+}
+
+.icon-tile svg {
+  width: 19px;
+  stroke: var(--teal);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.6;
+}
+
+.dimension-track .track-card {
+  display: flex;
+  flex-direction: column;
+  padding-top: calc(var(--node) / 2 + 12px);
+}
+
+.dimension-track .icon-tile {
+  margin-bottom: 14px;
+}
+
+.track-includes {
+  margin-top: auto;
+  padding-top: 14px;
+}
+
+/* On a wide screen the five dimension cards share their rows (icon, title, question, review list), so
+   the "Review includes" rules line up across the row whatever the length of each question. */
+@media (min-width: 1181px) {
+  .dimension-track {
+    grid-template-rows: repeat(4, auto);
+    row-gap: 0;
+  }
+
+  .dimension-track .track-stage,
+  .dimension-track .track-card {
+    display: grid;
+    grid-row: span 4;
+    grid-template-rows: subgrid;
+    row-gap: 0;
+  }
+
+  .dimension-track .track-card > p {
+    margin-bottom: 0;
+  }
+
+  .dimension-track .track-includes {
+    margin-top: 0;
+    padding-top: 16px;
+  }
+}
+
+.track-includes::before {
   display: block;
-  padding-top: 13px;
-  color: #6f7f82;
+  margin-bottom: 12px;
   border-top: 1px solid var(--line);
-  font-size: 8px;
-  line-height: 1.5;
+  content: "";
+}
+
+.dimension-track .track-card > p {
+  margin-bottom: 14px;
+}
+
+.track-includes span {
+  color: var(--teal);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.track-includes p {
+  margin: 6px 0 0;
+  color: var(--ink-soft);
+  font-size: 11.5px;
+  line-height: 1.6;
+}
+
+/* Enhanced review: three groups, each a tinted header over two item cards. */
+.review-groups {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.review-group {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(16, 42, 48, 0.08);
+  border-radius: 10px;
+  background: rgba(252, 251, 247, 0.6);
+}
+
+.review-group-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  padding: 14px 18px;
+  color: var(--teal);
+  border-radius: 10px 10px 0 0;
+  background: rgba(220, 238, 232, 0.6);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.review-group.is-diagnostics .review-group-head {
+  color: #1d5f86;
+  background: #e5f0f7;
+}
+
+.review-group-head svg {
+  flex: 0 0 auto;
+  width: 19px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.6;
+}
+
+.review-group ul {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 10px;
+  list-style: none;
+}
+
+.review-item {
+  display: flex;
+  flex: 1;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px 18px;
+  border: 1px solid rgba(16, 42, 48, 0.1);
+  border-radius: 9px;
+  background: var(--white);
+}
+
+.review-item h4 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.review-item p {
+  margin: 5px 0 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.skill-panels {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  align-items: stretch;
 }
 
 .integration-card,
@@ -1109,7 +1347,7 @@ textarea {
 .integration-card > p {
   margin: 14px 0 20px;
   color: var(--ink-soft);
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.6;
 }
 
@@ -1156,34 +1394,11 @@ textarea {
   background: var(--navy);
 }
 
-/* Six perspectives: three to a row on a wide screen; the method grid's own rules apply below 900px. */
-.perspective-grid .method-card {
-  min-height: 0;
-}
-
-@media (min-width: 901px) {
-  .perspective-grid .method-card,
-  .perspective-grid .method-card:nth-child(4),
-  .perspective-grid .method-card:nth-child(5) {
-    grid-column: span 2;
-  }
-}
-
-@media (min-width: 561px) and (max-width: 900px) {
-  .perspective-grid .method-card:last-child {
-    grid-column: span 1;
-  }
-}
-
-.perspective-grid .method-card-top {
-  margin-bottom: 16px;
-}
-
 .integration-card > small {
   display: block;
   margin-top: 9px;
   color: #788789;
-  font-size: 8px;
+  font-size: 10px;
   line-height: 1.45;
   text-align: center;
 }
@@ -1222,13 +1437,13 @@ textarea {
   position: relative;
   padding-left: 15px;
   color: var(--ink-soft);
-  font-size: 9px;
+  font-size: 12px;
   line-height: 1.5;
 }
 
 .skill-checklist li::before {
   position: absolute;
-  top: 5px;
+  top: 7px;
   left: 0;
   width: 5px;
   height: 5px;
@@ -1303,7 +1518,8 @@ textarea {
 }
 
 .workflow-panel {
-  padding: 28px 28px 24px;
+  margin-bottom: 24px;
+  padding: 30px 32px 28px;
 }
 
 .section-heading {
@@ -1325,7 +1541,7 @@ textarea {
 .section-heading h2 {
   margin: 0;
   font-family: var(--font-serif);
-  font-size: 22px;
+  font-size: 25px;
   font-weight: 600;
   letter-spacing: -0.02em;
 }
@@ -1341,108 +1557,43 @@ textarea {
 }
 
 .phase-tag {
-  padding: 7px 10px;
-  color: var(--teal);
-  border: 1px solid rgba(14, 119, 111, 0.22);
-  background: rgba(220, 238, 232, 0.45);
-}
-
-.workflow-list {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.workflow-step {
-  position: relative;
-  min-width: 0;
-  padding: 18px 16px 18px 0;
-  border-top: 1px solid var(--line);
-}
-
-.workflow-step.gate {
-  padding-left: 14px;
-  border-top-color: var(--teal);
-  background: linear-gradient(180deg, rgba(220, 238, 232, 0.46), transparent);
-}
-
-.step-number {
-  display: grid;
-  place-items: center;
-  width: 29px;
-  height: 29px;
-  margin-bottom: 25px;
+  padding: 8px 14px;
   color: var(--teal);
   border: 1px solid rgba(14, 119, 111, 0.28);
-  border-radius: 50%;
-  background: var(--paper);
-  font-size: 9px;
-  font-weight: 800;
-}
-
-.step-number svg {
-  width: 14px;
-  stroke: var(--teal);
-  stroke-width: 1.8;
-}
-
-.step-title-row {
-  min-height: 40px;
-}
-
-.step-copy h3 {
-  margin: 0;
-  font-size: 12px;
-}
-
-.step-copy p {
-  margin: 6px 0 0;
-  color: var(--ink-soft);
+  background: rgba(220, 238, 232, 0.45);
   font-size: 10px;
-  line-height: 1.5;
 }
 
 .required-badge {
   display: inline-block;
-  margin-top: 4px;
-  padding: 3px 6px;
+  align-self: flex-start;
+  padding: 4px 9px;
   color: var(--teal);
   background: var(--mint);
-  font-size: 7px;
-}
-
-.workflow-arrow {
-  position: absolute;
-  top: 27px;
-  right: 6px;
-  width: 13px;
-  stroke: #a9b5b2;
-  stroke-width: 1.4;
+  font-size: 9.5px;
 }
 
 .workflow-rule {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-top: 10px;
-  padding: 12px 14px;
+  gap: 14px;
+  margin-top: 26px;
+  padding: 14px 18px;
   color: var(--ink);
-  border-radius: 6px;
-  background: #edf4f0;
+  border-radius: 8px;
+  background: #e9f3ef;
 }
 
 .workflow-rule svg {
   flex: 0 0 auto;
-  width: 16px;
+  width: 18px;
   stroke: var(--teal);
-  stroke-width: 2;
+  stroke-width: 2.2;
 }
 
 .workflow-rule p {
   margin: 0;
-  font-size: 10px;
+  font-size: 13px;
   line-height: 1.5;
 }
 
@@ -2352,13 +2503,49 @@ textarea {
     position: static;
   }
 
-  .skills-layout {
-    grid-template-columns: 1fr;
+  /* Too narrow for five cards in a row: the track turns vertical, nodes on the left. */
+  .track {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
   }
 
-  .skill-side-column {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+  .track::before {
+    display: none;
+  }
+
+  .track-stage {
+    padding: 0 0 0 calc(var(--node) + 16px);
+  }
+
+  .track-stage:not(:last-child)::after {
+    top: var(--node);
+    left: calc(var(--node) / 2);
+    width: 2px;
+    height: calc(100% - var(--node) + 12px);
+    margin: 0 0 0 -1px;
+  }
+
+  .track-node {
+    left: 0;
+    transform: none;
+  }
+
+  .track-card,
+  .dimension-track .track-card {
+    padding: 16px 18px;
+  }
+
+  .track-gate-link {
+    display: none;
+  }
+
+  .workflow-rule {
+    margin-top: 16px;
+  }
+
+  .review-groups,
+  .skill-panels {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .hero {
@@ -2388,20 +2575,18 @@ textarea {
   }
 
   .sidebar nav {
-    display: flex;
+    flex-direction: row;
     flex-wrap: wrap;
     gap: 8px;
     margin-top: 18px;
   }
 
-  .workspace-nav,
-  .governance-nav {
+  .sidebar .nav-list {
     flex-direction: row;
     flex-wrap: wrap;
   }
 
-  .workspace-nav .nav-item,
-  .governance-nav .nav-item {
+  .sidebar .nav-item {
     min-height: 38px;
   }
 
@@ -2446,32 +2631,6 @@ textarea {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .workflow-list {
-    grid-template-columns: 1fr;
-  }
-
-  .workflow-step,
-  .workflow-step.gate {
-    display: grid;
-    grid-template-columns: 40px 1fr;
-    gap: 10px;
-    padding: 15px 0;
-    border-top: 1px solid var(--line);
-    background: transparent;
-  }
-
-  .step-number {
-    margin: 0;
-  }
-
-  .step-title-row {
-    min-height: 0;
-  }
-
-  .workflow-arrow {
-    display: none;
-  }
-
   .control-grid {
     grid-template-columns: 1fr;
   }
@@ -2491,24 +2650,6 @@ textarea {
 
   .skill-purpose {
     grid-column: 1 / -1;
-  }
-
-  .method-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .method-card,
-  .method-card:nth-child(4),
-  .method-card:nth-child(5) {
-    grid-column: span 1;
-  }
-
-  .method-card:last-child {
-    grid-column: 1 / -1;
-  }
-
-  .skill-side-column {
-    display: flex;
   }
 
   .control-card {
@@ -2650,17 +2791,22 @@ textarea {
     flex-direction: column;
   }
 
-  .skill-method {
-    padding: 22px 18px;
+  .skill-section {
+    padding: 22px 16px;
   }
 
-  .method-grid {
-    grid-template-columns: 1fr;
+  .section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
   }
 
-  .method-card,
-  .method-card:last-child {
-    grid-column: 1;
+  .section-heading h2 {
+    font-size: 21px;
+  }
+
+  .review-item {
+    padding: 14px;
   }
 }
 

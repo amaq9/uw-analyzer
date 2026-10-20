@@ -277,7 +277,7 @@ async function signIn(page: Page) {
 }
 
 async function openDraft(page: Page) {
-  await page.getByRole("navigation", { name: "Primary navigation" }).getByRole("link", { name: "UW Analyzer recommendations" }).click();
+  await page.getByRole("navigation", { name: "Primary navigation" }).getByRole("link", { name: "UW Analyzer recommendation", exact: true }).click();
   await page.getByRole("link", { name: "Open the recommendation" }).click();
   await expect(page.getByRole("heading", { name: /Step 3 · Your decision/ })).toBeVisible();
 }
@@ -298,7 +298,7 @@ test.describe("the recommendation journey", () => {
   test("lists the draft waiting for a decision and opens it on the right tab, named in the browser tab", async ({ page }) => {
     await mockApi(page);
     await signIn(page);
-    await page.getByRole("navigation", { name: "Primary navigation" }).getByRole("link", { name: "UW Analyzer recommendations" }).click();
+    await page.getByRole("navigation", { name: "Primary navigation" }).getByRole("link", { name: "UW Analyzer recommendation", exact: true }).click();
     await expect(page).toHaveTitle("UW Analyzer recommendations · UW Analyzer");
     await expect(page.getByText("1 recommendation is waiting for your decision.")).toBeVisible();
     await expect(page.getByRole("row", { name: /NIKE, Inc\./ })).toContainText("Waiting for your decision");

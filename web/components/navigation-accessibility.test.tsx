@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { SessionProvider, type UserSession } from "@/components/session-provider";
@@ -41,7 +41,7 @@ describe("workspace navigation", () => {
 
     expect(screen.getByRole("link", { name: "Cases" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Source access" })).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Audit trail" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Audit history" })).not.toBeInTheDocument();
 
     rerender(
       <SessionProvider initialSession={session(["audit:read"])} key="auditor">
@@ -49,7 +49,36 @@ describe("workspace navigation", () => {
       </SessionProvider>,
     );
 
-    expect(screen.getByRole("link", { name: "Audit trail" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Audit history" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Cases" })).not.toBeInTheDocument();
+  });
+
+  it("groups the links into Workspace, Analysis and Governance, in order", () => {
+    render(
+      <SessionProvider initialSession={session(["case:read", "audit:read"])}>
+        <Sidebar activePage="agreement" />
+      </SessionProvider>,
+    );
+
+    const listed = (name: string) =>
+      within(screen.getByRole("list", { name })).getAllByRole("link").map((link) => link.textContent);
+    expect(listed("Workspace")).toEqual(["Overview", "Cases", "Skills"]);
+    expect(listed("Analysis")).toEqual(["UW Analyzer recommendation", "Decision Outcome"]);
+    expect(listed("Governance")).toEqual(["Source access", "Audit history"]);
+    expect(screen.getByRole("link", { name: "UW Analyzer recommendation" })).toHaveAttribute("href", "/recommendations");
+    expect(screen.getByRole("link", { name: "Decision Outcome" })).toHaveAttribute("href", "/agreement");
+    expect(screen.getByRole("link", { name: "Decision Outcome" })).toHaveAttribute("aria-current", "page");
+  });
+
+  it("leaves out a section, heading and all, when none of its links are allowed", () => {
+    render(
+      <SessionProvider>
+        <Sidebar />
+      </SessionProvider>,
+    );
+
+    expect(screen.getByRole("list", { name: "Workspace" })).toBeInTheDocument();
+    expect(screen.queryByText("Analysis")).not.toBeInTheDocument();
+    expect(screen.queryByText("Governance")).not.toBeInTheDocument();
   });
 });

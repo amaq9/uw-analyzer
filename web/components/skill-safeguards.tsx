@@ -19,7 +19,7 @@ const boundaries = [
 
 export function SkillSafeguards() {
   return (
-    <aside className="skill-side-column">
+    <div className="skill-panels">
       <section className="panel integration-card" aria-labelledby="integration-title">
         <div className="integration-status-row is-live">
           <span className="connection-dot" />
@@ -56,6 +56,6 @@ export function SkillSafeguards() {
           {boundaries.map((item) => <li key={item}>{item}</li>)}
         </ul>
       </section>
-    </aside>
+    </div>
   );
 }
