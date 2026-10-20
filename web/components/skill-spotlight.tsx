@@ -10,13 +10,13 @@ export function SkillSpotlight() {
       </div>
       <div className="skill-spotlight-copy">
         <div className="skill-spotlight-meta">
-          <span>New specialist skill</span>
-          <span className="method-badge">Method ready</span>
+          <span>Specialist skill</span>
+          <span className="method-badge">Enhanced · in use</span>
         </div>
-        <h2 id="skill-spotlight-title">Financial Statement Assessment</h2>
+        <h2 id="skill-spotlight-title">Financial Statement Assessment, Enhanced</h2>
         <p>
-          A five-dimension financial review built for trade credit evidence: profitability, liquidity,
-          balance sheet and leverage, cash flow, and efficiency and sector.
+          Five financial dimensions (profitability, liquidity, balance sheet and leverage, cash flow, efficiency and
+          sector), read with the annual report&apos;s notes and auditor and the published agency ratings.
         </p>
       </div>
       <Link className="skill-spotlight-link" href="/skills">
